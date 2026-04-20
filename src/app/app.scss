@@ -1,0 +1,34 @@
+.app-shell {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--app-bg, #f6f7f9);
+  color: var(--app-fg, #0f1419);
+}
+
+.app-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 0.875rem 1.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--app-fg, #0f1419) 8%, transparent);
+  background: color-mix(in srgb, #fff 92%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.app-brand {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-brand:hover {
+  color: var(--app-accent, #2563eb);
+}
+
+.app-main {
+  flex: 1;
+  display: block;
+}

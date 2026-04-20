@@ -1,0 +1,61 @@
+.home {
+  padding: clamp(2rem, 6vw, 4rem) 1.5rem;
+}
+
+.home__inner {
+  max-width: 40rem;
+  margin: 0 auto;
+}
+
+.home__eyebrow {
+  margin: 0 0 0.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: color-mix(in srgb, var(--app-fg, #0f1419) 55%, transparent);
+}
+
+.home__title {
+  margin: 0 0 1rem;
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+}
+
+.home__lead {
+  margin: 0 0 1.75rem;
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  color: color-mix(in srgb, var(--app-fg, #0f1419) 72%, transparent);
+}
+
+.home__lead code {
+  font-size: 0.9em;
+  padding: 0.15em 0.4em;
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--app-fg, #0f1419) 6%, transparent);
+}
+
+.home__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.home__hint {
+  font-size: 0.9375rem;
+  color: color-mix(in srgb, var(--app-fg, #0f1419) 60%, transparent);
+}
+
+.home__hint kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.85em;
+  padding: 0.2em 0.45em;
+  border-radius: 0.3rem;
+  border: 1px solid color-mix(in srgb, var(--app-fg, #0f1419) 14%, transparent);
+  background: #fff;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--app-fg, #0f1419) 8%, transparent);
+}

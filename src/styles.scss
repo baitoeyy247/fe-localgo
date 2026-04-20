@@ -1,0 +1,33 @@
+/* You can add global styles to this file, and also import other style files */
+
+:root {
+  --app-bg: #f6f7f9;
+  --app-fg: #0f1419;
+  --app-accent: #2563eb;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Helvetica,
+    Arial,
+    sans-serif;
+  background: var(--app-bg);
+  color: var(--app-fg);
+}
