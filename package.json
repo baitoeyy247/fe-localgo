@@ -6,6 +6,7 @@
     "start": "ng serve",
     "build": "ng build",
     "build:sit": "ng build --configuration sit",
+    "build:cloudflare": "node scripts/generate-fe-environment.mjs && ng build --configuration sit",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
@@ -28,9 +29,6 @@
     "@angular/build": "^21.2.7",
     "@angular/cli": "^21.2.7",
     "@angular/compiler-cli": "^21.2.0",
-    "@emnapi/core": "1.10.0",
-    "@emnapi/runtime": "1.10.0",
-    "@emnapi/wasi-threads": "1.2.1",
     "jsdom": "^28.0.0",
     "prettier": "^3.8.1",
     "typescript": "~5.9.2",
