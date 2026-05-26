@@ -1,0 +1,94 @@
+<app-page-shell title="ประกาศงาน" backLink="/requester">
+  <app-requester-flow-bar active="post" />
+  <section class="screen">
+    <div class="hero-panel hero-panel--search">
+      <span class="badge">โพสต์แล้วรอรับราคา</span>
+      <h3>กำหนดจุดรับงานให้ชัด แล้วเปิดรับข้อเสนอจากผู้ให้บริการรอบพื้นที่นั้น</h3>
+      <p>เลือกตำแหน่งใน popup แล้วกดยืนยัน ระบบจะอัปเดตจุดรับงานของประกาศนี้ทันที</p>
+    </div>
+
+    <div class="stack">
+      <label class="form-field form-field--modern">
+        <span>หมวดหมู่</span>
+        <select aria-label="หมวดหมู่" (change)="selectCategory($any($event.target).value)">
+          @for (cat of categories(); track cat.id) {
+            <option [value]="cat.id" [selected]="selectedCategoryId() === cat.id">{{ cat.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="form-field form-field--modern">
+        <span>หัวข้องาน</span>
+        <input
+          aria-label="หัวข้องาน"
+          placeholder="เช่น ต้องการซักผ้าด่วน 5 กก."
+          (input)="updateTitle($any($event.target).value)"
+        />
+      </label>
+      <label class="form-area form-area--modern">
+        <span>รายละเอียด</span>
+        <textarea
+          rows="3"
+          aria-label="รายละเอียด"
+          placeholder="ระบุสถานที่ รอบเวลา และเงื่อนไขที่ต้องการ"
+          (input)="updateDescription($any($event.target).value)"
+        ></textarea>
+      </label>
+
+      <section class="summary-panel summary-panel--interactive">
+        <div class="summary-panel__content">
+          <span class="badge badge--blue">จุดรับงาน</span>
+          <h3>{{ requestLocation().title }}</h3>
+          <p>{{ requestLocation().subtitle }}</p>
+          <div class="chips">
+            <span>รัศมี {{ requestLocation().radiusKm }} กม.</span>
+            <span>{{ requestLocation().lat.toFixed(4) }}, {{ requestLocation().lng.toFixed(4) }}</span>
+          </div>
+        </div>
+        <button type="button" class="secondary secondary--pill" (click)="openPicker()">
+          เลือกตำแหน่ง
+        </button>
+      </section>
+
+      <label class="form-field form-field--modern">
+        <span>งบประมาณ</span>
+        <input
+          aria-label="งบประมาณ"
+          [value]="budgetText()"
+          (input)="updateBudget($any($event.target).value)"
+        />
+      </label>
+
+      <div class="glass-card">
+        <span class="muted-label">สิ่งที่จะเกิดขึ้นหลังโพสต์</span>
+        <strong>ผู้ให้บริการในพื้นที่จะได้รับแจ้งเตือนทาง LINE</strong>
+        <p>คุณจะเห็น bid ทั้งหมดในหน้าเดียว และเลือกข้อเสนอได้เฉพาะคนที่ประกาศงานนี้</p>
+      </div>
+
+      <button
+        class="primary"
+        type="button"
+        [disabled]="posting() || !title().trim()"
+        (click)="publish()"
+      >
+        {{ posting() ? 'กำลังประกาศ…' : 'ประกาศงาน' }}
+      </button>
+    </div>
+  </section>
+
+  <app-requester-bottom-nav />
+
+  <app-location-picker-modal
+    [open]="pickerOpen()"
+    heading="เลือกตำแหน่งสำหรับประกาศงาน"
+    description="เปิดแผนที่เต็มจอเพื่อปักจุดรับงานให้ตรงที่สุด แล้วกดยืนยันเพื่อใช้พิกัดนี้กับประกาศงาน"
+    [locationTitle]="requestLocation().title"
+    [locationSubtitle]="requestLocation().subtitle"
+    [searchText]="requestLocation().title"
+    [radiusKm]="requestLocation().radiusKm"
+    [lat]="requestLocation().lat"
+    [lng]="requestLocation().lng"
+    [radiusOptions]="[1, 3, 5, 10]"
+    (cancel)="closePicker()"
+    (confirm)="applyLocation($event)"
+  />
+</app-page-shell>

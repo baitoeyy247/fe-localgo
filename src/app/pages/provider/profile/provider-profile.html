@@ -1,0 +1,57 @@
+<app-page-shell title="โปรไฟล์ผู้ให้บริการ" subtitle="ขั้นตอนที่ 1 จาก 3" backLink="/provider">
+  <app-provider-setup-bar active="profile" />
+  <section class="screen">
+    @if (loading()) {
+      <p class="state-message">กำลังโหลด…</p>
+    } @else {
+      <div class="stack">
+        <label class="form-field">
+          <span>ประเภทผู้ให้บริการ</span>
+          <select aria-label="ประเภท" (change)="selectProviderType($any($event.target).value)">
+            @for (opt of typeOptions; track opt.value) {
+              <option [value]="opt.value" [selected]="providerType() === opt.value">{{ opt.label }}</option>
+            }
+          </select>
+        </label>
+        <label class="form-field">
+          <span>ชื่อที่แสดง (ร้าน / บริษัท / ชื่อเล่น)</span>
+          <input
+            [value]="name()"
+            aria-label="ชื่อบริการ"
+            (input)="updateName($any($event.target).value)"
+          />
+        </label>
+        <label class="form-area">
+          <span>รายละเอียด</span>
+          <textarea
+            rows="3"
+            [value]="description()"
+            aria-label="รายละเอียด"
+            (input)="updateDescription($any($event.target).value)"
+          ></textarea>
+        </label>
+        <label class="form-field">
+          <span>LINE ติดต่อ</span>
+          <input
+            [value]="contactLineId()"
+            aria-label="LINE"
+            placeholder="@username"
+            (input)="updateContactLine($any($event.target).value)"
+          />
+        </label>
+        <label class="form-field">
+          <span>เบอร์โทร</span>
+          <input
+            [value]="contactPhone()"
+            aria-label="เบอร์โทร"
+            (input)="updateContactPhone($any($event.target).value)"
+          />
+        </label>
+        <button class="primary" type="button" [disabled]="saving() || !name().trim()" (click)="saveAndContinue()">
+          {{ saving() ? 'กำลังบันทึก…' : 'บันทึกและตั้งพื้นที่' }}
+        </button>
+      </div>
+    }
+  </section>
+  <app-provider-bottom-nav />
+</app-page-shell>

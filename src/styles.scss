@@ -1,9 +1,12 @@
+@use './app/demo/prototype';
+@import 'leaflet/dist/leaflet.css';
+
 /* You can add global styles to this file, and also import other style files */
 
 :root {
-  --app-bg: #f6f7f9;
-  --app-fg: #0f1419;
-  --app-accent: #2563eb;
+  --app-bg: #f4f7f5;
+  --app-fg: #10181f;
+  --app-accent: #0a9f50;
 }
 
 *,
@@ -30,4 +33,52 @@ body {
     sans-serif;
   background: var(--app-bg);
   color: var(--app-fg);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.section-title a,
+.request-card a,
+.match-card a {
+  width: fit-content;
+  padding: 0.45rem 0.75rem;
+  border-radius: 999px;
+  background: #d6f2e0;
+  color: #07572f;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.bottom-nav a {
+  min-height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.5rem;
+  background: transparent;
+  color: #63717a;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.stepper a {
+  min-height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid #dbe4df;
+  border-radius: 999px;
+  background: #fff;
+  color: #63717a;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.primary,
+.secondary,
+.demo-admin {
+  display: grid;
+  place-items: center;
+  text-align: center;
 }

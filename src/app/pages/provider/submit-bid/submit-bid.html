@@ -1,0 +1,50 @@
+<app-page-shell title="เสนอราคา" [backLink]="backLink()">
+  <section class="screen">
+    @if (loading()) {
+      <p class="state-message">กำลังโหลด…</p>
+    } @else if (request(); as r) {
+      <div class="stack">
+        @if (error()) {
+          <p class="error-text">{{ error() }}</p>
+        }
+        <div class="summary-panel">
+          <span class="badge badge--blue">ข้อเสนอส่วนตัว</span>
+          <h3>{{ r.title }}</h3>
+          <p>
+            ผู้ประกาศเห็นราคาของคุณเท่านั้น
+            @if (existingBidId()) {
+              · คุณเคยส่งข้อเสนอแล้ว แก้ไขได้ทันที
+            }
+          </p>
+        </div>
+        <label class="form-field">
+          <span>ราคาเสนอ</span>
+          <input
+            placeholder="เช่น 120 บาท"
+            [value]="priceText()"
+            (input)="priceText.set($any($event.target).value)"
+          />
+        </label>
+        <label class="form-area">
+          <span>รายละเอียดข้อเสนอ</span>
+          <textarea
+            rows="3"
+            placeholder="ระบุเงื่อนไข เวลา และสิ่งที่รวมในราคา"
+            [value]="description()"
+            (input)="description.set($any($event.target).value)"
+          ></textarea>
+        </label>
+        <button class="primary" type="button" [disabled]="submitting() || !priceText().trim()" (click)="submit()">
+          {{
+            submitting()
+              ? (existingBidId() ? 'กำลังอัปเดต…' : 'กำลังส่ง…')
+              : (existingBidId() ? 'อัปเดตข้อเสนอราคา' : 'ส่งข้อเสนอราคา')
+          }}
+        </button>
+      </div>
+    } @else {
+      <p class="state-message">เลือกงานจากรายการก่อน</p>
+      <a routerLink="/provider/requests">ไปรายการงาน</a>
+    }
+  </section>
+</app-page-shell>

@@ -1,0 +1,99 @@
+<app-page-shell title="รายละเอียดงาน" subtitle="ข้อมูลจาก API" [backLink]="'/provider/requests'">
+  <section class="screen">
+    @if (loading()) {
+      <p class="state-message">กำลังโหลด…</p>
+    } @else if (error()) {
+      <p class="error-text">{{ error() }}</p>
+      <a routerLink="/provider/requests">กลับ</a>
+    } @else if (request(); as r) {
+      <div class="stack">
+        @if (notice()) {
+          <p class="state-message">{{ notice() }}</p>
+        }
+        <div class="summary-panel">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+            <h3 style="margin: 0;">{{ r.title }}</h3>
+            <span class="badge">{{ statusLabel(r.status) }}</span>
+          </div>
+          <p style="margin-top: 0.35rem;">{{ r.categoryName ?? 'ทั่วไป' }}</p>
+        </div>
+        @if (r.description) {
+          <div class="form-area">
+            <span>รายละเอียด</span>
+            <p>{{ r.description }}</p>
+          </div>
+        }
+        <div class="chips">
+          <span>รัศมี {{ (r.searchRadiusMeters / 1000).toFixed(0) }} กม.</span>
+          @if (r.budgetText) {
+            <span>{{ r.budgetText }}</span>
+          }
+        </div>
+
+        @if (showAppointmentSection()) {
+          <article class="summary-panel summary-panel--interactive" style="flex-direction: column; align-items: stretch; gap: 0.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+              <strong style="font-size: 1.1rem; color: #10181f; margin: 0;">รายละเอียดนัดหมาย</strong>
+              <span class="badge badge--green">นัดหมายจากลูกค้า</span>
+            </div>
+            <div>
+            @if (appointmentLoading()) {
+              <p class="state-hint">กำลังโหลดรายละเอียดนัด…</p>
+            } @else if (appointment(); as appt) {
+              <p><strong>วันและเวลา:</strong> {{ formatScheduledAt(appt.scheduledAt) }}</p>
+              <p><strong>สถานที่:</strong> {{ appt.addressText?.trim() || 'ยังไม่ระบุสถานที่' }}</p>
+              @if (appt.note) {
+                <p><strong>หมายเหตุ:</strong> {{ appt.note }}</p>
+              }
+              <p><strong>สถานะ:</strong> {{ appointmentStatusLabel(appt.status) }}</p>
+              @if (canConfirmAppointment()) {
+                <p class="state-hint">รอคุณยืนยันนัด</p>
+                <button
+                  class="primary"
+                  type="button"
+                  style="margin-top: 0.5rem; width: 100%;"
+                  [disabled]="acting()"
+                  (click)="confirmAppointment()"
+                >
+                  {{ acting() ? 'กำลังยืนยัน…' : 'ยืนยันรับนัดหมาย' }}
+                </button>
+              } @else if (appt.status === 'Confirmed') {
+                <p class="state-hint">ยืนยันรับนัดแล้ว</p>
+              }
+            } @else {
+              @if (appointmentError()) {
+                <p class="error-text">{{ appointmentError() }}</p>
+              } @else {
+                <p class="state-hint">ยังไม่มีรายละเอียดนัด</p>
+              }
+              <button type="button" class="secondary" style="margin-top: 0.5rem; width: 100%;" (click)="reloadAppointment()">โหลดนัดหมายอีกครั้ง</button>
+            }
+            </div>
+          </article>
+        }
+
+        @if (myBid(); as bid) {
+          <article class="summary-panel">
+            <span class="badge badge--blue">ข้อเสนอของคุณ</span>
+            @if (bid.status !== 'Withdrawn') {
+              <strong>{{ bid.priceText }}</strong>
+              <p>{{ bid.description ?? '—' }}</p>
+            } @else {
+              <p>คุณถอนข้อเสนอไปแล้ว สามารถส่งข้อเสนอใหม่ได้หากงานยังเปิดรับ</p>
+            }
+            <small>สถานะข้อเสนอ: {{ bidStatusLabel(bid.status) }}</small>
+            @if (canWithdrawBid()) {
+              <button type="button" class="danger" (click)="withdrawMyBid()">ถอนข้อเสนอ</button>
+            }
+            @if (canResubmitBid()) {
+              <button class="primary" type="button" (click)="submitBid()">เสนอราคาใหม่</button>
+            }
+          </article>
+        } @else {
+          <button class="primary" type="button" (click)="submitBid()">ส่งข้อเสนอราคา</button>
+        }
+      </div>
+    }
+  </section>
+  <app-provider-bottom-nav />
+</app-page-shell>

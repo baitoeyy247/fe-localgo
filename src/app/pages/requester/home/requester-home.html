@@ -1,0 +1,76 @@
+<app-page-shell title="ผู้รับบริการ" [showBack]="true" backLink="/" backLabel="สลับบทบาท">
+  <section class="screen">
+    <div class="stack">
+      <a class="action-card" routerLink="/requester/search">
+        <span>
+          <strong>🔍 ค้นหาบริการใกล้พื้นที่</strong>
+          <small>เลือกพื้นที่ หมวดหมู่ และรัศมีค้นหา</small>
+        </span>
+        <b>→</b>
+      </a>
+
+      <a class="action-card action-card--accent" routerLink="/requester/post">
+        <span>
+          <strong>📢 ประกาศงานให้เสนอราคา</strong>
+          <small>ผู้ให้บริการในพื้นที่จะได้รับแจ้งเตือนทาง LINE</small>
+        </span>
+        <b>→</b>
+      </a>
+
+      <div class="section-title">
+        <h3>งานของฉัน</h3>
+      </div>
+
+      @if (loading()) {
+        <p class="state-message">กำลังโหลด…</p>
+      } @else if (error()) {
+        <p class="error-text">{{ error() }}</p>
+      } @else {
+        @for (request of requests(); track request.id) {
+          <article class="request-card">
+            <div style="display: grid; gap: 0.25rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.15rem; flex-wrap: wrap;">
+                <strong style="margin: 0;">{{ request.title }}</strong>
+                <span class="badge" [ngClass]="statusBadgeClass(request.status)">{{ statusLabel(request.status) }}</span>
+              </div>
+              <span>
+                @if (request.categoryName) { {{ request.categoryName }} · }
+                {{ request.bidCount }} ข้อเสนอ
+              </span>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <button
+                type="button"
+                (click)="openRequest(request)"
+              >
+                ดำเนินงานต่อ
+              </button>
+              @if (canCancel(request.status)) {
+                <button
+                  type="button"
+                  class="danger"
+                  style="padding: 0.55rem 1.15rem; width: auto; min-height: auto;"
+                  (click)="cancelRequest(request, $event)"
+                >
+                  ยกเลิกงาน
+                </button>
+              }
+            </div>
+          </article>
+        } @empty {
+          <article class="empty-state">
+            <h3>ยังไม่มีงาน</h3>
+            <p>เริ่มจากประกาศงานหรือค้นหาบริการในพื้นที่</p>
+            <a class="primary" routerLink="/requester/post">ประกาศงานแรก</a>
+          </article>
+        }
+      }
+    </div>
+
+    <button type="button" class="ghost-link role-switch" (click)="switchToProvider()">
+      สลับไปโหมดผู้ให้บริการ
+    </button>
+  </section>
+
+  <app-requester-bottom-nav />
+</app-page-shell>

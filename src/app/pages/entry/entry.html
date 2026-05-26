@@ -1,0 +1,77 @@
+<app-page-shell title="เลือกบทบาท" [showBack]="false">
+  <section class="entry">
+    <div class="entry-hero">
+      <app-map-view size="hero" label="ค้นหาพื้นที่" radiusLabel="รัศมี 5 กม." />
+      <div class="entry-hero__content">
+        <h3>บริการใกล้คุณ<br>ในที่เดียว</h3>
+        <p class="entry-hero__sub">ค้นหา · ประกาศงาน · รับข้อเสนอ · นัดหมาย</p>
+      </div>
+    </div>
+
+    @if (categories().length) {
+      <div class="category-strip" aria-label="หมวดบริการ">
+        @for (cat of categories(); track cat.id) {
+          <button class="category-chip" type="button" (click)="searchCategory(cat)">{{ cat.name }}</button>
+        }
+      </div>
+    }
+
+    @if (loading()) {
+      <p class="state-message">กำลังเชื่อมต่อระบบ…</p>
+    } @else if (error()) {
+      <p class="error-text">{{ error() }}</p>
+      @if (lineHint()) {
+        <p class="muted-label">{{ lineHint() }}</p>
+      }
+      <div class="action-stack entry-recovery-actions">
+        <button class="secondary" type="button" (click)="retryLogin()">เข้าสู่ระบบใหม่</button>
+        @if (auth.isAuthenticated()) {
+          <button class="danger" type="button" (click)="logout()">ออกจากระบบ</button>
+        }
+      </div>
+      @if (allowDevLogin && !auth.isLineClient()) {
+        <button class="secondary" type="button" (click)="useDevLogin()">เข้าด้วย Dev login (เบราว์เซอร์)</button>
+      }
+    } @else {
+      @if (auth.user(); as u) {
+        <p class="badge entry-greeting">
+          สวัสดี {{ u.displayName }}
+          @if (auth.authMode() === 'line') { · <span>LINE</span> }
+          @if (auth.authMode() === 'dev') { · <span>Dev</span> }
+        </p>
+      }
+      @if (!auth.user() && allowDevLogin) {
+        <p class="muted-label">LINE จริง: <a [href]="liffEntryUrl()">{{ liffEntryUrl() }}</a></p>
+      }
+      @if (!auth.isAuthenticated()) {
+        <button class="secondary" type="button" (click)="retryLogin()">เข้าสู่ระบบใหม่</button>
+      }
+      <button class="role-card role-card--requester" type="button" (click)="enterAs('Requester')">
+        <span class="role-card__icon">🔍</span>
+        <span>
+          <strong>ผู้รับบริการ</strong>
+          <small>ค้นหาบริการ ประกาศงาน รับข้อเสนอราคา และรีวิวหลังงานสำเร็จ</small>
+        </span>
+      </button>
+
+      <button class="role-card role-card--provider" type="button" (click)="enterAs('Provider')">
+        <span class="role-card__icon">🛠</span>
+        <span>
+          <strong>ผู้ให้บริการ</strong>
+          <small>สร้างโปรไฟล์ เพิ่มบริการ ตั้งพื้นที่ให้บริการ และเสนอราคาแข่งขัน</small>
+        </span>
+      </button>
+
+      @if (!auth.isLineClient()) {
+        <p class="muted-label entry-admin">
+          <button type="button" class="ghost-link" (click)="enterAdmin()">เข้าหลังบ้านแอดมิน</button>
+        </p>
+      }
+      @if (auth.isAuthenticated()) {
+        <div class="entry-session-actions">
+          <button class="danger" type="button" (click)="logout()">ออกจากระบบ</button>
+        </div>
+      }
+    }
+  </section>
+</app-page-shell>

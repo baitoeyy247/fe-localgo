@@ -45,6 +45,11 @@ Thumbs.db
 
 # Local env (secrets)
 /.env
+/.env.local
+/.env.sit
+/.env.sit.local
+!/.env.example
+!/.env.sit.example
 
 # TypeScript
 *.tsbuildinfo

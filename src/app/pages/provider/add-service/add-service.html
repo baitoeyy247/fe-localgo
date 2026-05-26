@@ -1,0 +1,61 @@
+<app-page-shell title="เพิ่มบริการ" subtitle="ขั้นตอนที่ 3 จาก 3" backLink="/provider/coverage">
+  <app-provider-setup-bar active="service" />
+  <section class="screen">
+    @if (loading()) {
+      <p class="state-message">กำลังโหลด…</p>
+    } @else if (!provider()) {
+      <div class="empty-state">
+        <h3>สร้างโปรไฟล์ก่อน</h3>
+        <a class="primary" routerLink="/provider/profile">ไปหน้าโปรไฟล์</a>
+      </div>
+    } @else {
+      <div class="stack">
+        <label class="form-field">
+          <span>หมวดหมู่</span>
+          <select aria-label="หมวดหมู่" (change)="selectCategory($any($event.target).value)">
+            @for (cat of categories(); track cat.id) {
+              <option [value]="cat.id" [selected]="selectedCategoryId() === cat.id">{{ cat.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="form-field">
+          <span>ชื่อบริการ</span>
+          <input placeholder="เช่น ซักอบรีด รับส่งถึงที่" (input)="updateTitle($any($event.target).value)" />
+        </label>
+        <label class="form-area">
+          <span>รายละเอียด</span>
+          <textarea rows="3" (input)="updateDescription($any($event.target).value)"></textarea>
+        </label>
+        <label class="form-field">
+          <span>ราคาเริ่มต้น</span>
+          <input placeholder="เช่น เริ่ม 40 บาท / กก." (input)="updateBasePrice($any($event.target).value)" />
+        </label>
+
+        <div class="section-title">
+          <h3>จุดที่ใช้กับบริการนี้</h3>
+          <a routerLink="/provider/coverage">จัดการจุด</a>
+        </div>
+        @for (branch of provider()!.branches; track branch.id) {
+          <label class="location-option" [class.location-option--selected]="isBranchSelected(branch.id)">
+            <input
+              type="checkbox"
+              [checked]="isBranchSelected(branch.id)"
+              (change)="toggleBranch(branch.id, $any($event.target).checked)"
+            />
+            <span>
+              <strong>{{ branch.name }}</strong>
+              <small>รัศมี {{ branch.serviceRadiusMeters / 1000 }} กม.</small>
+            </span>
+          </label>
+        } @empty {
+          <p class="muted-label">เพิ่มจุดให้บริการในขั้นตอนพื้นที่ก่อน</p>
+        }
+
+        <button class="primary" type="button" [disabled]="saving()" (click)="saveAndContinue()">
+          {{ saving() ? 'กำลังบันทึก…' : 'บันทึกและจัดการบริการ' }}
+        </button>
+      </div>
+    }
+  </section>
+  <app-provider-bottom-nav />
+</app-page-shell>

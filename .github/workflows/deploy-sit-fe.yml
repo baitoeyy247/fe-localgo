@@ -1,0 +1,42 @@
+name: Deploy SIT Frontend
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Generate environment.sit.ts
+        env:
+          NG_APP_API_BASE_URL: ${{ secrets.SIT_API_BASE_URL }}
+          NG_APP_LIFF_ID: ${{ secrets.SIT_LIFF_ID }}
+          NG_APP_MAP_DEFAULT_LAT: ${{ secrets.SIT_MAP_DEFAULT_LAT }}
+          NG_APP_MAP_DEFAULT_LNG: ${{ secrets.SIT_MAP_DEFAULT_LNG }}
+        run: node scripts/generate-fe-environment.mjs
+
+      - name: Install and build
+        run: |
+          npm ci
+          npm run build:sit
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: localgo-sit
+          directory: dist/localgo/browser
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}

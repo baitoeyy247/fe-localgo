@@ -1,0 +1,63 @@
+<app-page-shell title="บริการของฉัน" backLink="/provider">
+  <section class="screen">
+    @if (loading()) {
+      <p class="state-message">กำลังโหลด…</p>
+    } @else if (provider(); as p) {
+      <div class="stack">
+        <div class="summary-panel">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+            <h3 style="margin: 0;">{{ p.name }}</h3>
+            <span class="badge">{{ p.status === 'Active' ? 'พร้อมรับงาน' : p.status }}</span>
+          </div>
+          <p style="margin-top: 0.35rem;">
+            {{ p.services.length }} บริการ · {{ p.branches.length }} จุดให้บริการ ·
+            ★ {{ p.averageVerifiedRating }} ({{ p.verifiedReviewCount }} รีวิว)
+          </p>
+        </div>
+
+        <div class="section-title">
+          <h3>รายการบริการ ({{ p.services.length }})</h3>
+          <a class="ghost-link" routerLink="/provider/service">+ เพิ่ม</a>
+        </div>
+
+        @for (service of p.services; track service.id) {
+          <article class="service-card" [class.service-card--paused]="!service.isActive">
+            <div style="display:flex;justify-content:space-between;align-items:start;gap:.5rem">
+              <strong>{{ service.title }}</strong>
+              <small>{{ service.isActive ? 'เปิด' : 'หยุด' }}</small>
+            </div>
+            <span>{{ service.categoryName ?? 'บริการ' }} · {{ service.basePriceText ?? 'ติดต่อสอบถาม' }}</span>
+            <div class="coverage-card__actions">
+              <a class="secondary" [routerLink]="['/provider/service', service.id, 'edit']">แก้ไข</a>
+              <button
+                type="button"
+                class="secondary"
+                (click)="toggleService(service.id, !service.isActive)"
+              >
+                {{ service.isActive ? '⏸ หยุดชั่วคราว' : '▶ เปิดอีกครั้ง' }}
+              </button>
+            </div>
+          </article>
+        } @empty {
+          <div class="empty-state">
+            <h3>ยังไม่มีบริการ</h3>
+            <p>เพิ่มบริการแรกเพื่อเริ่มรับงานในพื้นที่</p>
+            <a class="primary" routerLink="/provider/service">เพิ่มบริการแรก</a>
+          </div>
+        }
+
+        @if (p.services.length > 0) {
+          <a class="primary" routerLink="/provider/requests">📋 ดูงานที่ตรงกับบริการ</a>
+        }
+      </div>
+    } @else {
+      <div class="empty-state">
+        <h3>ยังไม่มีโปรไฟล์ผู้ให้บริการ</h3>
+        <p>สร้างโปรไฟล์ก่อนเพื่อเริ่มรับงาน</p>
+        <a class="primary" routerLink="/provider/profile">สร้างโปรไฟล์ก่อน</a>
+      </div>
+    }
+  </section>
+
+  <app-provider-bottom-nav />
+</app-page-shell>

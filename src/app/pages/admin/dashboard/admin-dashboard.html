@@ -1,0 +1,68 @@
+<app-page-shell title="แอดมิน" [showBack]="true" backLink="/">
+  <section class="screen">
+    @if (loading()) {
+      <p class="state-message">กำลังโหลดจาก API…</p>
+    } @else if (error()) {
+      <p class="error-text">{{ error() }}</p>
+    } @else {
+      <div class="stack">
+        <div class="summary-panel">
+          <span class="badge">Back office</span>
+          <h3>ภาพรวมระบบ</h3>
+          <p>ข้อมูลจาก API จริง — ต้องล็อกอินด้วยบัญชี Admin</p>
+        </div>
+
+        @if (dashboard(); as d) {
+          <div class="admin-grid">
+            <article>
+              <span>👥 ผู้ใช้ทั้งหมด</span>
+              <strong>{{ d.users }}</strong>
+            </article>
+            <article>
+              <span>🛠 ผู้ให้บริการ</span>
+              <strong>{{ d.providers }}</strong>
+            </article>
+            <article>
+              <span>📢 ประกาศเปิด</span>
+              <strong>{{ d.publishedRequests }}</strong>
+            </article>
+            <article>
+              <span>✅ เสร็จสิ้น</span>
+              <strong>{{ d.completedRequests }}</strong>
+            </article>
+            <article>
+              <span>⏰ หมดอายุ</span>
+              <strong>{{ d.expiredRequests }}</strong>
+            </article>
+            <article>
+              <span>🔔 แจ้งเตือนค้าง</span>
+              <strong>{{ d.pendingNotifications }}</strong>
+            </article>
+          </div>
+        }
+
+        <div class="section-title">
+          <h3>ผู้ใช้ล่าสุด ({{ users().length }})</h3>
+        </div>
+        @for (u of users().slice(0, 8); track $index) {
+          <article class="request-card">
+            <code>{{ userLine($any(u)) }}</code>
+          </article>
+        } @empty {
+          <p class="muted-label">ยังไม่มีผู้ใช้</p>
+        }
+
+        <div class="section-title">
+          <h3>บันทึกแจ้งเตือนล่าสุด</h3>
+        </div>
+        @for (n of notifications().slice(0, 8); track $index) {
+          <article class="request-card">
+            <span>{{ notificationLabel(n) }}</span>
+          </article>
+        } @empty {
+          <p class="muted-label">ยังไม่มีบันทึกแจ้งเตือน</p>
+        }
+      </div>
+    }
+  </section>
+</app-page-shell>

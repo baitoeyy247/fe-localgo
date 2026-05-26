@@ -1,0 +1,72 @@
+<app-page-shell title="ข้อเสนอที่ได้รับ" backLink="/requester">
+  <app-requester-flow-bar active="bids" />
+  <section class="screen">
+    <div class="stack">
+      @if (request(); as r) {
+        <div class="summary-panel" [class.summary-panel--success]="justPosted()">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+            <h3 style="margin: 0;">{{ r.title }}</h3>
+            <span class="badge" [class.badge--warn]="isExpired()">{{ statusLabel(r.status) }}</span>
+          </div>
+          @if (!justPosted()) {
+            <p style="margin-top: 0.35rem;">หมดอายุอัตโนมัติหากไม่มีความคืบหน้า 14 วัน</p>
+          }
+        </div>
+      }
+
+      @if (!request() && !loading()) {
+        <div class="empty-state">
+          <h3>ยังไม่มีงานที่เปิดรับข้อเสนอ</h3>
+          <p>เริ่มจากประกาศงานใหม่ แล้วกลับมาดูข้อเสนอที่ได้รับ</p>
+          <a class="primary" routerLink="/requester/post">ประกาศงาน</a>
+        </div>
+      } @else if (loading()) {
+        <p class="state-message">กำลังโหลดข้อเสนอ…</p>
+      } @else if (bids().length === 0) {
+        <div class="empty-state">
+          <h3>ยังไม่มีผู้เสนอราคา</h3>
+          <p>ระบบจะแจ้งเตือนทาง LINE เมื่อมีข้อเสนอใหม่</p>
+        </div>
+      } @else {
+        @for (bid of bids(); track bid.id) {
+          <button
+            class="bid-card"
+            [class.bid-card--selected]="selectedBidId() === bid.id"
+            type="button"
+            (click)="selectBid(bid)"
+          >
+            <span>
+              <strong>{{ bid.providerName }}</strong>
+              <small>{{ bid.description ?? 'ไม่มีรายละเอียดเพิ่ม' }}</small>
+            </span>
+            <b>{{ bid.priceText }}</b>
+          </button>
+        }
+      }
+
+      @if (error()) {
+        <p class="error-text">{{ error() }}</p>
+      }
+
+      @if (canClearBidSelection()) {
+        <button
+          class="danger"
+          type="button"
+          [disabled]="clearing()"
+          (click)="clearBidSelection()"
+        >
+          {{ clearing() ? 'กำลังยกเลิก…' : 'ยกเลิกการเลือกข้อเสนอ' }}
+        </button>
+      }
+
+      @if (!isExpired()) {
+        <button class="primary" type="button" [disabled]="!selectedBidId()" (click)="confirmSelection()">
+          เลือกข้อเสนอและนัดหมาย
+        </button>
+      } @else {
+        <a class="primary" routerLink="/requester/post">ประกาศงานใหม่</a>
+      }
+    </div>
+  </section>
+  <app-requester-bottom-nav />
+</app-page-shell>

@@ -1,0 +1,55 @@
+<app-page-shell title="แก้ไขบริการ" backLink="/provider/manage">
+  <section class="screen">
+    @if (loading()) {
+      <p class="state-message">กำลังโหลด…</p>
+    } @else if (!service()) {
+      <p class="state-message">ไม่พบบริการ</p>
+      <a routerLink="/provider/manage">กลับ</a>
+    } @else {
+      <div class="stack">
+        @if (error()) {
+          <p class="error-text">{{ error() }}</p>
+        }
+        <label class="form-field">
+          <span>หมวดหมู่</span>
+          <select (change)="selectCategory($any($event.target).value)">
+            @for (cat of categories(); track cat.id) {
+              <option [value]="cat.id" [selected]="selectedCategoryId() === cat.id">{{ cat.name }}</option>
+            }
+          </select>
+        </label>
+        <label class="form-field">
+          <span>ชื่อบริการ</span>
+          <input [value]="title()" (input)="title.set($any($event.target).value)" />
+        </label>
+        <label class="form-area">
+          <span>รายละเอียด</span>
+          <textarea rows="3" [value]="description()" (input)="description.set($any($event.target).value)"></textarea>
+        </label>
+        <label class="form-field">
+          <span>ราคาเริ่มต้น</span>
+          <input [value]="basePriceText()" (input)="basePriceText.set($any($event.target).value)" />
+        </label>
+        @for (branch of provider()!.branches; track branch.id) {
+          @if (branch.isActive) {
+            <label class="location-option" [class.location-option--selected]="isBranchSelected(branch.id)">
+              <input
+                type="checkbox"
+                [checked]="isBranchSelected(branch.id)"
+                (change)="toggleBranch(branch.id, $any($event.target).checked)"
+              />
+              <span>
+                <strong>{{ branch.name }}</strong>
+                <small>รัศมี {{ branch.serviceRadiusMeters / 1000 }} กม.</small>
+              </span>
+            </label>
+          }
+        }
+        <button type="button" class="primary" [disabled]="saving()" (click)="save()">
+          {{ saving() ? 'กำลังบันทึก…' : 'บันทึกการแก้ไข' }}
+        </button>
+      </div>
+    }
+  </section>
+  <app-provider-bottom-nav />
+</app-page-shell>

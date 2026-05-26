@@ -1,0 +1,112 @@
+<app-page-shell title="ค้นหาบริการ" backLink="/requester">
+  <section class="screen">
+    <div class="hero-panel hero-panel--search">
+      <span class="badge badge--blue">ค้นหาจากพื้นที่จริง</span>
+      <h3>เลือกจุดที่ต้องการ แล้วระบบจะจัดบริการรอบนั้นให้ทันที</h3>
+      <p>แตะปุ่มเลือกบนแผนที่ แล้วกดยืนยันตำแหน่งใน popup เพื่ออัปเดตพื้นที่ค้นหาหน้านี้</p>
+    </div>
+
+    <div class="stack">
+      <label class="search-box search-box--modern">
+        <span>คำค้นหรือชื่อบริการ</span>
+        <input
+          [value]="keyword()"
+          placeholder="เช่น ซักรีด, ทำความสะอาด, ช่างไฟ…"
+          aria-label="ค้นหาบริการ"
+          (input)="updateKeyword($any($event.target).value)"
+          (keyup.enter)="search()"
+        />
+      </label>
+
+      @if (categories().length) {
+        <div class="category-strip" aria-label="กรองหมวดบริการ">
+          <button
+            class="category-chip"
+            [class.category-chip--active]="selectedCategoryId() === null"
+            type="button"
+            (click)="selectCategory(null, null); search()"
+          >ทั้งหมด</button>
+          @for (cat of categories(); track cat.id) {
+            <button
+              class="category-chip"
+              [class.category-chip--active]="selectedCategoryId() === cat.id"
+              type="button"
+              (click)="selectCategory(cat.id, cat.name); search()"
+            >{{ cat.name }}</button>
+          }
+        </div>
+      }
+
+      <button type="button" class="secondary" (click)="search()">
+        @if (selectedCategoryName()) { ค้นหา: {{ selectedCategoryName() }} } @else { ค้นหา }
+      </button>
+
+      <section class="summary-panel summary-panel--interactive">
+        <div class="summary-panel__content">
+          <span class="badge">พื้นที่ค้นหา</span>
+          <h3>{{ selectedArea().title }}</h3>
+          <p>{{ selectedArea().subtitle }}</p>
+          <div class="chips">
+            <span>รัศมี {{ selectedArea().radiusKm }} กม.</span>
+            <span>{{ selectedArea().lat.toFixed(4) }}, {{ selectedArea().lng.toFixed(4) }}</span>
+          </div>
+        </div>
+        <button type="button" class="secondary secondary--pill" (click)="openPicker()">
+          เลือกบนแผนที่
+        </button>
+      </section>
+
+      <div class="result-header">
+        <div>
+          <span class="muted-label">ผลลัพธ์ที่ตรงกับพื้นที่</span>
+          <strong>ผู้ให้บริการที่ตอบโจทย์ตอนนี้</strong>
+        </div>
+        <span class="result-count">{{ providers().length }} ราย</span>
+      </div>
+
+      @if (loading()) {
+        <p class="state-message">กำลังค้นหา…</p>
+      } @else if (providers().length === 0) {
+        <div class="empty-state">
+          <h3>ไม่พบผู้ให้บริการในพื้นที่นี้</h3>
+          <p>ลองขยายรัศมีหรือเปลี่ยนคำค้น</p>
+          <a class="primary" routerLink="/requester/post">ประกาศงานแทน</a>
+        </div>
+      }
+      @for (provider of providers(); track provider.providerId) {
+        <a
+          class="provider-card provider-card--modern"
+          [routerLink]="['/requester/provider', provider.providerId]"
+          [queryParams]="provider.matchedServiceId ? { serviceId: provider.matchedServiceId } : null"
+        >
+          <div class="provider-card__thumb">{{ (provider.categoryName ?? '?')[0] }}</div>
+          <div>
+            <strong>{{ provider.providerName }}</strong>
+            <span>{{ provider.categoryName ?? 'บริการทั่วไป' }}</span>
+            <small>★ {{ provider.averageVerifiedRating }} ({{ provider.verifiedReviewCount }} รีวิว)</small>
+          </div>
+          <em>{{ formatDistance(provider.distanceMeters) }}</em>
+        </a>
+      }
+
+      <a class="primary" routerLink="/requester/post">ไม่เจอที่ต้องการ → ประกาศงาน</a>
+    </div>
+  </section>
+
+  <app-requester-bottom-nav />
+
+  <app-location-picker-modal
+    [open]="pickerOpen()"
+    heading="เลือกพื้นที่ค้นหาบริการ"
+    description="ขยายแผนที่เต็มจอเพื่อเลือกพื้นที่ให้แม่นขึ้น จากนั้นกดปุ่มยืนยันเพื่ออัปเดตผลการค้นหาหน้านี้"
+    [locationTitle]="selectedArea().title"
+    [locationSubtitle]="selectedArea().subtitle"
+    [searchText]="selectedArea().title"
+    [radiusKm]="selectedArea().radiusKm"
+    [lat]="selectedArea().lat"
+    [lng]="selectedArea().lng"
+    [radiusOptions]="[1, 3, 5, 8]"
+    (cancel)="closePicker()"
+    (confirm)="applyLocation($event)"
+  />
+</app-page-shell>

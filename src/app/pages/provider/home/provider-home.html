@@ -1,0 +1,65 @@
+<app-page-shell title="ผู้ให้บริการ" [showBack]="true" backLink="/" backLabel="สลับบทบาท">
+  <section class="screen">
+    @if (loading()) {
+      <p class="state-message">กำลังโหลด…</p>
+    } @else if (!hasProfile()) {
+      <div class="hero-panel">
+        <span class="badge badge--blue">เริ่มต้น</span>
+        <h3>สร้างโปรไฟล์ผู้ให้บริการ</h3>
+        <p>ตั้งโปรไฟล์ พื้นที่ให้บริการ และรายการบริการก่อนรับงานจากผู้ประกาศ</p>
+        <a class="primary" routerLink="/provider/profile">เริ่มตั้งค่า (3 ขั้นตอน)</a>
+      </div>
+    } @else {
+      <div class="summary-panel">
+        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+          <h3 style="margin: 0;">{{ provider()!.name }}</h3>
+          <span class="badge">พร้อมรับงาน</span>
+        </div>
+        <p style="margin-top: 0.35rem;">
+          {{ provider()!.services.length }} บริการ · {{ provider()!.branches.length }} จุด ·
+          ★ {{ provider()!.averageVerifiedRating }} ({{ provider()!.verifiedReviewCount }} รีวิว)
+        </p>
+      </div>
+
+      @if (!setupDone()) {
+        <div class="checklist-card">
+          <h3>ตั้งค่าให้ครบก่อนรับงาน</h3>
+          <ul class="checklist">
+            <li [class.is-done]="true">
+              <a routerLink="/provider/profile">โปรไฟล์</a>
+            </li>
+            <li [class.is-done]="provider()!.branches.length > 0">
+              <a routerLink="/provider/coverage">พื้นที่ให้บริการ</a>
+            </li>
+            <li [class.is-done]="provider()!.services.length > 0">
+              <a routerLink="/provider/service">เพิ่มบริการ</a>
+            </li>
+          </ul>
+        </div>
+      }
+
+      <div class="stack">
+        <a class="action-card" routerLink="/provider/requests">
+          <span>
+            <strong>งานที่ตรงกับบริการ</strong>
+            <small>ดูประกาศในพื้นที่และส่งข้อเสนอราคา</small>
+          </span>
+          <b>→</b>
+        </a>
+        <a class="action-card" routerLink="/provider/manage">
+          <span>
+            <strong>จัดการบริการ</strong>
+            <small>เปิด/ปิดบริการและดูรายการทั้งหมด</small>
+          </span>
+          <b>→</b>
+        </a>
+      </div>
+    }
+
+    <button type="button" class="ghost-link role-switch" (click)="switchToRequester()">
+      สลับไปโหมดผู้รับบริการ
+    </button>
+  </section>
+
+  <app-provider-bottom-nav />
+</app-page-shell>
