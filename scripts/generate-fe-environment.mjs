@@ -10,7 +10,7 @@ function env(name, fallback = '') {
   return (process.env[name] ?? fallback).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
-const apiBaseUrl = env('NG_APP_API_BASE_URL', 'https://localgo-api-sit.onrender.com/api');
+const apiBaseUrl = env('NG_APP_API_BASE_URL', 'https://be-localgo.onrender.com/api');
 const liffId = env('NG_APP_LIFF_ID', '2010177240-Bu98ZCLT');
 const mapLat = env('NG_APP_MAP_DEFAULT_LAT', '13.7563');
 const mapLng = env('NG_APP_MAP_DEFAULT_LNG', '100.5018');
