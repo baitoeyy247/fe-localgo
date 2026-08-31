@@ -43,10 +43,10 @@ export class AuthService {
   private resolvedLiffId: string | null = null;
 
   async bootstrap(): Promise<void> {
-    const useLiffHost = !this.isLocalDevHost();
+    const useDevLogin = environment.allowDevLogin && this.isLocalDevHost();
 
-    // เปิดจาก LINE / ngrok — อย่าใช้ token Dev เก่าค้างจาก localhost
-    if (useLiffHost) {
+    // เปิดจาก LINE / ngrok — อย่าใช้ token Dev เก่าค้างจาก localhost/LAN dev
+    if (!useDevLogin) {
       if (sessionStorage.getItem(AUTH_MODE_KEY) !== 'line') {
         this.clearSession();
       }
@@ -69,7 +69,7 @@ export class AuthService {
       }
     }
 
-    if (environment.allowDevLogin) {
+    if (useDevLogin) {
       await this.devLogin();
     }
   }
@@ -223,7 +223,16 @@ export class AuthService {
 
   private isLocalDevHost(): boolean {
     const host = window.location.hostname;
-    return host === 'localhost' || host === '127.0.0.1';
+    return (
+      host === 'localhost' ||
+      host === '0.0.0.0' ||
+      host === '::1' ||
+      host.endsWith('.local') ||
+      /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
+      /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
+      /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) ||
+      /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host)
+    );
   }
 
   private toAuthError(err: unknown, fallback: string): Error {

@@ -84,7 +84,7 @@ export class EntryPage implements OnInit {
 
   private async loadLineHint(): Promise<void> {
     const host = window.location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1') {
+    if (this.isLocalDevHost(host)) {
       return;
     }
     try {
@@ -108,6 +108,19 @@ export class EntryPage implements OnInit {
         'ตรวจว่า FE (4200), API (5080) และ ngrok http 4200 รันอยู่ แล้วเปิดจากลิงก์ LIFF ไม่ใช่ localhost',
       );
     }
+  }
+
+  private isLocalDevHost(host: string): boolean {
+    return (
+      host === 'localhost' ||
+      host === '0.0.0.0' ||
+      host === '::1' ||
+      host.endsWith('.local') ||
+      /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
+      /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
+      /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) ||
+      /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host)
+    );
   }
 
   protected async enterAs(role: 'Requester' | 'Provider'): Promise<void> {
