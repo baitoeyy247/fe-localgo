@@ -159,6 +159,58 @@ export class ProviderRequestDetailPage implements OnInit {
     return this.hasActiveEngagement() && appt?.status === 'Pending';
   }
 
+  protected canStartRequest(): boolean {
+    return this.hasActiveEngagement()
+      && this.request()?.status === 'Scheduled'
+      && this.appointment()?.status === 'Confirmed';
+  }
+
+  protected canCompleteRequest(): boolean {
+    return this.hasActiveEngagement() && this.request()?.status === 'InProgress';
+  }
+
+  protected async startRequest(): Promise<void> {
+    const request = this.request();
+    if (!request || !this.canStartRequest() || this.acting()) {
+      return;
+    }
+    if (!confirm('ยืนยันว่าเริ่มดำเนินงานแล้ว?')) {
+      return;
+    }
+    this.acting.set(true);
+    this.error.set(null);
+    try {
+      await firstValueFrom(this.api.startRequest(request.id));
+      this.request.set({ ...request, status: 'InProgress' });
+      this.notice.set('เริ่มดำเนินงานแล้ว');
+    } catch (e) {
+      this.error.set(apiErrorMessage(e, 'เริ่มงานไม่สำเร็จ'));
+    } finally {
+      this.acting.set(false);
+    }
+  }
+
+  protected async completeRequest(): Promise<void> {
+    const request = this.request();
+    if (!request || !this.canCompleteRequest() || this.acting()) {
+      return;
+    }
+    if (!confirm('ยืนยันว่าดำเนินงานเสร็จสิ้นแล้ว?')) {
+      return;
+    }
+    this.acting.set(true);
+    this.error.set(null);
+    try {
+      await firstValueFrom(this.api.completeRequest(request.id));
+      this.request.set({ ...request, status: 'Completed' });
+      this.notice.set('งานเสร็จสิ้นแล้ว — ลูกค้าสามารถส่งรีวิวได้');
+    } catch (e) {
+      this.error.set(apiErrorMessage(e, 'ปิดงานไม่สำเร็จ'));
+    } finally {
+      this.acting.set(false);
+    }
+  }
+
   protected async confirmAppointment(): Promise<void> {
     const appt = this.appointment();
     if (!appt || !this.canConfirmAppointment() || this.acting()) {
