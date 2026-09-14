@@ -72,28 +72,6 @@
           </article>
         }
 
-        @if (canStartRequest()) {
-          <button
-            class="primary"
-            type="button"
-            [disabled]="acting()"
-            (click)="startRequest()"
-          >
-            {{ acting() ? 'กำลังเริ่มงาน…' : 'เริ่มงาน' }}
-          </button>
-        }
-
-        @if (canCompleteRequest()) {
-          <button
-            class="primary"
-            type="button"
-            [disabled]="acting()"
-            (click)="completeRequest()"
-          >
-            {{ acting() ? 'กำลังบันทึก…' : 'เสร็จสิ้นงาน' }}
-          </button>
-        }
-
         @if (myBid(); as bid) {
           <article class="summary-panel">
             <span class="badge badge--blue">ข้อเสนอของคุณ</span>

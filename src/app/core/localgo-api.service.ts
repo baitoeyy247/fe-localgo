@@ -214,10 +214,6 @@ export class LocalGoApiService {
     return this.post<void>(`/service-requests/${requestId}/cancel`, {});
   }
 
-  startRequest(requestId: string): Observable<void> {
-    return this.post<void>(`/service-requests/${requestId}/start`, {});
-  }
-
   completeRequest(requestId: string): Observable<void> {
     return this.post<void>(`/service-requests/${requestId}/complete`, {});
   }
