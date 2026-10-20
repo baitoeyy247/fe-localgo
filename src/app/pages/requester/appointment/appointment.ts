@@ -219,8 +219,26 @@ export class AppointmentPage implements OnInit {
     }
   }
 
+  protected async reload(): Promise<void> {
+    const requestId = this.request()?.id ?? this.session.requesterRequestId;
+    if (!requestId || this.saving()) {
+      return;
+    }
+    await this.loadRequestState(requestId);
+  }
+
   protected async goToReview(): Promise<void> {
-    await this.router.navigateByUrl('/requester/review');
+    const requestId = this.request()?.id ?? this.session.requesterRequestId;
+    if (requestId) {
+      this.session.requesterRequestId = requestId;
+    }
+    const providerId = this.selectedBid()?.providerId ?? this.request()?.selectedProviderId;
+    if (providerId) {
+      this.session.currentProviderId = providerId;
+    }
+    await this.router.navigate(['/requester/review'], {
+      queryParams: requestId ? { requestId } : undefined,
+    });
   }
 
   protected get needsBidSelection(): boolean {
@@ -250,7 +268,12 @@ export class AppointmentPage implements OnInit {
     if (!appt) {
       return false;
     }
-    return appt.status === 'Pending' || appt.status === 'Confirmed';
+    return (
+      appt.status === 'Pending' ||
+      appt.status === 'Confirmed' ||
+      appt.status === 'InProgress' ||
+      appt.status === 'Completed'
+    );
   }
 
   protected isReadOnly(): boolean {
@@ -278,11 +301,9 @@ export class AppointmentPage implements OnInit {
     if (this.canSubmitReview()) {
       return true;
     }
-    if (this.hasActiveAppointment()) {
-      return true;
-    }
     const detail = this.request();
-    return detail?.status === 'InProgress' || detail?.status === 'Scheduled';
+    const appt = this.appointment();
+    return detail?.status === 'InProgress' || appt?.status === 'InProgress';
   }
 
   protected isDirectBooking(): boolean {
@@ -304,7 +325,13 @@ export class AppointmentPage implements OnInit {
       return 'รอผู้ให้บริการยืนยันนัด';
     }
     if (status === 'Confirmed') {
-      return 'ยืนยันนัดแล้ว';
+      return 'ผู้ให้บริการยืนยันนัดแล้ว — รอเริ่มงาน';
+    }
+    if (status === 'InProgress') {
+      return 'ผู้ให้บริการกำลังดำเนินงาน';
+    }
+    if (status === 'Completed') {
+      return 'งานเสร็จแล้ว — ให้คะแนนและรีวิวได้';
     }
     return null;
   }
@@ -334,6 +361,8 @@ export class AppointmentPage implements OnInit {
       this.selectedBid.set(bid);
       if (bid) {
         this.session.currentProviderId = bid.providerId;
+      } else if (detail.selectedProviderId) {
+        this.session.currentProviderId = detail.selectedProviderId;
       }
       if (existing) {
         this.applyAppointmentFields(existing);

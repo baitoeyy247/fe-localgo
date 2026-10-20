@@ -43,7 +43,7 @@
                 type="button"
                 (click)="openRequest(request)"
               >
-                ดำเนินงานต่อ
+                {{ continueLabel(request.status) }}
               </button>
               @if (canCancel(request.status)) {
                 <button

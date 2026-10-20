@@ -55,10 +55,32 @@
                   [disabled]="acting()"
                   (click)="confirmAppointment()"
                 >
-                  {{ acting() ? 'กำลังยืนยัน…' : 'ยืนยันรับนัดหมาย' }}
+                  {{ acting() ? actingLabel() : 'ยืนยันรับนัดหมาย' }}
                 </button>
-              } @else if (appt.status === 'Confirmed') {
-                <p class="state-hint">ยืนยันรับนัดแล้ว</p>
+              } @else if (canStartJob()) {
+                <p class="state-hint">ยืนยันรับนัดแล้ว — กดเริ่มงานเมื่อถึงเวลานัด</p>
+                <button
+                  class="primary"
+                  type="button"
+                  style="margin-top: 0.5rem; width: 100%;"
+                  [disabled]="acting()"
+                  (click)="startJob()"
+                >
+                  {{ acting() ? actingLabel() : 'เริ่มงาน' }}
+                </button>
+              } @else if (canCompleteJob()) {
+                <p class="state-hint">กำลังดำเนินงาน — กดเมื่องานเสร็จ</p>
+                <button
+                  class="primary"
+                  type="button"
+                  style="margin-top: 0.5rem; width: 100%;"
+                  [disabled]="acting()"
+                  (click)="completeJob()"
+                >
+                  {{ acting() ? actingLabel() : 'งานเสร็จสิ้น' }}
+                </button>
+              } @else if (appt.status === 'Completed') {
+                <p class="state-hint">งานเสร็จแล้ว — ลูกค้าสามารถให้คะแนนและรีวิวได้</p>
               }
             } @else {
               @if (appointmentError()) {
@@ -89,7 +111,7 @@
               <button class="primary" type="button" (click)="submitBid()">เสนอราคาใหม่</button>
             }
           </article>
-        } @else {
+        } @else if (!showAppointmentSection()) {
           <button class="primary" type="button" (click)="submitBid()">ส่งข้อเสนอราคา</button>
         }
       </div>

@@ -22,16 +22,27 @@
 
         @if (hasActiveAppointment()) {
           <div class="summary-panel">
-            <span class="badge badge--green">นัดหมายแล้ว</span>
+            <span class="badge badge--green">{{ appointmentStatusLabel(appointment()!.status) }}</span>
             <p><strong>วันและเวลา:</strong> {{ formatScheduledAt(appointment()?.scheduledAt) }}</p>
             <p><strong>สถานที่:</strong> {{ addressText() || 'ยังไม่ระบุสถานที่' }}</p>
             @if (appointment()?.note) {
               <p><strong>หมายเหตุ:</strong> {{ appointment()!.note }}</p>
             }
-            <p><strong>สถานะ:</strong> {{ appointmentStatusLabel(appointment()!.status) }}</p>
+            @if (request()?.status; as jobStatus) {
+              <p><strong>สถานะงาน:</strong> {{ statusLabel(jobStatus) }}</p>
+            }
             @if (appointmentStatusHint(appointment()?.status); as hint) {
               <p class="state-hint">{{ hint }}</p>
             }
+            <button
+              type="button"
+              class="secondary"
+              style="margin-top: 0.5rem; width: 100%;"
+              [disabled]="loading() || saving()"
+              (click)="reload()"
+            >
+              รีเฟรชสถานะ
+            </button>
           </div>
         }
 

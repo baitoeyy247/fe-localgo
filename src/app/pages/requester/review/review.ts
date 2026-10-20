@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { RequesterBottomNav } from '../../../shared/requester-bottom-nav';
@@ -25,9 +25,14 @@ export class ReviewPage implements OnInit {
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<void> {
-    const requestId = this.session.requesterRequestId;
+    const queryRequestId = this.route.snapshot.queryParamMap.get('requestId');
+    const requestId = queryRequestId ?? this.session.requesterRequestId;
+    if (queryRequestId) {
+      this.session.requesterRequestId = queryRequestId;
+    }
     const providerId = this.session.currentProviderId;
     if (requestId) {
       try {

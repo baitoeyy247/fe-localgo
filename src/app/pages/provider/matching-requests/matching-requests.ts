@@ -178,6 +178,12 @@ export class MatchingRequestsPage implements OnInit {
     if (request.needsAppointmentConfirm) {
       return 'ยืนยันรับนัด';
     }
+    if (request.status === 'InProgress') {
+      return 'งานเสร็จสิ้น';
+    }
+    if (request.status === 'Scheduled') {
+      return 'เริ่มงาน';
+    }
     if (this.isMyActiveJob(request)) {
       return 'ดำเนินงานต่อ';
     }

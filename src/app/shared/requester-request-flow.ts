@@ -21,18 +21,20 @@ function pickActiveRequest(
   mine: ServiceRequestSummary[],
   strategy: RequesterRequestPickStrategy,
 ): ServiceRequestSummary | undefined {
+  if (strategy === 'appointment') {
+    return (
+      mine.find((r) => r.status === 'InProgress') ??
+      mine.find((r) => r.status === 'Scheduled' || r.status === 'ProviderSelected') ??
+      mine.find((r) => r.status === 'Completed') ??
+      mine.find((r) => r.status === 'HasOffers') ??
+      mine[0]
+    );
+  }
   const selectedOrScheduled = mine.find(
     (r) => r.status === 'ProviderSelected' || r.status === 'Scheduled',
   );
   if (selectedOrScheduled) {
     return selectedOrScheduled;
-  }
-  if (strategy === 'appointment') {
-    return (
-      mine.find((r) => r.status === 'InProgress') ??
-      mine.find((r) => r.status === 'HasOffers') ??
-      mine[0]
-    );
   }
   return (
     mine.find((r) => r.status === 'Open' || r.status === 'HasOffers') ?? mine[0]

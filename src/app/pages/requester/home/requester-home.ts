@@ -59,7 +59,9 @@ export class RequesterHomePage implements OnInit {
     // Ensure requester journey stays in requester role before routing.
     await this.auth.setActiveRole('Requester');
     if (request.status === 'Completed') {
-      await this.router.navigateByUrl('/requester/review');
+      await this.router.navigate(['/requester/review'], {
+        queryParams: { requestId: request.id },
+      });
       return;
     }
     if (
@@ -72,6 +74,16 @@ export class RequesterHomePage implements OnInit {
       return;
     }
     await this.router.navigateByUrl('/requester/bids');
+  }
+
+  protected continueLabel(status: string): string {
+    if (status === 'Completed') {
+      return 'ให้คะแนนและรีวิว';
+    }
+    if (status === 'InProgress') {
+      return 'ดูสถานะงาน';
+    }
+    return 'ดำเนินงานต่อ';
   }
 
   protected async switchToProvider(): Promise<void> {
