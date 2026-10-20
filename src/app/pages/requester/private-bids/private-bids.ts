@@ -1,25 +1,27 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ActivatedRoute, ParamMap, Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 import { RequesterBottomNav } from '../../../shared/requester-bottom-nav';
 import { RequesterFlowBar } from '../../../shared/requester-flow-bar';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
-import { BidItem, ServiceRequestDetail } from '../../../core/models';
+import { BidItem, ServiceRequestDetail, ServiceRequestSummary } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import { AuthService } from '../../../core/auth.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { requestStatusLabel } from '../../../shared/status-labels';
+import { formatBaht } from '../../../shared/form-rules';
 import { resolveRequesterRequestId } from '../../../shared/requester-request-flow';
 import { redirectProviderFromRequesterRoute } from '../../../shared/requester-deep-link-guard';
 
 @Component({
   selector: 'app-private-bids-page',
-  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, LoadingSkeleton],
+  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, LoadingSkeleton, RouterLink],
   templateUrl: './private-bids.html',
 })
-export class PrivateBidsPage implements OnInit {
+export class PrivateBidsPage implements OnInit, OnDestroy {
   protected readonly bids = signal<BidItem[]>([]);
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly selectedBidId = signal<string | null>(null);
@@ -28,6 +30,10 @@ export class PrivateBidsPage implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly statusLabel = requestStatusLabel;
   protected readonly justPosted = signal(false);
+  protected readonly jobChoices = signal<ServiceRequestSummary[]>([]);
+  protected readonly choosing = signal(false);
+  protected readonly formatBaht = formatBaht;
+  private querySub?: Subscription;
 
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
@@ -35,31 +41,68 @@ export class PrivateBidsPage implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
-  async ngOnInit(): Promise<void> {
-    const qp = this.route.snapshot.queryParamMap;
+  ngOnInit(): void {
+    this.querySub = this.route.queryParamMap.subscribe((qp) => {
+      void this.applyQuery(qp);
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.querySub?.unsubscribe();
+  }
+
+  private async applyQuery(qp: ParamMap): Promise<void> {
     this.justPosted.set(qp.get('posted') === '1');
     const queryRequestId = qp.get('requestId');
-    if (queryRequestId) {
-      const redirected = await redirectProviderFromRequesterRoute(
-        this.api,
-        this.auth,
-        this.router,
-        queryRequestId,
-      );
-      if (redirected) {
-        return;
-      }
+    if (!queryRequestId) {
+      this.request.set(null);
+      await this.loadJobList();
+      return;
     }
-
+    const redirected = await redirectProviderFromRequesterRoute(
+      this.api,
+      this.auth,
+      this.router,
+      queryRequestId,
+    );
+    if (redirected) {
+      return;
+    }
     const requestId = await resolveRequesterRequestId(this.api, this.session, {
       queryRequestId,
       strategy: 'bids',
     });
     if (!requestId) {
-      this.loading.set(false);
+      await this.loadJobList();
       return;
     }
     await this.load(requestId);
+  }
+
+  protected async openJob(job: ServiceRequestSummary): Promise<void> {
+    this.choosing.set(true);
+    await this.router.navigate(['/requester/bids'], { queryParams: { requestId: job.id } });
+    this.choosing.set(false);
+  }
+
+  protected canSchedule(): boolean {
+    const status = this.request()?.status;
+    return status === 'Open' || status === 'HasOffers';
+  }
+
+  protected isCancelled(): boolean {
+    return this.request()?.status === 'Cancelled';
+  }
+
+  protected formatWhen(iso?: string | null): string {
+    if (!iso) {
+      return '';
+    }
+    try {
+      return new Date(iso).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
+    } catch {
+      return iso;
+    }
   }
 
   protected selectBid(bid: BidItem): void {
@@ -70,11 +113,18 @@ export class PrivateBidsPage implements OnInit {
   protected async confirmSelection(): Promise<void> {
     const requestId = this.request()?.id ?? this.session.requesterRequestId ?? null;
     const bidId = this.selectedBidId();
-    if (!requestId || !bidId) {
+    if (!requestId || !bidId || !this.canSchedule() || this.choosing()) {
       return;
     }
-    await firstValueFrom(this.api.selectBid(requestId, bidId));
-    await this.router.navigateByUrl('/requester/appointment');
+    this.choosing.set(true);
+    try {
+      await firstValueFrom(this.api.selectBid(requestId, bidId));
+      await this.router.navigateByUrl('/requester/appointment');
+    } catch (e) {
+      this.error.set(apiErrorMessage(e, 'เลือกข้อเสนอไม่สำเร็จ'));
+    } finally {
+      this.choosing.set(false);
+    }
   }
 
   protected canClearBidSelection(): boolean {
@@ -118,7 +168,21 @@ export class PrivateBidsPage implements OnInit {
   }
 
   protected async retry(): Promise<void> {
-    await this.ngOnInit();
+    await this.applyQuery(this.route.snapshot.queryParamMap);
+  }
+
+  private async loadJobList(): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const mine = await firstValueFrom(this.api.listMyRequests());
+      this.jobChoices.set(mine.filter((job) => (job.bidCount ?? 0) > 0));
+    } catch (e) {
+      this.jobChoices.set([]);
+      this.error.set(apiErrorMessage(e, 'โหลดข้อเสนอไม่สำเร็จ'));
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   private async load(requestId: string): Promise<void> {

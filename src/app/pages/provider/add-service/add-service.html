@@ -1,4 +1,4 @@
-<app-page-shell title="เพิ่มบริการ" subtitle="ขั้นตอนที่ 3 จาก 3" backLink="/provider/coverage">
+<app-page-shell title="เพิ่มบริการ" subtitle="ขั้นตอนที่ 3 จาก 3" fallbackLink="/provider/manage">
   <app-provider-setup-bar active="service" />
   <section class="screen">
     @if (loading()) {
@@ -8,12 +8,36 @@
         <h3>สร้างโปรไฟล์ก่อน</h3>
         <a class="primary" routerLink="/provider/profile">ไปหน้าโปรไฟล์</a>
       </div>
+    } @else if (published()) {
+      <div class="stack">
+        <div class="summary-panel summary-panel--success" role="status">
+          <h3>บริการนี้เปิดให้ลูกค้าเห็นแล้ว</h3>
+          <p>{{ title() }}</p>
+        </div>
+        @if (saveError()) {
+          <p class="error-text" role="alert">{{ saveError() }}</p>
+        }
+        @if (paused()) {
+          <p>หยุดแสดงบริการนี้แล้ว</p>
+        } @else {
+          <button class="secondary" type="button" [disabled]="pausing()" (click)="pausePublished()">
+            {{ pausing() ? 'กำลังหยุด…' : 'หยุดชั่วคราว' }}
+          </button>
+        }
+        <a class="primary" routerLink="/provider/manage">ไปจัดการบริการ</a>
+      </div>
     } @else {
       <div class="stack">
+        @if (saveError()) {
+          <p class="error-text" role="alert">{{ saveError() }}</p>
+        }
         <label class="form-field">
-          <span>หมวดหมู่</span>
+          <span>หมวดหมู่ <abbr class="required-mark" title="จำเป็น">*</abbr></span>
           <select
+            id="service-category"
             aria-label="หมวดหมู่"
+            [attr.aria-invalid]="fieldErrors().category ? 'true' : null"
+            [attr.aria-describedby]="fieldErrors().category ? 'service-category-error' : null"
             [value]="selectedCategoryId() ?? ''"
             (change)="selectCategory($any($event.target).value)"
           >
@@ -22,34 +46,44 @@
               <option [value]="cat.id">{{ cat.name }}</option>
             }
           </select>
-          @if (fieldErrors().category) {
-            <p class="field-error">{{ fieldErrors().category }}</p>
-          }
+          <app-field-error [message]="fieldErrors().category" errorId="service-category-error" />
         </label>
         <label class="form-field">
-          <span>ชื่อบริการ</span>
-          <input placeholder="เช่น ซักอบรีด รับส่งถึงที่" (input)="updateTitle($any($event.target).value)" />
-          @if (fieldErrors().title) {
-            <p class="field-error">{{ fieldErrors().title }}</p>
-          }
+          <span>ชื่อบริการ <abbr class="required-mark" title="จำเป็น">*</abbr></span>
+          <input
+            id="service-title"
+            [attr.maxlength]="titleMax"
+            [value]="title()"
+            aria-label="ชื่อบริการ"
+            placeholder="เช่น ซักอบรีด รับส่งถึงที่"
+            [attr.aria-invalid]="fieldErrors().title ? 'true' : null"
+            [attr.aria-describedby]="fieldErrors().title ? 'service-title-error' : null"
+            (input)="updateTitle($any($event.target).value)"
+          />
+          <small>{{ title().length }}/{{ titleMax }}</small>
+          <app-field-error [message]="fieldErrors().title" errorId="service-title-error" />
         </label>
         <label class="form-area">
-          <span>รายละเอียด</span>
-          <textarea rows="3" (input)="updateDescription($any($event.target).value)"></textarea>
-          @if (fieldErrors().description) {
-            <p class="field-error">{{ fieldErrors().description }}</p>
-          }
+          <span>รายละเอียด <abbr class="required-mark" title="จำเป็น">*</abbr></span>
+          <textarea
+            rows="3"
+            [attr.aria-invalid]="fieldErrors().description ? 'true' : null"
+            (input)="updateDescription($any($event.target).value)"
+          ></textarea>
+          <app-field-error [message]="fieldErrors().description" errorId="service-description-error" />
         </label>
         <label class="form-field">
-          <span>ราคาเริ่มต้น</span>
+          <span>ราคาเริ่มต้น <abbr class="required-mark" title="จำเป็น">*</abbr></span>
           <input
+            id="service-price"
             inputmode="decimal"
             placeholder="เช่น 40 หรือ 40-80"
+            aria-label="ราคาเริ่มต้น"
+            [attr.aria-invalid]="fieldErrors().price ? 'true' : null"
+            [attr.aria-describedby]="fieldErrors().price ? 'service-price-error' : null"
             (input)="updateBasePrice($any($event.target).value)"
           />
-          @if (fieldErrors().price) {
-            <p class="field-error">{{ fieldErrors().price }}</p>
-          }
+          <app-field-error [message]="fieldErrors().price" errorId="service-price-error" />
         </label>
 
         <div class="section-title">
@@ -65,15 +99,13 @@
             />
             <span>
               <strong>{{ branch.name }}</strong>
-              <small>รัศมี {{ branch.serviceRadiusMeters / 1000 }} กม.</small>
+              <small>รัศมี {{ branch.serviceRadiusMeters / 1000 }} กิโลเมตร</small>
             </span>
           </label>
         } @empty {
           <p class="muted-label">เพิ่มจุดให้บริการในขั้นตอนพื้นที่ก่อน</p>
         }
-        @if (fieldErrors().branch) {
-          <p class="field-error">{{ fieldErrors().branch }}</p>
-        }
+        <app-field-error [message]="fieldErrors().branch" errorId="service-branch-error" />
 
         <button
           class="primary"
@@ -82,7 +114,7 @@
           (pointerdown)="pressSave($event)"
           (click)="pressSave($event)"
         >
-          {{ saving() ? 'กำลังบันทึก…' : 'บันทึกและจัดการบริการ' }}
+          {{ saving() ? 'กำลังบันทึก…' : 'บันทึกบริการ' }}
         </button>
       </div>
     }

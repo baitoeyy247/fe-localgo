@@ -22,6 +22,7 @@ import {
 } from '../../../shared/datetime.util';
 import { resolveRequesterRequestId } from '../../../shared/requester-request-flow';
 import { redirectProviderFromRequesterRoute } from '../../../shared/requester-deep-link-guard';
+import { formatBaht } from '../../../shared/form-rules';
 
 @Component({
   selector: 'app-appointment-page',
@@ -45,6 +46,8 @@ export class AppointmentPage implements OnInit {
   protected readonly formatScheduledAt = formatScheduledAt;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
   protected readonly statusLabel = requestStatusLabel;
+  protected readonly formatBaht = formatBaht;
+  protected readonly rescheduling = signal(false);
 
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
@@ -96,8 +99,62 @@ export class AppointmentPage implements OnInit {
     this.pickerOpen.set(false);
   }
 
+  protected startReschedule(event?: Event): void {
+    if (this.saving()) {
+      event?.preventDefault();
+      return;
+    }
+    this.rescheduling.set(true);
+  }
+
+  protected contactProvider(): void {
+    const providerId =
+      this.appointment()?.providerId ??
+      this.selectedBid()?.providerId ??
+      this.request()?.selectedProviderId;
+    if (!providerId) {
+      return;
+    }
+    void this.router.navigate(['/requester/provider', providerId]);
+  }
+
+  protected providerName(): string {
+    return this.selectedBid()?.providerName?.trim() || 'ผู้ให้บริการ';
+  }
+
+  protected initials(name: string): string {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) {
+      return '?';
+    }
+    return parts
+      .slice(0, 2)
+      .map((part) => Array.from(part)[0] ?? '')
+      .join('');
+  }
+
+  protected displayStatus(): string | null {
+    const appointment = this.appointment();
+    if (appointment && this.hasActiveAppointment()) {
+      return this.appointmentStatusLabel(appointment.status);
+    }
+    const status = this.request()?.status;
+    return status ? this.statusLabel(status) : null;
+  }
+
+  protected isOverdue(): boolean {
+    const appointment = this.appointment();
+    if (!appointment?.scheduledAt || !this.hasActiveAppointment()) {
+      return false;
+    }
+    if (appointment.status !== 'Pending' && appointment.status !== 'Confirmed') {
+      return false;
+    }
+    return new Date(appointment.scheduledAt).getTime() < Date.now();
+  }
+
   protected async confirm(): Promise<void> {
-    if (this.saving() || this.hasActiveAppointment() || this.isReadOnly()) {
+    if ((this.hasActiveAppointment() && !this.rescheduling()) || this.isReadOnly()) {
       return;
     }
     const requestId = this.request()?.id ?? this.session.requesterRequestId ?? null;
@@ -143,6 +200,7 @@ export class AppointmentPage implements OnInit {
         }),
       );
       this.success.set('บันทึกนัดหมายแล้ว ระบบจะแจ้งผู้ให้บริการให้ทราบ');
+      this.rescheduling.set(false);
       await this.loadRequestState(requestId);
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'ยืนยันนัดหมายไม่สำเร็จ'));
@@ -251,7 +309,10 @@ export class AppointmentPage implements OnInit {
   }
 
   protected get canConfirm(): boolean {
-    if (this.saving() || this.hasActiveAppointment() || this.isReadOnly()) {
+    if (this.saving() || this.isReadOnly()) {
+      return false;
+    }
+    if (this.hasActiveAppointment() && !this.rescheduling()) {
       return false;
     }
     const detail = this.request();
@@ -352,12 +413,15 @@ export class AppointmentPage implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const detail = await firstValueFrom(this.api.getRequest(requestId));
+      const [detail, existing, listedBids] = await Promise.all([
+        firstValueFrom(this.api.getRequest(requestId)),
+        firstValueFrom(this.api.getAppointment(requestId)),
+        firstValueFrom(this.api.listBids(requestId)),
+      ]);
       this.request.set(detail);
       this.session.requesterRequestId = detail.id;
-      const existing = await firstValueFrom(this.api.getAppointment(requestId));
       this.appointment.set(existing);
-      const bids = detail.bids ?? (await firstValueFrom(this.api.listBids(requestId)));
+      const bids = detail.bids?.length ? detail.bids : listedBids;
       const bid = this.resolveBid(bids, detail);
       this.selectedBid.set(bid);
       if (bid) {

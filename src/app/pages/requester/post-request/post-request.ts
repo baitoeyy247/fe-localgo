@@ -13,14 +13,17 @@ import { Category } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import { UserLocationService } from '../../../core/user-location.service';
 import { formatCoordinates } from '../../../shared/coordinates';
-import { OPEN_BUDGET, budgetAmountError } from '../../../shared/form-rules';
+import { OPEN_BUDGET, REQUEST_DETAILS_MAX, REQUEST_TITLE_MAX, budgetAmountError } from '../../../shared/form-rules';
 import { apiErrorMessage } from '../../../core/api-error.util';
+import { focusFirstInvalid } from '../../../shared/focus-invalid';
+import { FieldError } from '../../../shared/field-error';
+import { environment } from '../../../../environments/environment';
 
 type FieldKey = 'category' | 'title' | 'description' | 'location' | 'budget';
 
 @Component({
   selector: 'app-post-request-page',
-  imports: [PageShell, LocationPickerModal, RequesterBottomNav, RequesterFlowBar],
+  imports: [PageShell, LocationPickerModal, RequesterBottomNav, RequesterFlowBar, FieldError],
   templateUrl: './post-request.html',
 })
 export class PostRequestPage implements OnInit {
@@ -34,15 +37,17 @@ export class PostRequestPage implements OnInit {
   protected readonly budgetMode = signal<'open' | 'amount'>('open');
   protected readonly budgetAmount = signal('');
   protected readonly posting = signal(false);
-  protected readonly locating = signal(true);
+  protected readonly locating = signal(false);
+  protected readonly titleMax = REQUEST_TITLE_MAX;
+  protected readonly detailsMax = REQUEST_DETAILS_MAX;
   protected readonly submitError = signal<string | null>(null);
   protected readonly fieldErrors = signal<Partial<Record<FieldKey, string>>>({});
   protected readonly requestLocation = signal({
     title: 'จุดรับงานปัจจุบัน',
     subtitle: 'พิกัดเริ่มต้นของประกาศนี้',
     radiusKm: 5,
-    lat: 0,
-    lng: 0,
+    lat: environment.mapDefaultLat,
+    lng: environment.mapDefaultLng,
   });
   protected readonly openBudgetLabel = OPEN_BUDGET;
 
@@ -70,12 +75,12 @@ export class PostRequestPage implements OnInit {
   }
 
   protected updateTitle(value: string): void {
-    this.title.set(value);
+    this.title.set(value.slice(0, REQUEST_TITLE_MAX));
     this.clearField('title');
   }
 
   protected updateDescription(value: string): void {
-    this.description.set(value);
+    this.description.set(value.slice(0, REQUEST_DETAILS_MAX));
     this.clearField('description');
   }
 
@@ -85,7 +90,7 @@ export class PostRequestPage implements OnInit {
   }
 
   protected updateBudgetAmount(value: string): void {
-    this.budgetAmount.set(value);
+    this.budgetAmount.set(value.replace(/\D/g, ''));
     this.budgetMode.set('amount');
     this.clearField('budget');
   }
@@ -132,6 +137,7 @@ export class PostRequestPage implements OnInit {
     this.fieldErrors.set(errors);
     if (Object.keys(errors).length > 0) {
       this.posting.set(false);
+      setTimeout(() => focusFirstInvalid());
       return;
     }
     this.submitError.set(null);
@@ -172,9 +178,13 @@ export class PostRequestPage implements OnInit {
     }
     if (!this.title().trim()) {
       errors.title = 'กรุณากรอกหัวข้องาน';
+    } else if (this.title().trim().length > REQUEST_TITLE_MAX) {
+      errors.title = `หัวข้องานต้องไม่เกิน ${REQUEST_TITLE_MAX} ตัวอักษร`;
     }
     if (!this.description().trim()) {
       errors.description = 'กรุณากรอกรายละเอียด';
+    } else if (this.description().trim().length > REQUEST_DETAILS_MAX) {
+      errors.description = `รายละเอียดต้องไม่เกิน ${REQUEST_DETAILS_MAX} ตัวอักษร`;
     }
     const loc = this.requestLocation();
     if (this.locating() || (loc.lat === 0 && loc.lng === 0)) {
@@ -223,7 +233,6 @@ export class PostRequestPage implements OnInit {
   }
 
   private async loadLocation(): Promise<void> {
-    this.locating.set(true);
     try {
       const area = await this.userLocation.resolveSearchArea();
       this.requestLocation.set({

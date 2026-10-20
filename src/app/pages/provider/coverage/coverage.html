@@ -31,13 +31,13 @@
               <strong>{{ branch.name }}</strong>
               <span>
                 รัศมี {{ branch.serviceRadiusMeters / 1000 }} กม.
-                · {{ branch.isActive ? 'เปิด' : 'ปิด' }}
+                · {{ branch.isActive ? 'ใช้งานอยู่' : 'ปิดใช้งานแล้ว' }}
               </span>
             </div>
             <div class="coverage-card__actions">
               <button type="button" (click)="editBranch(branch)">แก้ไข</button>
               @if (branch.isActive) {
-                <button type="button" class="danger danger--pill" style="min-height: auto; padding: 0.45rem 0.75rem; border-radius: 0.65rem;" (click)="deactivateBranch(branch)">ปิด</button>
+                <button type="button" class="danger danger--pill" style="min-height: auto; padding: 0.45rem 0.75rem; border-radius: 0.65rem;" (click)="deactivateBranch(branch)">ปิดใช้งานพื้นที่นี้</button>
               }
             </div>
           </article>
@@ -72,15 +72,17 @@
           </label>
           <p class="muted-label">พิกัด {{ editingLat().toFixed(5) }}, {{ editingLng().toFixed(5) }}</p>
           <button type="button" class="secondary secondary--pill" (click)="openPicker()">เลือกบนแผนที่</button>
-          <button
-            type="button"
-            class="primary"
-            [disabled]="saving()"
-            (pointerdown)="beginSave($event)"
-            (click)="beginSave($event)"
-          >
-            {{ saving() ? 'กำลังบันทึก…' : isEditingExisting() ? 'บันทึกการแก้ไข' : 'เพิ่มจุดนี้' }}
-          </button>
+          <div class="coverage-confirm">
+            <button
+              type="button"
+              class="primary"
+              [disabled]="saving()"
+              (pointerdown)="beginSave($event)"
+              (click)="beginSave($event)"
+            >
+              {{ saving() ? 'กำลังบันทึก…' : isEditingExisting() ? 'บันทึกการแก้ไข' : 'เพิ่มจุดนี้' }}
+            </button>
+          </div>
         </div>
 
         <a class="secondary" routerLink="/provider/service">ต่อไป เพิ่มบริการ</a>

@@ -1,4 +1,4 @@
-<app-page-shell title="ผู้ให้บริการ" [showBack]="true" backLink="/" backLabel="สลับบทบาท">
+<app-page-shell title="ผู้ให้บริการ" [showBack]="true" backLink="/" backLabel="สลับบทบาท" [backAsText]="true">
   <section class="screen">
     @if (loading()) {
       <app-loading-skeleton />
@@ -56,8 +56,8 @@
       </div>
     }
 
-    <button type="button" class="ghost-link role-switch" (click)="switchToRequester()">
-      สลับไปโหมดผู้รับบริการ
+    <button type="button" class="ghost-link role-switch" [disabled]="switching()" (click)="switchToRequester()">
+      {{ switching() ? 'กำลังสลับ…' : 'สลับไปโหมดผู้รับบริการ' }}
     </button>
   </section>
 

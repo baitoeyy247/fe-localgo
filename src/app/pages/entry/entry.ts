@@ -143,6 +143,15 @@ export class EntryPage implements OnInit {
     );
   }
 
+  protected dismissDenied(): void {
+    this.adminDenied.set(false);
+    void this.router.navigate([], {
+      queryParams: { denied: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+
   protected async enterAs(role: 'Requester' | 'Provider'): Promise<void> {
     if (this.navigationLock) {
       return;

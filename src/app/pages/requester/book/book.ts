@@ -14,6 +14,7 @@ import { UserLocationService } from '../../../core/user-location.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { defaultAppointmentDatetimeLocal } from '../../../shared/datetime.util';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
+import { formatBaht } from '../../../shared/form-rules';
 
 @Component({
   selector: 'app-requester-book-page',
@@ -22,6 +23,7 @@ import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 })
 export class RequesterBookPage implements OnInit {
   protected readonly provider = signal<ProviderDetail | null>(null);
+  protected readonly formatBaht = formatBaht;
   protected readonly serviceId = signal<string | null>(null);
   protected readonly scheduledAt = signal('');
   protected readonly addressText = signal('');

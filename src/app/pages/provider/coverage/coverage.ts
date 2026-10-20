@@ -13,6 +13,7 @@ import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderBranch, ProviderDetail } from '../../../core/models';
 import { UserLocationService } from '../../../core/user-location.service';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-coverage-page',
@@ -33,8 +34,8 @@ export class CoveragePage implements OnInit {
   protected readonly editingName = signal('');
   protected readonly editingActive = signal(true);
   protected readonly editingRadiusKm = signal(5);
-  protected readonly editingLat = signal(0);
-  protected readonly editingLng = signal(0);
+  protected readonly editingLat = signal(environment.mapDefaultLat);
+  protected readonly editingLng = signal(environment.mapDefaultLng);
   protected readonly pickerTitle = signal('จุดให้บริการ');
 
   constructor(
@@ -67,15 +68,25 @@ export class CoveragePage implements OnInit {
 
   protected async startNewBranch(): Promise<void> {
     this.editingBranchId.set(null);
-    this.editingName.set('จุดให้บริการใหม่');
     this.editingActive.set(true);
     this.editingRadiusKm.set(5);
+    this.editingLat.set(environment.mapDefaultLat);
+    this.editingLng.set(environment.mapDefaultLng);
+    this.editingName.set('พื้นที่ของฉัน');
+    this.pickerTitle.set('พื้นที่ของฉัน');
     this.message.set('กำลังตั้งจุดใหม่');
+    this.error.set(null);
     const area = await this.userLocation.resolveSearchArea();
+    if (this.editingBranchId()) {
+      return;
+    }
     this.editingLat.set(area.lat);
     this.editingLng.set(area.lng);
-    this.pickerTitle.set(area.title);
-    this.error.set(null);
+    const district = area.title?.trim();
+    if (district && district !== 'พื้นที่ค้นหาเริ่มต้น' && district !== 'จุดให้บริการใหม่') {
+      this.editingName.set(district);
+      this.pickerTitle.set(district);
+    }
   }
 
   protected beginSave(event: Event): void {
@@ -132,7 +143,7 @@ export class CoveragePage implements OnInit {
     if (!p || this.saving()) {
       return;
     }
-    if (!confirm(`ปิดใช้งานจุด "${branch.name}"?`)) {
+    if (!confirm(`ปิดใช้งานพื้นที่ "${branch.name}"?`)) {
       return;
     }
     this.saving.set(true);

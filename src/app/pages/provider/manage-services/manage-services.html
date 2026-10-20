@@ -26,7 +26,7 @@
               <strong>{{ service.title }}</strong>
               <small>{{ service.isActive ? 'เปิด' : 'หยุด' }}</small>
             </div>
-            <span>{{ service.categoryName ?? 'บริการ' }} · {{ service.basePriceText ?? 'ติดต่อสอบถาม' }}</span>
+            <span>{{ service.categoryName ?? 'บริการ' }} · {{ formatBaht(service.basePriceText) }}</span>
             <div class="coverage-card__actions">
               <a class="secondary" [routerLink]="['/provider/service', service.id, 'edit']">แก้ไข</a>
               <button

@@ -18,6 +18,7 @@ export class ProviderHomePage implements OnInit {
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly hasProfile = signal(false);
   protected readonly loading = signal(true);
+  protected readonly switching = signal(false);
 
   constructor(
     private readonly api: LocalGoApiService,
@@ -44,8 +45,11 @@ export class ProviderHomePage implements OnInit {
     return !!p && p.branches.length > 0 && p.services.length > 0;
   }
 
-  protected async switchToRequester(): Promise<void> {
-    await this.auth.setActiveRole('Requester');
-    await this.router.navigateByUrl('/requester');
+  protected switchToRequester(): void {
+    if (this.switching()) {
+      return;
+    }
+    this.switching.set(true);
+    void this.auth.setActiveRole('Requester').then(() => this.router.navigateByUrl('/requester'));
   }
 }

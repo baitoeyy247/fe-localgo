@@ -14,6 +14,7 @@ import {
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { formatScheduledAt } from '../../../shared/datetime.util';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
+import { formatBaht } from '../../../shared/form-rules';
 
 @Component({
   selector: 'app-provider-request-detail-page',
@@ -21,6 +22,7 @@ import { LoadingSkeleton } from '../../../shared/loading-skeleton';
   templateUrl: './request-detail.html',
 })
 export class ProviderRequestDetailPage implements OnInit {
+  protected readonly formatBaht = formatBaht;
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly myBid = signal<BidItem | null>(null);
   protected readonly myProvider = signal<ProviderDetail | null>(null);

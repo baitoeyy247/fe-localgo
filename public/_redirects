@@ -1,1 +1,9 @@
-/*    /index.html   200
+# Existing files are served first. Missing scripts must not become index.html
+# (that response is HTML and the browser refuses it as a module).
+/*.js        /index.html  404
+/*/*.js     /index.html  404
+/*/*/*.js   /index.html  404
+/*.css       /index.html  404
+/*/*.css    /index.html  404
+/*.map       /index.html  404
+/*          /index.html  200

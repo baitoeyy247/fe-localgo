@@ -16,7 +16,15 @@ import { Router, RouterLink } from '@angular/router';
           <h1>{{ title() }}</h1>
         </div>
         @if (showBack()) {
-          @if (backLink()) {
+          @if (backAsText()) {
+            @if (backLink()) {
+              <a class="header-action" [routerLink]="backLink()!" [attr.aria-label]="backLabel()">{{ backLabel() }}</a>
+            } @else {
+              <button type="button" class="header-action" [attr.aria-label]="backLabel()" (click)="goBack()">
+                {{ backLabel() }}
+              </button>
+            }
+          } @else if (backLink()) {
             <a class="icon-button" [routerLink]="backLink()!" [attr.aria-label]="backLabel()">
               <span aria-hidden="true">←</span>
             </a>
@@ -40,6 +48,8 @@ export class PageShell {
   readonly showBack = input(true);
   readonly backLink = input<string | null>(null);
   readonly backLabel = input('กลับ');
+  readonly backAsText = input(false);
+  readonly fallbackLink = input('/');
 
   private readonly location = inject(Location);
   private readonly router = inject(Router);
@@ -49,6 +59,6 @@ export class PageShell {
       this.location.back();
       return;
     }
-    void this.router.navigateByUrl('/');
+    void this.router.navigateByUrl(this.fallbackLink());
   }
 }

@@ -57,9 +57,9 @@
           @for (request of matchingRequests(); track request.id) {
             <article class="match-card match-card--api">
               <div>
-                <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.15rem; flex-wrap: wrap;">
+                <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.15rem; flex-wrap: wrap;">
                   <strong style="margin: 0;">{{ request.title }}</strong>
-                  <div style="display: flex; gap: 0.25rem;">
+                  <div style="display: flex; gap: 0.25rem; flex-wrap: wrap; justify-content: flex-end;">
                     <span class="badge" [ngClass]="statusBadgeClass(request.status)">{{ statusLabel(request.status) }}</span>
                     @if (request.needsAppointmentConfirm) {
                       <em class="badge badge--orange">รอยืนยันนัด</em>

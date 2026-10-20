@@ -216,8 +216,9 @@ export class LocationPickerModal {
       const label = await this.geo.reverseGeocode(pos);
       this.applyPlace(pos.lat, pos.lng, label);
     } catch (e) {
-      if (!silent) {
-        this.geoError.set(e instanceof Error ? e.message : 'หาตำแหน่งไม่สำเร็จ');
+      this.geoError.set(e instanceof Error ? e.message : 'หาตำแหน่งไม่สำเร็จ');
+      if (silent) {
+        this.placeTitle.set(this.locationTitle() || 'กรุงเทพมหานคร');
       }
     } finally {
       this.locating.set(false);
@@ -259,15 +260,19 @@ export class LocationPickerModal {
   }
 
   private syncDraft(): void {
-    this.draftLat.set(this.lat());
-    this.draftLng.set(this.lng());
+    const lat = this.lat();
+    const lng = this.lng();
+    const hasPoint = Number.isFinite(lat) && Number.isFinite(lng) && !(lat === 0 && lng === 0);
+    this.draftLat.set(hasPoint ? lat : 13.7563);
+    this.draftLng.set(hasPoint ? lng : 100.5018);
     this.draftRadiusKm.set(this.radiusKm());
-    this.placeTitle.set(this.locationTitle());
+    this.placeTitle.set(this.locationTitle() || 'กรุงเทพมหานคร');
     this.placeSubtitle.set(this.locationSubtitle());
   }
 
   private refreshMapSoon(): void {
+    requestAnimationFrame(() => this.mapRef?.refreshSize());
     setTimeout(() => this.mapRef?.refreshSize(), 50);
-    setTimeout(() => this.mapRef?.refreshSize(), 400);
+    setTimeout(() => this.mapRef?.refreshSize(), 300);
   }
 }

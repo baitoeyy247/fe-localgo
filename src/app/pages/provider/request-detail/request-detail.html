@@ -98,7 +98,7 @@
           <article class="summary-panel">
             <span class="badge badge--blue">ข้อเสนอของคุณ</span>
             @if (bid.status !== 'Withdrawn') {
-              <strong>{{ bid.priceText }}</strong>
+              <strong>{{ formatBaht(bid.priceText) }}</strong>
               <p>{{ bid.description ?? '—' }}</p>
             } @else {
               <p>คุณถอนข้อเสนอไปแล้ว สามารถส่งข้อเสนอใหม่ได้หากงานยังเปิดรับ</p>

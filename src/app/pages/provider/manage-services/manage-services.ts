@@ -7,6 +7,7 @@ import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderDetail } from '../../../core/models';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
+import { formatBaht } from '../../../shared/form-rules';
 
 @Component({
   selector: 'app-manage-services-page',
@@ -17,6 +18,7 @@ export class ManageServicesPage implements OnInit {
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly loading = signal(true);
   protected readonly togglingId = signal<string | null>(null);
+  protected readonly formatBaht = formatBaht;
 
   constructor(private readonly api: LocalGoApiService) {}
 

@@ -56,6 +56,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/requester/review/review').then((m) => m.ReviewPage),
   },
   {
+    path: 'requester/requests/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/requester/request-detail/request-detail').then(
+        (m) => m.RequesterRequestDetailPage,
+      ),
+  },
+  {
     path: 'provider',
     canActivate: [authGuard],
     loadComponent: () =>

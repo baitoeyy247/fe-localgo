@@ -9,13 +9,16 @@
 
     <div class="stack">
       <label class="form-field form-field--modern">
-        <span>หมวดหมู่</span>
+        <span>หมวดหมู่ <abbr class="required-mark" title="จำเป็น">*</abbr></span>
         @if (categoriesError()) {
-          <p class="error-text">{{ categoriesError() }}</p>
+          <p class="error-text" role="alert">{{ categoriesError() }}</p>
           <button class="secondary" type="button" (click)="retryCategories()">ลองใหม่</button>
         } @else {
           <select
+            id="post-category"
             aria-label="หมวดหมู่"
+            [attr.aria-invalid]="fieldErrors().category ? 'true' : null"
+            [attr.aria-describedby]="fieldErrors().category ? 'post-category-error' : null"
             [value]="selectedCategoryId() ?? ''"
             (change)="selectCategory($any($event.target).value)"
           >
@@ -25,34 +28,38 @@
             }
           </select>
         }
-        @if (fieldErrors().category) {
-          <p class="field-error">{{ fieldErrors().category }}</p>
-        }
+        <app-field-error [message]="fieldErrors().category" errorId="post-category-error" />
       </label>
       <label class="form-field form-field--modern">
-        <span>หัวข้องาน</span>
+        <span>หัวข้องาน <abbr class="required-mark" title="จำเป็น">*</abbr></span>
         <input
+          id="post-title"
           aria-label="หัวข้องาน"
           placeholder="เช่น ต้องการซักผ้าด่วน 5 กก."
+          [attr.maxlength]="titleMax"
+          [attr.aria-invalid]="fieldErrors().title ? 'true' : null"
+          [attr.aria-describedby]="fieldErrors().title ? 'post-title-error' : null"
           [value]="title()"
           (input)="updateTitle($any($event.target).value)"
         />
-        @if (fieldErrors().title) {
-          <p class="field-error">{{ fieldErrors().title }}</p>
-        }
+        <small>{{ title().length }}/{{ titleMax }}</small>
+        <app-field-error [message]="fieldErrors().title" errorId="post-title-error" />
       </label>
       <label class="form-area form-area--modern">
-        <span>รายละเอียด</span>
+        <span>รายละเอียด <abbr class="required-mark" title="จำเป็น">*</abbr></span>
         <textarea
+          id="post-description"
           rows="3"
           aria-label="รายละเอียด"
           placeholder="ระบุสถานที่ รอบเวลา และเงื่อนไขที่ต้องการ"
+          [attr.maxlength]="detailsMax"
+          [attr.aria-invalid]="fieldErrors().description ? 'true' : null"
+          [attr.aria-describedby]="fieldErrors().description ? 'post-description-error' : null"
           [value]="description()"
           (input)="updateDescription($any($event.target).value)"
         ></textarea>
-        @if (fieldErrors().description) {
-          <p class="field-error">{{ fieldErrors().description }}</p>
-        }
+        <small>{{ description().length }}/{{ detailsMax }}</small>
+        <app-field-error [message]="fieldErrors().description" errorId="post-description-error" />
       </label>
 
       <section class="summary-panel summary-panel--interactive">
@@ -73,7 +80,7 @@
         }
       </section>
 
-      <fieldset class="form-field form-field--modern">
+      <fieldset class="form-field form-field--modern budget-fieldset">
         <legend>งบประมาณ</legend>
         <label class="budget-choice">
           <input
@@ -94,16 +101,18 @@
           <span>ระบุจำนวน</span>
         </label>
         <input
+          id="post-budget"
           aria-label="งบประมาณ"
           inputmode="numeric"
+          pattern="[0-9]*"
           placeholder="เช่น 500"
+          [attr.aria-invalid]="fieldErrors().budget ? 'true' : null"
+          [attr.aria-describedby]="fieldErrors().budget ? 'post-budget-error' : null"
           [value]="budgetAmount()"
           [disabled]="budgetMode() !== 'amount'"
           (input)="updateBudgetAmount($any($event.target).value)"
         />
-        @if (fieldErrors().budget) {
-          <p class="field-error">{{ fieldErrors().budget }}</p>
-        }
+        <app-field-error [message]="fieldErrors().budget" errorId="post-budget-error" />
       </fieldset>
 
       <div class="glass-card">
@@ -113,7 +122,7 @@
       </div>
 
       @if (submitError()) {
-        <p class="error-text">{{ submitError() }}</p>
+        <p class="error-text" role="alert">{{ submitError() }}</p>
       }
 
       <button

@@ -10,6 +10,7 @@ import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderCoverageArea, ProviderDetail, ServiceRequestSummary } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { requestStatusLabel, requestStatusBadgeClass } from '../../../shared/status-labels';
+import { formatDistanceMeters } from '../../../shared/coordinates';
 import { AuthService } from '../../../core/auth.service';
 
 type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
@@ -153,12 +154,15 @@ export class MatchingRequestsPage implements OnInit {
   }
 
   protected radiusLabel(meters: number): string {
-    if (meters >= 1000) {
-      const km = meters / 1000;
-      const text = Number.isInteger(km) ? String(km) : km.toFixed(1);
-      return `${text} กม.`;
+    if (meters < 100) {
+      return 'น้อยกว่า 100 เมตร';
     }
-    return `${Math.round(meters)} ม.`;
+    if (meters < 1000) {
+      return `${Math.round(meters)} เมตร`;
+    }
+    const km = meters / 1000;
+    const text = Number.isInteger(km) ? String(km) : km.toFixed(1);
+    return `${text} กิโลเมตร`;
   }
 
   protected emptyReason(): string {
@@ -218,10 +222,7 @@ export class MatchingRequestsPage implements OnInit {
   }
 
   protected formatDistance(meters?: number | null): string {
-    if (meters == null) {
-      return '—';
-    }
-    return meters >= 1000 ? `${(meters / 1000).toFixed(1)} กม.` : `${Math.round(meters)} ม.`;
+    return formatDistanceMeters(meters);
   }
 
   protected formatWhen(iso: string): string {

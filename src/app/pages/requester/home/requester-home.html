@@ -1,4 +1,4 @@
-<app-page-shell title="ผู้รับบริการ" [showBack]="true" backLink="/" backLabel="สลับบทบาท">
+<app-page-shell title="ผู้รับบริการ" [showBack]="true" backLink="/" backLabel="สลับบทบาท" [backAsText]="true">
   <section class="screen">
     <div class="stack">
       <a class="action-card" routerLink="/requester/search">
@@ -42,9 +42,11 @@
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               <button
                 type="button"
+                [disabled]="openingId() === request.id"
+                (pointerdown)="armOpen(request, $event)"
                 (click)="openRequest(request)"
               >
-                {{ continueLabel(request.status) }}
+                {{ openingId() === request.id ? 'กำลังเปิด…' : continueLabel(request.status) }}
               </button>
               @if (canCancel(request.status)) {
                 <button
@@ -67,8 +69,8 @@
       }
     </div>
 
-    <button type="button" class="ghost-link role-switch" (click)="switchToProvider()">
-      สลับไปโหมดผู้ให้บริการ
+    <button type="button" class="ghost-link role-switch" [disabled]="switching()" (click)="switchToProvider()">
+      {{ switching() ? 'กำลังสลับ…' : 'สลับไปโหมดผู้ให้บริการ' }}
     </button>
   </section>
 

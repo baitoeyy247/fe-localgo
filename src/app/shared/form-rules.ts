@@ -1,6 +1,9 @@
 export const OPEN_BUDGET = 'เปิดรับราคา';
 export const BUDGET_MIN = 1;
 export const BUDGET_MAX = 1_000_000;
+export const REQUEST_TITLE_MAX = 100;
+export const REQUEST_DETAILS_MAX = 1000;
+export const SERVICE_TITLE_MAX = 80;
 
 const THAI_MOBILE = /^0\d{9}$/;
 
@@ -29,7 +32,7 @@ export function budgetAmountError(value: string): string | null {
 
 export function isPriceText(value: string): boolean {
   const trimmed = value.trim().replace(/บาท/g, '').replace(/\s/g, '');
-  const match = trimmed.match(/^(\d+(?:\.\d+)?)(?:[-–—]|ถึง)(\d+(?:\.\d+)?)$|^(\d+(?:\.\d+)?)$/);
+  const match = trimmed.match(/^(\d+)(?:[-–—]|ถึง)(\d+)$|^(\d+)$/);
   if (!match) {
     return false;
   }
@@ -50,17 +53,28 @@ export function priceTextError(value: string): string | null {
     return 'กรุณากรอกราคา';
   }
   if (!isPriceText(trimmed)) {
-    return 'กรุณากรอกตัวเลขหรือช่วงราคา เช่น 40 หรือ 40-80';
+    return 'กรุณากรอกจำนวนเต็มหรือช่วงราคา เช่น 40 หรือ 40-80';
   }
   return null;
 }
 
+export function formatBaht(priceText: string | null | undefined): string {
+  const trimmed = (priceText ?? '').trim();
+  if (!trimmed) {
+    return 'ติดต่อสอบถาม';
+  }
+  if (trimmed === OPEN_BUDGET || trimmed.includes('บาท')) {
+    return trimmed;
+  }
+  return `${trimmed} บาท`;
+}
+
 function positiveAmount(text: string): number | null {
-  if (!/^\d+(?:\.\d+)?$/.test(text)) {
+  if (!/^\d+$/.test(text)) {
     return null;
   }
   const amount = Number(text);
-  if (!Number.isFinite(amount) || amount <= 0 || amount > BUDGET_MAX) {
+  if (!Number.isSafeInteger(amount) || amount <= 0 || amount > BUDGET_MAX) {
     return null;
   }
   return amount;

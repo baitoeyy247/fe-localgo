@@ -8,34 +8,52 @@
     } @else {
       <div class="stack">
         @if (error()) {
-          <p class="error-text">{{ error() }}</p>
+          <p class="error-text" role="alert">{{ error() }}</p>
         }
         <label class="form-field">
-          <span>หมวดหมู่</span>
-          <select (change)="selectCategory($any($event.target).value)">
+          <span>หมวดหมู่ <abbr class="required-mark" title="จำเป็น">*</abbr></span>
+          <select
+            id="service-category"
+            [attr.aria-invalid]="fieldErrors().category ? 'true' : null"
+            [attr.aria-describedby]="fieldErrors().category ? 'edit-category-error' : null"
+            (change)="selectCategory($any($event.target).value)"
+          >
             @for (cat of categories(); track cat.id) {
               <option [value]="cat.id" [selected]="selectedCategoryId() === cat.id">{{ cat.name }}</option>
             }
           </select>
+          <app-field-error [message]="fieldErrors().category" errorId="edit-category-error" />
         </label>
         <label class="form-field">
-          <span>ชื่อบริการ</span>
-          <input [value]="title()" (input)="title.set($any($event.target).value)" />
+          <span>ชื่อบริการ <abbr class="required-mark" title="จำเป็น">*</abbr></span>
+          <input
+            id="service-title"
+            [value]="title()"
+            [attr.maxlength]="titleMax"
+            aria-label="ชื่อบริการ"
+            [attr.aria-invalid]="fieldErrors().title ? 'true' : null"
+            [attr.aria-describedby]="fieldErrors().title ? 'edit-title-error' : null"
+            (input)="updateTitle($any($event.target).value)"
+          />
+          <small>{{ title().length }}/{{ titleMax }}</small>
+          <app-field-error [message]="fieldErrors().title" errorId="edit-title-error" />
         </label>
         <label class="form-area">
           <span>รายละเอียด</span>
           <textarea rows="3" [value]="description()" (input)="description.set($any($event.target).value)"></textarea>
         </label>
         <label class="form-field">
-          <span>ราคาเริ่มต้น</span>
+          <span>ราคาเริ่มต้น <abbr class="required-mark" title="จำเป็น">*</abbr></span>
           <input
+            id="service-price"
             inputmode="decimal"
+            aria-label="ราคาเริ่มต้น"
             [value]="basePriceText()"
+            [attr.aria-invalid]="fieldErrors().price ? 'true' : null"
+            [attr.aria-describedby]="fieldErrors().price ? 'edit-price-error' : null"
             (input)="basePriceText.set($any($event.target).value)"
           />
-          @if (priceError()) {
-            <p class="field-error">{{ priceError() }}</p>
-          }
+          <app-field-error [message]="fieldErrors().price" errorId="edit-price-error" />
         </label>
         @for (branch of provider()!.branches; track branch.id) {
           @if (branch.isActive) {
@@ -47,7 +65,7 @@
               />
               <span>
                 <strong>{{ branch.name }}</strong>
-                <small>รัศมี {{ branch.serviceRadiusMeters / 1000 }} กม.</small>
+                <small>รัศมี {{ branch.serviceRadiusMeters / 1000 }} กิโลเมตร</small>
               </span>
             </label>
           }
@@ -61,8 +79,23 @@
         >
           {{ saving() ? 'กำลังบันทึก…' : 'บันทึกการแก้ไข' }}
         </button>
+        <button type="button" class="danger" [disabled]="saving()" (click)="askDelete()">ลบบริการ</button>
       </div>
     }
   </section>
+  @if (confirmDelete()) {
+    <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="delete-service-title">
+      <div class="confirm-modal__sheet">
+        <h2 id="delete-service-title">ลบบริการ</h2>
+        <p>ลบ "{{ title() }}" แล้วลูกค้าจะไม่เห็นบริการนี้อีก</p>
+        <div class="confirm-modal__actions">
+          <button type="button" (click)="dismissDelete()" [disabled]="deleting()">กลับ</button>
+          <button type="button" class="confirm-modal__confirm" [disabled]="deleting()" (click)="confirmDeleteService()">
+            {{ deleting() ? 'กำลังลบ…' : 'ยืนยันลบ' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
   <app-provider-bottom-nav />
 </app-page-shell>

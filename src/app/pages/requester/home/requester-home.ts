@@ -68,6 +68,8 @@ export class RequesterHomePage implements OnInit {
   protected readonly cancelTarget = signal<ServiceRequestSummary | null>(null);
   protected readonly cancelling = signal(false);
   protected readonly cancelError = signal<string | null>(null);
+  protected readonly openingId = signal<string | null>(null);
+  protected readonly switching = signal(false);
   protected readonly statusLabel = requestStatusLabel;
   protected readonly statusBadgeClass = requestStatusBadgeClass;
 
@@ -126,31 +128,34 @@ export class RequesterHomePage implements OnInit {
     }
   }
 
-  protected async openRequest(request: ServiceRequestSummary): Promise<void> {
+  protected armOpen(request: ServiceRequestSummary, event: Event): void {
+    if (this.openingId()) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    this.openingId.set(request.id);
+  }
+
+  protected openRequest(request: ServiceRequestSummary): void {
+    if (this.openingId() && this.openingId() !== request.id) {
+      return;
+    }
+    this.openingId.set(request.id);
     this.session.currentRequestId = request.id;
-    await this.auth.setActiveRole('Requester');
-    if (request.status === 'Cancelled') {
-      await this.router.navigate(['/requester/bids'], {
-        queryParams: { requestId: request.id },
-      });
-      return;
-    }
-    if (request.status === 'Completed') {
-      await this.router.navigate(['/requester/review'], {
-        queryParams: { requestId: request.id },
-      });
-      return;
-    }
-    if (
-      request.status === 'ProviderSelected' ||
-      request.status === 'Selected' ||
-      request.status === 'Scheduled' ||
-      request.status === 'InProgress'
-    ) {
-      await this.router.navigateByUrl('/requester/appointment');
-      return;
-    }
-    await this.router.navigateByUrl('/requester/bids');
+    void this.auth.setActiveRole('Requester');
+    const destination =
+      request.status === 'Cancelled'
+        ? this.router.navigate(['/requester/requests', request.id])
+        : request.status === 'Completed'
+          ? this.router.navigate(['/requester/review'], { queryParams: { requestId: request.id } })
+          : request.status === 'ProviderSelected' ||
+              request.status === 'Selected' ||
+              request.status === 'Scheduled' ||
+              request.status === 'InProgress'
+            ? this.router.navigateByUrl('/requester/appointment')
+            : this.router.navigate(['/requester/bids'], { queryParams: { requestId: request.id } });
+    void destination.finally(() => this.openingId.set(null));
   }
 
   protected continueLabel(status: string): string {
@@ -177,8 +182,11 @@ export class RequesterHomePage implements OnInit {
     }
   }
 
-  protected async switchToProvider(): Promise<void> {
-    await this.auth.setActiveRole('Provider');
-    await this.router.navigateByUrl('/provider');
+  protected switchToProvider(): void {
+    if (this.switching()) {
+      return;
+    }
+    this.switching.set(true);
+    void this.auth.setActiveRole('Provider').then(() => this.router.navigateByUrl('/provider'));
   }
 }

@@ -10,7 +10,8 @@ import { RequesterBottomNav } from '../../../shared/requester-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { Category, ProviderSummary } from '../../../core/models';
 import { UserLocationService } from '../../../core/user-location.service';
-import { formatCoordinates } from '../../../shared/coordinates';
+import { formatCoordinates, formatDistanceMeters } from '../../../shared/coordinates';
+import { environment } from '../../../../environments/environment';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 import { apiErrorMessage } from '../../../core/api-error.util';
 
@@ -23,7 +24,7 @@ export class RequesterSearchPage implements OnInit {
   protected readonly providers = signal<ProviderSummary[]>([]);
   protected readonly categories = signal<Category[]>([]);
   protected readonly loading = signal(true);
-  protected readonly locating = signal(true);
+  protected readonly locating = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly keyword = signal('');
   protected readonly pickerOpen = signal(false);
@@ -33,8 +34,8 @@ export class RequesterSearchPage implements OnInit {
     title: 'พื้นที่ค้นหาปัจจุบัน',
     subtitle: 'พิกัดเริ่มต้นของพื้นที่ค้นหา',
     radiusKm: 5,
-    lat: 0,
-    lng: 0,
+    lat: environment.mapDefaultLat,
+    lng: environment.mapDefaultLng,
   });
 
   constructor(
@@ -45,35 +46,40 @@ export class RequesterSearchPage implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    this.loading.set(true);
-    this.locating.set(true);
-    this.error.set(null);
+    const qp = this.route.snapshot.queryParamMap;
+    const catId = qp.get('categoryId');
+    const catName = qp.get('categoryName');
+    if (catId) {
+      this.selectedCategoryId.set(catId);
+      this.selectedCategoryName.set(catName);
+    }
+    await Promise.all([this.loadCategories(), this.reload()]);
+    void this.refineLocation();
+  }
+
+  private async loadCategories(): Promise<void> {
+    try {
+      this.categories.set(await firstValueFrom(this.api.listCategories()));
+    } catch (e) {
+      this.error.set(apiErrorMessage(e, 'โหลดหมวดหมู่ไม่สำเร็จ'));
+    }
+  }
+
+  private async refineLocation(): Promise<void> {
     try {
       const area = await this.userLocation.resolveSearchArea();
+      if (area.lat === this.selectedArea().lat && area.lng === this.selectedArea().lng) {
+        return;
+      }
       this.selectedArea.set({
         title: area.title,
         subtitle: area.subtitle,
-        radiusKm: area.radiusKm,
+        radiusKm: this.selectedArea().radiusKm,
         lat: area.lat,
         lng: area.lng,
       });
-      this.locating.set(false);
-
-      const cats = await firstValueFrom(this.api.listCategories());
-      this.categories.set(cats);
-
-      const qp = this.route.snapshot.queryParamMap;
-      const catId = qp.get('categoryId');
-      const catName = qp.get('categoryName');
-      if (catId) {
-        this.selectedCategoryId.set(catId);
-        this.selectedCategoryName.set(catName);
-      }
-
       await this.reload();
-    } catch (e) {
-      this.error.set(apiErrorMessage(e, 'โหลดหน้าค้นหาไม่สำเร็จ'));
-      this.loading.set(false);
+    } catch {
       this.locating.set(false);
     }
   }
@@ -127,7 +133,7 @@ export class RequesterSearchPage implements OnInit {
   }
 
   protected formatDistance(meters: number): string {
-    return meters >= 1000 ? `${(meters / 1000).toFixed(1)} กม.` : `${Math.round(meters)} ม.`;
+    return formatDistanceMeters(meters);
   }
 
   private async reload(): Promise<void> {

@@ -1,7 +1,10 @@
 <app-page-shell title="เลือกบทบาท" [showBack]="false">
   <section class="entry">
     @if (adminDenied()) {
-      <p class="error-text" role="alert">ไม่มีสิทธิ์เข้าถึง</p>
+      <div class="access-alert" role="alert">
+        <p style="margin: 0;">ไม่มีสิทธิ์เข้าถึงหลังบ้านแอดมิน บัญชีนี้ไม่ใช่ผู้ดูแลระบบ</p>
+        <button type="button" (click)="dismissDenied()">ปิด</button>
+      </div>
     }
     <div class="entry-hero">
       <app-map-view size="hero" label="ค้นหาพื้นที่" radiusLabel="รัศมี 5 กม." />

@@ -1947,10 +1947,11 @@ button,
   letter-spacing: normal;
 }
 
-.field-error {
+.field-error,
+.error-text {
   margin: 0.35rem 0 0;
-  color: #9f1239;
-  font-size: 0.75rem;
+  color: #b42318;
+  font-size: 0.875rem;
   font-weight: 700;
 }
 
@@ -1972,6 +1973,84 @@ fieldset.form-field {
   letter-spacing: normal;
   color: #10181f;
   font-size: 1rem;
+  white-space: nowrap;
+}
+
+fieldset.budget-fieldset {
+  border: 1px solid #d7e0db;
+  border-radius: 0.9rem;
+  margin: 0;
+  min-width: 0;
+  padding: 0.85rem 0.9rem 1rem;
+}
+
+fieldset.budget-fieldset legend {
+  padding: 0 0.35rem;
+  font-weight: 800;
+}
+
+.required-mark {
+  color: #b42318;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+button.primary:disabled,
+button.is-unavailable {
+  background: #e5e7eb;
+  color: #4b5563;
+  border-color: #d1d5db;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.coverage-confirm {
+  position: sticky;
+  bottom: calc(4.15rem + env(safe-area-inset-bottom));
+  z-index: 3;
+  background: #f4f7f5;
+  padding: 0.5rem 0 0.25rem;
+}
+
+.access-alert {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #fedfae;
+  border-radius: 0.9rem;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.access-alert button {
+  min-height: 2.75rem;
+  flex: 0 0 auto;
+}
+
+.provider-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  background: #e7f6ee;
+  color: #07572f;
+  font-weight: 800;
+}
+
+.header-action {
+  min-height: 2.75rem;
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  border: 1px solid #d7e0db;
+  background: #fff;
+  color: #17428f;
+  font-weight: 800;
 }
 
 .skeleton-list {
