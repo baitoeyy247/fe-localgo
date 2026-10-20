@@ -38,6 +38,11 @@ export class AddServicePage implements OnInit {
 
   constructor(private readonly api: LocalGoApiService) {}
 
+  protected setupComplete(): boolean {
+    const profile = this.provider();
+    return !!profile && profile.branches.length > 0 && profile.services.length > 0;
+  }
+
   async ngOnInit(): Promise<void> {
     const [cats, mine] = await Promise.allSettled([
       firstValueFrom(this.api.listCategories()),

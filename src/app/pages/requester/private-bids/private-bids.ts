@@ -13,18 +13,21 @@ import { AuthService } from '../../../core/auth.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { requestStatusLabel } from '../../../shared/status-labels';
 import { formatBaht } from '../../../shared/form-rules';
+import { ConfirmModal } from '../../../shared/confirm-modal';
 import { resolveRequesterRequestId } from '../../../shared/requester-request-flow';
 import { redirectProviderFromRequesterRoute } from '../../../shared/requester-deep-link-guard';
 
 @Component({
   selector: 'app-private-bids-page',
-  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, LoadingSkeleton, RouterLink],
+  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, LoadingSkeleton, RouterLink, ConfirmModal],
   templateUrl: './private-bids.html',
 })
 export class PrivateBidsPage implements OnInit, OnDestroy {
   protected readonly bids = signal<BidItem[]>([]);
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly selectedBidId = signal<string | null>(null);
+  protected readonly openedBidId = signal<string | null>(null);
+  protected readonly confirmClear = signal(false);
   protected readonly loading = signal(true);
   protected readonly clearing = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -143,19 +146,43 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
     if (!requestId || !this.canClearBidSelection() || this.clearing()) {
       return;
     }
-    if (!confirm('ยกเลิกการเลือกข้อเสนอและกลับไปเลือกใหม่?')) {
+    this.confirmClear.set(true);
+  }
+
+  protected dismissClear(): void {
+    if (!this.clearing()) {
+      this.confirmClear.set(false);
+    }
+  }
+
+  protected async confirmClearSelection(): Promise<void> {
+    const requestId = this.request()?.id ?? this.session.requesterRequestId ?? null;
+    if (!requestId || !this.canClearBidSelection() || this.clearing()) {
       return;
     }
     this.clearing.set(true);
     this.error.set(null);
     try {
       await firstValueFrom(this.api.clearBidSelection(requestId));
+      this.confirmClear.set(false);
       await this.load(requestId);
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'ยกเลิกการเลือกไม่สำเร็จ'));
     } finally {
       this.clearing.set(false);
     }
+  }
+
+  protected openBid(bid: BidItem): void {
+    this.openedBidId.set(bid.id);
+    if (this.canSchedule()) {
+      this.selectBid(bid);
+    }
+  }
+
+  protected focusedBid(): BidItem | null {
+    const id = this.openedBidId() ?? this.selectedBidId();
+    return this.bids().find((bid) => bid.id === id) ?? null;
   }
 
   protected isExpired(): boolean {

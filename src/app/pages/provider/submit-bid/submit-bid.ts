@@ -8,10 +8,12 @@ import { ServiceRequestDetail } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
+import { FieldError } from '../../../shared/field-error';
+import { BID_MESSAGE_MAX, bidPriceError } from '../../../shared/form-rules';
 
 @Component({
   selector: 'app-submit-bid-page',
-  imports: [PageShell, RouterLink, LoadingSkeleton],
+  imports: [PageShell, RouterLink, LoadingSkeleton, FieldError],
   templateUrl: './submit-bid.html',
 })
 export class SubmitBidPage implements OnInit {
@@ -24,6 +26,10 @@ export class SubmitBidPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly denied = signal<string | null>(null);
+  protected readonly deniedCode = signal<string | null>(null);
+  protected readonly priceError = signal<string | null>(null);
+  protected readonly descriptionError = signal<string | null>(null);
+  protected readonly messageMax = BID_MESSAGE_MAX;
 
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
@@ -62,6 +68,7 @@ export class SubmitBidPage implements OnInit {
       const form = formResult.value;
       if (!form.allowed || !form.request) {
         this.denied.set(form.reason || 'ไม่สามารถเสนอราคางานนี้ได้');
+        this.deniedCode.set(form.reasonCode ?? null);
         return;
       }
       this.session.providerRequestId = requestId;
@@ -90,10 +97,59 @@ export class SubmitBidPage implements OnInit {
     }
   }
 
+  protected fixLink(): string {
+    switch (this.deniedCode()) {
+      case 'CATEGORY_MISMATCH':
+        return '/provider/service';
+      case 'SERVICE_PAUSED':
+        return '/provider/manage';
+      case 'AREA_DISABLED':
+      case 'OUT_OF_RANGE':
+        return '/provider/coverage';
+      default:
+        return '/provider/requests';
+    }
+  }
+
+  protected fixLabel(): string {
+    switch (this.deniedCode()) {
+      case 'CATEGORY_MISMATCH':
+        return 'เพิ่มบริการที่ตรงหมวด';
+      case 'SERVICE_PAUSED':
+        return 'เปิดบริการอีกครั้ง';
+      case 'AREA_DISABLED':
+        return 'เปิดพื้นที่ให้บริการ';
+      case 'OUT_OF_RANGE':
+        return 'แก้ไขพื้นที่';
+      default:
+        return 'ไปรายการงาน';
+    }
+  }
+
+  protected updatePrice(value: string): void {
+    this.priceText.set(value);
+    this.priceError.set(bidPriceError(value));
+  }
+
+  protected updateDescription(value: string): void {
+    const next = value.slice(0, BID_MESSAGE_MAX);
+    this.description.set(next);
+    this.descriptionError.set(
+      value.length > BID_MESSAGE_MAX ? `รายละเอียดข้อเสนอต้องไม่เกิน ${BID_MESSAGE_MAX} ตัวอักษร` : null,
+    );
+  }
+
   protected async submit(): Promise<void> {
     const requestId = this.activeRequestId;
     const providerId = this.providerId();
-    if (!requestId || !providerId || !this.priceText().trim() || this.submitting()) {
+    const priceError = bidPriceError(this.priceText());
+    const descriptionError =
+      this.description().trim().length > BID_MESSAGE_MAX
+        ? `รายละเอียดข้อเสนอต้องไม่เกิน ${BID_MESSAGE_MAX} ตัวอักษร`
+        : null;
+    this.priceError.set(priceError);
+    this.descriptionError.set(descriptionError);
+    if (!requestId || !providerId || priceError || descriptionError || this.submitting()) {
       return;
     }
     this.submitting.set(true);
@@ -101,6 +157,7 @@ export class SubmitBidPage implements OnInit {
     try {
       const payload = {
         priceText: this.priceText().trim(),
+        amount: Number(this.priceText().trim().replace(/บาท/g, '').replace(/\s/g, '')),
         description: this.description().trim() || undefined,
       };
       const bidId = this.existingBidId();
@@ -149,7 +206,7 @@ export class SubmitBidPage implements OnInit {
   }
 
   private isRecoverableSubmitError(status: number): boolean {
-    return status === 0 || status === 409 || status >= 500;
+    return status === 0;
   }
 
   private isActiveBidStatus(status: string): boolean {

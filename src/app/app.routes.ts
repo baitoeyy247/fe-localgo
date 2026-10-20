@@ -99,6 +99,20 @@ export const routes: Routes = [
       import('./pages/provider/manage-services/manage-services').then((m) => m.ManageServicesPage),
   },
   {
+    path: 'provider/services',
+    redirectTo: '/provider/manage',
+  },
+  {
+    path: 'provider/jobs',
+    redirectTo: '/provider/requests',
+  },
+  {
+    path: 'provider/my-bids',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/provider/my-bids/my-bids').then((m) => m.ProviderMyBidsPage),
+  },
+  {
     path: 'provider/requests',
     canActivate: [authGuard],
     loadComponent: () =>

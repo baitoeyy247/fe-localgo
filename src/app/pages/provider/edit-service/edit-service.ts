@@ -107,6 +107,10 @@ export class EditServicePage implements OnInit {
       this.title.set(svc.title.slice(0, SERVICE_TITLE_MAX));
       this.description.set(svc.description ?? '');
       this.basePriceText.set(svc.basePriceText ?? '');
+      const legacyPrice = priceTextError(svc.basePriceText ?? '');
+      if (legacyPrice) {
+        this.fieldErrors.set({ price: legacyPrice });
+      }
       const linked = svc.branchIds?.length
         ? new Set(svc.branchIds)
         : new Set(mine.value.branches.filter((b) => b.isActive).map((b) => b.id));

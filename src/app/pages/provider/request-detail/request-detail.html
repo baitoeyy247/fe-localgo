@@ -1,4 +1,4 @@
-<app-page-shell title="รายละเอียดงาน" subtitle="ข้อมูลจาก API" [backLink]="'/provider/requests'">
+<app-page-shell title="รายละเอียดงาน" [backLink]="'/provider/requests'">
   <section class="screen">
     @if (loading()) {
       <app-loading-skeleton />
@@ -25,7 +25,7 @@
         }
         <div class="chips">
           <span>รัศมี {{ (r.searchRadiusMeters / 1000).toFixed(0) }} กม.</span>
-          @if (r.budgetText) {
+          @if (r.budgetText && (r.status === 'Open' || r.status === 'HasOffers' || r.budgetText !== 'เปิดรับราคา')) {
             <span>{{ formatBaht(r.budgetText) }}</span>
           }
           @if (r.preferredStartAt) {
@@ -48,7 +48,7 @@
               @if (appt.note) {
                 <p><strong>หมายเหตุ:</strong> {{ appt.note }}</p>
               }
-              <p><strong>สถานะ:</strong> {{ appointmentStatusLabel(appt.status) }}</p>
+              <p><strong>สถานะนัดหมาย:</strong> {{ appointmentStatusLabel(appt.status) }}</p>
               @if (canConfirmAppointment()) {
                 <p class="state-hint">รอคุณยืนยันนัด</p>
                 <button
@@ -83,7 +83,7 @@
                   {{ acting() ? actingLabel() : 'งานเสร็จสิ้น' }}
                 </button>
               } @else if (appt.status === 'Completed') {
-                <p class="state-hint">งานเสร็จแล้ว — ลูกค้าสามารถให้คะแนนและรีวิวได้</p>
+                <p class="state-hint">ลูกค้าสามารถให้คะแนนและรีวิวได้</p>
               }
             } @else {
               @if (appointmentError()) {
@@ -120,5 +120,14 @@
       </div>
     }
   </section>
+  <app-confirm-modal
+    [open]="confirmOpen()"
+    [title]="confirmTitle()"
+    [message]="confirmMessage()"
+    confirmLabel="ยืนยัน"
+    cancelLabel="กลับ"
+    (confirm)="resolveConfirm(true)"
+    (cancel)="resolveConfirm(false)"
+  />
   <app-provider-bottom-nav />
 </app-page-shell>

@@ -100,7 +100,9 @@ describe('ProviderRequestDetailPage job completion', () => {
     api.getMyProvider.mockClear();
     api.getAppointment.mockClear();
     api.updateAppointmentStatus.mockClear();
-    vi.stubGlobal('confirm', () => true);
+    vi.stubGlobal('confirm', () => {
+      throw new Error('native confirm should not be used');
+    });
   });
 
   afterEach(() => {
@@ -115,6 +117,8 @@ describe('ProviderRequestDetailPage job completion', () => {
     expect(root.textContent).not.toContain('ส่งข้อเสนอราคา');
 
     buttonByText(root, 'เริ่มงาน').click();
+    fixture.detectChanges();
+    buttonByText(root, 'ยืนยัน').click();
     await vi.waitFor(() => {
       fixture.detectChanges();
       expect(api.updateAppointmentStatus).toHaveBeenCalledWith('appt-1', 'InProgress');
@@ -123,6 +127,8 @@ describe('ProviderRequestDetailPage job completion', () => {
     });
 
     buttonByText(root, 'งานเสร็จสิ้น').click();
+    fixture.detectChanges();
+    buttonByText(root, 'ยืนยัน').click();
     await vi.waitFor(() => {
       fixture.detectChanges();
       expect(api.updateAppointmentStatus).toHaveBeenCalledWith('appt-1', 'Completed');

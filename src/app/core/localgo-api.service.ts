@@ -16,6 +16,7 @@ import {
   ProviderBranch,
   BidFormAccess,
   ProviderDetail,
+  ProviderBidListItem,
   ProviderMatchingInbox,
   ProviderService,
   ProviderSummary,
@@ -384,6 +385,17 @@ export class LocalGoApiService {
     },
   ): Observable<ReviewItem> {
     return this.post<ReviewItem>(`/providers/${providerId}/reviews`, body);
+  }
+
+  findMyReview(providerId: string, serviceRequestId: string): Observable<ReviewItem | null> {
+    const params = new HttpParams().set('serviceRequestId', serviceRequestId);
+    return this.get<ReviewItem>(`/providers/${providerId}/reviews/mine`, { params }).pipe(
+      catchError((error: HttpErrorLike) => (error.status === 404 ? of(null) : throwError(() => error))),
+    );
+  }
+
+  listMyBids(): Observable<ProviderBidListItem[]> {
+    return this.get<ProviderBidListItem[]>('/provider/bids');
   }
 
   // --- Provider inbox ---

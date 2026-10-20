@@ -13,11 +13,12 @@ import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderBranch, ProviderDetail } from '../../../core/models';
 import { UserLocationService } from '../../../core/user-location.service';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
+import { ConfirmModal } from '../../../shared/confirm-modal';
 import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-coverage-page',
-  imports: [PageShell, RouterLink, LocationPickerModal, ProviderSetupBar, ProviderBottomNav, LoadingSkeleton],
+  imports: [PageShell, RouterLink, LocationPickerModal, ProviderSetupBar, ProviderBottomNav, LoadingSkeleton, ConfirmModal],
   templateUrl: './coverage.html',
 })
 export class CoveragePage implements OnInit {
@@ -27,6 +28,7 @@ export class CoveragePage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly message = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
+  protected readonly deactivateTarget = signal<ProviderBranch | null>(null);
 
   protected readonly pickerOpen = signal(false);
   /** null = สร้างจุดใหม่ */
@@ -143,7 +145,19 @@ export class CoveragePage implements OnInit {
     if (!p || this.saving()) {
       return;
     }
-    if (!confirm(`ปิดใช้งานพื้นที่ "${branch.name}"?`)) {
+    this.deactivateTarget.set(branch);
+  }
+
+  protected dismissDeactivate(): void {
+    if (!this.saving()) {
+      this.deactivateTarget.set(null);
+    }
+  }
+
+  protected async confirmDeactivate(): Promise<void> {
+    const branch = this.deactivateTarget();
+    const p = this.provider();
+    if (!branch || !p || this.saving()) {
       return;
     }
     this.saving.set(true);
@@ -157,11 +171,24 @@ export class CoveragePage implements OnInit {
           isActive: false,
         }),
       );
+      this.deactivateTarget.set(null);
       this.message.set('ปิดจุดให้บริการแล้ว');
       await this.reload();
     } finally {
       this.saving.set(false);
     }
+  }
+
+  protected deactivateMessage(): string {
+    const branch = this.deactivateTarget();
+    return branch
+      ? `ปิดใช้งานพื้นที่ "${branch.name}" แล้วงานใหม่ในรัศมีนี้จะไม่เข้ามา`
+      : '';
+  }
+
+  protected setupComplete(): boolean {
+    const profile = this.provider();
+    return !!profile && profile.branches.length > 0 && profile.services.length > 0;
   }
 
   protected openPicker(): void {

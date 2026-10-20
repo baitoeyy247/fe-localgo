@@ -1,5 +1,7 @@
-<app-page-shell title="พื้นที่ให้บริการ" subtitle="ขั้นตอนที่ 2 จาก 3" backLink="/provider">
-  <app-provider-setup-bar active="coverage" />
+<app-page-shell title="พื้นที่ให้บริการ" [subtitle]="setupComplete() ? null : 'ขั้นตอนที่ 2 จาก 3'" backLink="/provider">
+  @if (!setupComplete()) {
+    <app-provider-setup-bar active="coverage" />
+  }
   <section class="screen">
     @if (loading()) {
       <app-loading-skeleton />
@@ -100,6 +102,17 @@
     [lng]="editingLng()"
     (cancel)="closePicker()"
     (confirm)="applyLocation($event)"
+  />
+  <app-confirm-modal
+    [open]="deactivateTarget() !== null"
+    title="ปิดใช้งานพื้นที่นี้"
+    [message]="deactivateMessage()"
+    confirmLabel="ปิดใช้งาน"
+    cancelLabel="กลับ"
+    [busy]="saving()"
+    busyLabel="กำลังบันทึก…"
+    (confirm)="confirmDeactivate()"
+    (cancel)="dismissDeactivate()"
   />
   <app-provider-bottom-nav />
 </app-page-shell>

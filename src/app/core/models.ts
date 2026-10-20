@@ -83,6 +83,7 @@ export interface ProviderMatchingInbox {
 export interface BidFormAccess {
   allowed: boolean;
   reason?: string | null;
+  reasonCode?: string | null;
   request?: ServiceRequestDetail | null;
 }
 
@@ -97,6 +98,16 @@ export interface ServiceRequestSummary {
   distanceMeters?: number | null;
   alreadyBidByMe?: boolean;
   needsAppointmentConfirm?: boolean;
+  isOwnRequest?: boolean;
+}
+
+export interface ProviderBidListItem {
+  id: string;
+  serviceRequestId: string;
+  requestTitle: string;
+  priceText: string;
+  status: string;
+  createdAt: string;
 }
 
 export interface ServiceRequestDetail {
@@ -153,6 +164,8 @@ export interface ReviewItem {
   comment?: string | null;
   reviewType: string;
   createdAt: string;
+  reviewerDisplayName?: string | null;
+  serviceRequestId?: string | null;
 }
 
 export interface AdminDashboard {

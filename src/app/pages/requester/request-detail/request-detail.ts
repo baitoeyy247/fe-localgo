@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -19,6 +20,7 @@ export class RequesterRequestDetailPage implements OnInit {
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+  protected readonly notFound = signal(false);
   protected readonly statusLabel = requestStatusLabel;
   protected readonly formatBaht = formatBaht;
 
@@ -26,16 +28,32 @@ export class RequesterRequestDetailPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<void> {
+    await this.load();
+  }
+
+  protected async retry(): Promise<void> {
+    await this.load();
+  }
+
+  private async load(): Promise<void> {
     const id = this.route.snapshot.paramMap.get('id');
-    if (!id) {
-      this.error.set('ไม่พบงานนี้');
+    this.loading.set(true);
+    this.error.set(null);
+    this.notFound.set(false);
+    this.request.set(null);
+    if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+      this.notFound.set(true);
       this.loading.set(false);
       return;
     }
     try {
       this.request.set(await firstValueFrom(this.api.getRequest(id)));
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'โหลดรายละเอียดงานไม่สำเร็จ'));
+      if (e instanceof HttpErrorResponse && e.status === 404) {
+        this.notFound.set(true);
+      } else {
+        this.error.set(apiErrorMessage(e, 'โหลดรายละเอียดงานไม่สำเร็จ'));
+      }
     } finally {
       this.loading.set(false);
     }

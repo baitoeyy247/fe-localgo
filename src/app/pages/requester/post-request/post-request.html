@@ -97,19 +97,23 @@
 
       <fieldset class="form-field form-field--modern budget-fieldset">
         <legend>งบประมาณ</legend>
-        <label class="budget-choice">
+        <label class="budget-choice" for="budget-open">
           <input
+            id="budget-open"
             type="radio"
             name="budget-mode"
+            aria-label="เปิดรับราคา"
             [checked]="budgetMode() === 'open'"
             (change)="setBudgetMode('open')"
           />
           <span>{{ openBudgetLabel }}</span>
         </label>
-        <label class="budget-choice">
+        <label class="budget-choice" for="budget-amount">
           <input
+            id="budget-amount"
             type="radio"
             name="budget-mode"
+            aria-label="ระบุจำนวน"
             [checked]="budgetMode() === 'amount'"
             (change)="setBudgetMode('amount')"
           />

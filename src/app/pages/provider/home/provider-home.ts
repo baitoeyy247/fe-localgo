@@ -40,6 +40,22 @@ export class ProviderHomePage implements OnInit {
     }
   }
 
+  protected activeServiceCount(): number {
+    return this.provider()?.services.filter((service) => service.isActive).length ?? 0;
+  }
+
+  protected pausedServiceCount(): number {
+    return (this.provider()?.services.length ?? 0) - this.activeServiceCount();
+  }
+
+  protected activeAreaCount(): number {
+    return this.provider()?.branches.filter((branch) => branch.isActive).length ?? 0;
+  }
+
+  protected disabledAreaCount(): number {
+    return (this.provider()?.branches.length ?? 0) - this.activeAreaCount();
+  }
+
   protected setupDone(): boolean {
     const p = this.provider();
     return !!p && p.branches.length > 0 && p.services.length > 0;

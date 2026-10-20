@@ -47,11 +47,7 @@
       }
     } @else {
       @if (auth.user(); as u) {
-        <p class="badge entry-greeting">
-          สวัสดี {{ u.displayName }}
-          @if (auth.authMode() === 'line') { · <span>LINE</span> }
-          @if (auth.authMode() === 'dev') { · <span>Dev</span> }
-        </p>
+        <p class="badge entry-greeting">สวัสดี {{ u.displayName }}</p>
       }
       @if (!auth.user() && allowDevLogin) {
         <p class="muted-label">LINE จริง: <a [href]="liffEntryUrl()">{{ liffEntryUrl() }}</a></p>

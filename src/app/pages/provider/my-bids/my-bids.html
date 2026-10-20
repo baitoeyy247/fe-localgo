@@ -1,0 +1,31 @@
+<app-page-shell title="ข้อเสนอของฉัน" backLink="/provider">
+  <section class="screen">
+    @if (loading()) {
+      <app-loading-skeleton />
+    } @else if (error()) {
+      <div class="empty-state">
+        <h3>โหลดข้อเสนอไม่สำเร็จ</h3>
+        <p class="error-text">{{ error() }}</p>
+      </div>
+    } @else if (bids().length === 0) {
+      <div class="empty-state">
+        <h3>ยังไม่มีข้อเสนอ</h3>
+        <p>เมื่อส่งราคาแล้ว รายการจะแสดงราคาและสถานะที่นี่</p>
+        <a class="primary" routerLink="/provider/requests">ดูงานที่ตรงกับบริการ</a>
+      </div>
+    } @else {
+      <div class="stack">
+        @for (bid of bids(); track bid.id) {
+          <a class="bid-card" [routerLink]="['/provider/requests', bid.serviceRequestId]">
+            <span>
+              <strong>{{ bid.requestTitle }}</strong>
+              <small>{{ bidStatusLabel(bid.status) }}</small>
+            </span>
+            <b>{{ formatBaht(bid.priceText) }}</b>
+          </a>
+        }
+      </div>
+    }
+  </section>
+  <app-provider-bottom-nav />
+</app-page-shell>

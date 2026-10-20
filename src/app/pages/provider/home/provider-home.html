@@ -16,8 +16,11 @@
           <span class="badge">พร้อมรับงาน</span>
         </div>
         <p style="margin-top: 0.35rem;">
-          {{ provider()!.services.length }} บริการ · {{ provider()!.branches.length }} จุด ·
-          ★ {{ provider()!.averageVerifiedRating }} ({{ provider()!.verifiedReviewCount }} รีวิว)
+          {{ activeServiceCount() }} บริการที่เปิดอยู่
+          @if (pausedServiceCount() > 0) { · {{ pausedServiceCount() }} หยุดชั่วคราว }
+          · {{ activeAreaCount() }} พื้นที่ที่เปิดอยู่
+          @if (disabledAreaCount() > 0) { · {{ disabledAreaCount() }} ปิดอยู่ }
+          · ★ {{ provider()!.averageVerifiedRating }} ({{ provider()!.verifiedReviewCount }} รีวิว)
         </p>
       </div>
 
@@ -43,6 +46,13 @@
           <span>
             <strong>งานที่ตรงกับบริการ</strong>
             <small>ดูประกาศในพื้นที่และส่งข้อเสนอราคา</small>
+          </span>
+          <b>→</b>
+        </a>
+        <a class="action-card" routerLink="/provider/my-bids">
+          <span>
+            <strong>ข้อเสนอของฉัน</strong>
+            <small>ดูราคาและสถานะที่ส่งไปแล้ว</small>
           </span>
           <b>→</b>
         </a>

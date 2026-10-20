@@ -36,7 +36,7 @@ describe('form rules', () => {
     expect(priceTextError('-1')).toContain('ช่วงราคา');
     expect(isPriceText('1.5')).toBe(false);
     expect(isPriceText('80-40')).toBe(false);
-    expect(priceTextError('1.5')).toContain('จำนวนเต็ม');
-    expect(priceTextError('80-40')).toContain('จำนวนเต็ม');
+    expect(priceTextError('1.5')).toContain('ราคาต้องเป็นจำนวนเต็ม');
+    expect(priceTextError('80-40')).toContain('ราคาต่ำสุดต้องไม่มากกว่าราคาสูงสุด');
   });
 });

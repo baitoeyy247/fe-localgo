@@ -20,21 +20,31 @@
         <label class="form-field">
           <span>ราคาเสนอ</span>
           <input
-            placeholder="เช่น 120 บาท"
+            type="number"
+            inputmode="numeric"
+            min="1"
+            max="1000000"
+            step="1"
+            placeholder="เช่น 150"
             [value]="priceText()"
-            (input)="priceText.set($any($event.target).value)"
+            [attr.aria-invalid]="priceError() ? 'true' : null"
+            (input)="updatePrice($any($event.target).value)"
           />
+          <app-field-error [message]="priceError()" errorId="bid-price-error" />
         </label>
         <label class="form-area">
-          <span>รายละเอียดข้อเสนอ</span>
+          <span>รายละเอียดข้อเสนอ ({{ description().length }}/{{ messageMax }})</span>
           <textarea
             rows="3"
+            [maxLength]="messageMax"
             placeholder="ระบุเงื่อนไข เวลา และสิ่งที่รวมในราคา"
             [value]="description()"
-            (input)="description.set($any($event.target).value)"
+            [attr.aria-invalid]="descriptionError() ? 'true' : null"
+            (input)="updateDescription($any($event.target).value)"
           ></textarea>
+          <app-field-error [message]="descriptionError()" errorId="bid-description-error" />
         </label>
-        <button class="primary" type="button" [disabled]="submitting() || !priceText().trim()" (click)="submit()">
+        <button class="primary" type="button" [disabled]="submitting() || !!priceError() || !priceText().trim()" (click)="submit()">
           {{
             submitting()
               ? (existingBidId() ? 'กำลังอัปเดต…' : 'กำลังส่ง…')
@@ -46,7 +56,7 @@
       <article class="empty-state">
         <h3>ยังเสนอราคาไม่ได้</h3>
         <p>{{ denied() || 'เลือกงานจากรายการก่อน' }}</p>
-        <a class="primary" routerLink="/provider/requests">ไปรายการงาน</a>
+        <a class="primary" [routerLink]="fixLink()">{{ fixLabel() }}</a>
       </article>
     }
   </section>

@@ -11,6 +11,7 @@ import { ProviderCoverageArea, ProviderDetail, ServiceRequestSummary } from '../
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { requestStatusLabel, requestStatusBadgeClass } from '../../../shared/status-labels';
 import { formatDistanceMeters } from '../../../shared/coordinates';
+import { OPEN_BUDGET, formatBaht } from '../../../shared/form-rules';
 import { AuthService } from '../../../core/auth.service';
 
 type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
@@ -79,6 +80,7 @@ export class MatchingRequestsPage implements OnInit {
   protected readonly setupIssue = signal<SetupIssue | null>(null);
   protected readonly pendingConfirmCount = signal(0);
   protected readonly statusLabel = requestStatusLabel;
+  protected readonly formatBaht = formatBaht;
   protected readonly statusBadgeClass = requestStatusBadgeClass;
 
   constructor(
@@ -118,10 +120,12 @@ export class MatchingRequestsPage implements OnInit {
       }
 
       const inbox = inboxResult.value;
-      const items = inbox.items ?? [];
+      const areas = inbox.areas ?? [];
+      const excludesOwn = !!inbox.excludesOwnRequests;
+      const items = this.visibleItems(inbox.items ?? [], areas, excludesOwn);
       this.matchingRequests.set(items);
-      this.excludesOwnRequests.set(!!inbox.excludesOwnRequests);
-      this.areas.set(inbox.areas ?? []);
+      this.excludesOwnRequests.set(excludesOwn);
+      this.areas.set(areas);
       this.pendingConfirmCount.set(items.filter((r) => r.needsAppointmentConfirm).length);
       this.ready.set(true);
 
@@ -238,6 +242,31 @@ export class MatchingRequestsPage implements OnInit {
 
   protected async openRequest(request: ServiceRequestSummary): Promise<void> {
     await this.router.navigate(['/provider/requests', request.id]);
+  }
+
+  protected showBudget(request: ServiceRequestSummary): boolean {
+    if (!request.budgetText) {
+      return false;
+    }
+    const openForBids = request.status === 'Open' || request.status === 'HasOffers';
+    return openForBids || request.budgetText !== OPEN_BUDGET;
+  }
+
+  private visibleItems(
+    items: ServiceRequestSummary[],
+    areas: ProviderCoverageArea[],
+    excludesOwn: boolean,
+  ): ServiceRequestSummary[] {
+    const maxRadius = areas.reduce((max, area) => Math.max(max, area.serviceRadiusMeters), 0);
+    return items.filter((item) => {
+      if (excludesOwn && item.isOwnRequest) {
+        return false;
+      }
+      if (maxRadius > 0 && typeof item.distanceMeters === 'number' && item.distanceMeters > maxRadius) {
+        return false;
+      }
+      return true;
+    });
   }
 
   protected isMyActiveJob(request: ServiceRequestSummary): boolean {

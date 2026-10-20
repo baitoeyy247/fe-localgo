@@ -12,6 +12,7 @@
             <div style="display: flex; align-items: center; gap: 0.75rem;">
               <span class="provider-avatar" aria-hidden="true">{{ initials(providerName()) }}</span>
               <div>
+                <p class="muted-label" style="margin: 0;">ผู้ให้บริการ</p>
                 <h3 style="margin: 0;">{{ providerName() }}</h3>
                 <p style="margin: 0.2rem 0 0;">{{ request()?.title }}</p>
               </div>
@@ -38,7 +39,7 @@
         @if (hasActiveAppointment()) {
           <div class="summary-panel">
             <p><strong>วันและเวลา:</strong> {{ formatScheduledAt(appointment()?.scheduledAt) }}</p>
-            <p><strong>สถานที่:</strong> {{ addressText() || 'ยังไม่ระบุสถานที่' }}</p>
+            <p><strong>สถานที่:</strong> {{ placeLabel(addressText()) }}</p>
             @if (appointment()?.note) {
               <p><strong>หมายเหตุ:</strong> {{ appointment()!.note }}</p>
             }
@@ -109,28 +110,6 @@
         }
 
         <div class="action-stack">
-          @if (canClearBidSelection()) {
-            <button
-              class="danger"
-              type="button"
-              [disabled]="saving()"
-              (click)="clearBidSelection()"
-            >
-              {{ saving() ? 'กำลังยกเลิก…' : 'ยกเลิกการเลือกข้อเสนอ' }}
-            </button>
-          }
-
-          @if (canCancelAppointment()) {
-            <button
-              class="danger"
-              type="button"
-              [disabled]="saving()"
-              (click)="cancelAppointment()"
-            >
-              {{ saving() ? 'กำลังยกเลิก…' : 'ยกเลิกนัดหมาย' }}
-            </button>
-          }
-
           @if (showReviewAction()) {
             <button
               class="primary"
@@ -152,6 +131,18 @@
               {{ saving() ? 'กำลังบันทึก…' : rescheduling() ? 'บันทึกเวลานัดใหม่' : 'ยืนยันนัดหมาย' }}
             </button>
           }
+
+          @if (canClearBidSelection()) {
+            <button class="secondary" type="button" [disabled]="saving()" (click)="clearBidSelection()">
+              ยกเลิกการเลือกข้อเสนอ
+            </button>
+          }
+
+          @if (canCancelAppointment()) {
+            <button class="danger" type="button" [disabled]="saving()" (click)="cancelAppointment()">
+              ยกเลิกนัดหมาย
+            </button>
+          }
         </div>
       </div>
     }
@@ -167,6 +158,18 @@
     [lng]="mapLng() ?? 100.5018"
     (confirm)="applyPickedLocation($event)"
     (cancel)="closePicker()"
+  />
+
+  <app-confirm-modal
+    [open]="confirmKind() !== null"
+    [title]="confirmKind() === 'appointment' ? 'ยกเลิกนัดหมาย' : 'ยกเลิกการเลือกข้อเสนอ'"
+    [message]="confirmKind() === 'appointment' ? 'นัดหมายนี้จะถูกยกเลิก และคุณสามารถนัดหมายใหม่ได้' : 'ข้อเสนอที่เลือกไว้จะถูกยกเลิก และคุณสามารถกลับไปเลือกข้อเสนอใหม่ได้'"
+    confirmLabel="ยืนยันยกเลิก"
+    cancelLabel="กลับ"
+    [busy]="saving()"
+    busyLabel="กำลังยกเลิก…"
+    (confirm)="acceptConfirm()"
+    (cancel)="dismissConfirm()"
   />
 
   <app-requester-bottom-nav />

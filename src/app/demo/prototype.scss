@@ -124,6 +124,7 @@ a {
   gap: 0.5rem;
   overflow-x: auto;
   padding-bottom: 0.1rem;
+  min-height: 2.75rem;
 }
 
 .category-strip span {
@@ -471,6 +472,14 @@ a {
   margin: 0;
   color: #10181f;
   line-height: 1.5;
+}
+
+.form-area p.field-error,
+.form-field p.field-error,
+p.field-error {
+  color: #b42318;
+  font-size: 0.875rem;
+  font-weight: 700;
 }
 
 .chips {

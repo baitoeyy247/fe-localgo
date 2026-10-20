@@ -27,6 +27,9 @@
               <small>{{ service.isActive ? 'เปิด' : 'หยุด' }}</small>
             </div>
             <span>{{ service.categoryName ?? 'บริการ' }} · {{ formatBaht(service.basePriceText) }}</span>
+            @if (priceTextError(service.basePriceText ?? '')) {
+              <p class="field-error" role="alert">{{ priceTextError(service.basePriceText ?? '') }}</p>
+            }
             <div class="coverage-card__actions">
               <a class="secondary" [routerLink]="['/provider/service', service.id, 'edit']">แก้ไข</a>
               <button
@@ -44,6 +47,7 @@
                   ▶ เปิดอีกครั้ง
                 }
               </button>
+              <button type="button" class="danger danger--pill" (click)="askDelete(service)">ลบ</button>
             </div>
           </article>
         } @empty {
@@ -67,5 +71,19 @@
     }
   </section>
 
+  <app-confirm-modal
+    [open]="deleteTarget() !== null"
+    title="ลบบริการ"
+    [message]="deleteMessage()"
+    confirmLabel="ยืนยันลบ"
+    cancelLabel="กลับ"
+    [busy]="deleting()"
+    busyLabel="กำลังลบ…"
+    (confirm)="confirmDelete()"
+    (cancel)="dismissDelete()"
+  />
+  @if (deleteError()) {
+    <p class="error-text" role="alert">{{ deleteError() }}</p>
+  }
   <app-provider-bottom-nav />
 </app-page-shell>

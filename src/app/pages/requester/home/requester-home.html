@@ -17,6 +17,10 @@
         <b>→</b>
       </a>
 
+      @if (notice()) {
+        <p class="success-text" role="status">{{ notice() }}</p>
+      }
+
       <div class="section-title">
         <h3>งานของฉัน</h3>
       </div>

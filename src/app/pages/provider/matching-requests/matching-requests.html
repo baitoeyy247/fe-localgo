@@ -63,8 +63,10 @@
                     <span class="badge" [ngClass]="statusBadgeClass(request.status)">{{ statusLabel(request.status) }}</span>
                     @if (request.needsAppointmentConfirm) {
                       <em class="badge badge--orange">รอยืนยันนัด</em>
-                    } @else if (isMyActiveJob(request)) {
+                    } @else if (request.isOwnRequest && !excludesOwnRequests()) {
                       <em class="badge badge--green">งานของคุณ</em>
+                    } @else if (isMyActiveJob(request)) {
+                      <em class="badge badge--green">กำลังดำเนินการ</em>
                     } @else if (request.alreadyBidByMe) {
                       <em class="badge badge--blue">คุณส่งราคาแล้ว</em>
                     }
@@ -77,8 +79,8 @@
                 <small>
                   โพสต์ {{ formatWhen(request.createdAt) }}
                   · {{ request.bidCount }} ข้อเสนอ
-                  @if (request.budgetText) {
-                    · {{ request.budgetText }}
+                  @if (showBudget(request)) {
+                    · {{ formatBaht(request.budgetText) }}
                   }
                 </small>
               </div>

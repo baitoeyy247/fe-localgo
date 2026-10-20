@@ -66,15 +66,54 @@ export function isPriceText(value: string): boolean {
   return high != null && low <= high;
 }
 
+export const BID_MESSAGE_MAX = 2000;
+export const REVIEW_COMMENT_MAX = 2000;
+
 export function priceTextError(value: string): string | null {
   const trimmed = value.trim();
   if (!trimmed) {
     return 'กรุณากรอกราคา';
   }
+  const normalized = trimmed.replace(/บาท/g, '').replace(/\s/g, '');
+  if (normalized.includes('.') || normalized.includes(',')) {
+    return 'ราคาต้องเป็นจำนวนเต็ม';
+  }
+  const range = normalized.match(/^(\d+)(?:[-–—]|ถึง)(\d+)$/);
+  if (range && Number(range[1]) > Number(range[2])) {
+    return 'ราคาต่ำสุดต้องไม่มากกว่าราคาสูงสุด';
+  }
   if (!isPriceText(trimmed)) {
-    return 'กรุณากรอกจำนวนเต็มหรือช่วงราคา เช่น 40 หรือ 40-80';
+    return 'ราคาต้องเป็นจำนวนเต็มตั้งแต่ 1 ถึง 1,000,000 หรือช่วงราคา เช่น 40 หรือ 40-80';
   }
   return null;
+}
+
+export function bidPriceError(value: string): string | null {
+  const trimmed = value.trim().replace(/บาท/g, '').replace(/\s/g, '');
+  if (!trimmed) {
+    return 'กรุณากรอกราคา';
+  }
+  if (trimmed.includes('.') || trimmed.includes(',')) {
+    return 'ราคาต้องเป็นจำนวนเต็ม';
+  }
+  if (!/^\d+$/.test(trimmed)) {
+    return 'ราคาต้องเป็นจำนวนเต็มตั้งแต่ 1 ถึง 1,000,000';
+  }
+  const amount = Number(trimmed);
+  if (!Number.isSafeInteger(amount) || amount < BUDGET_MIN || amount > BUDGET_MAX) {
+    return 'ราคาต้องเป็นจำนวนเต็มตั้งแต่ 1 ถึง 1,000,000';
+  }
+  return null;
+}
+
+const PLACEHOLDER_PLACES = new Set(['พื้นที่ค้นหาเริ่มต้น', 'จุดให้บริการใหม่']);
+
+export function jobPlaceLabel(value: string | null | undefined, fallback = 'จุดรับงานตามประกาศ'): string {
+  const trimmed = (value ?? '').trim();
+  if (!trimmed || PLACEHOLDER_PLACES.has(trimmed) || trimmed.startsWith('พื้นที่ค้นหาเริ่มต้น')) {
+    return fallback;
+  }
+  return trimmed;
 }
 
 export function formatBaht(priceText: string | null | undefined): string {

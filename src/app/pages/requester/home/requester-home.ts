@@ -63,6 +63,7 @@ import { apiErrorMessage } from '../../../core/api-error.util';
 })
 export class RequesterHomePage implements OnInit {
   protected readonly requests = signal<ServiceRequestSummary[]>([]);
+  protected readonly notice = signal<string | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly cancelTarget = signal<ServiceRequestSummary | null>(null);
@@ -81,6 +82,10 @@ export class RequesterHomePage implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
+    const state = history.state as { notice?: string } | null;
+    if (state?.notice) {
+      this.notice.set(state.notice);
+    }
     try {
       const items = await firstValueFrom(this.api.listMyRequests());
       this.requests.set(items);
@@ -116,12 +121,17 @@ export class RequesterHomePage implements OnInit {
     }
     this.cancelling.set(true);
     this.cancelError.set(null);
+    const previous = this.requests();
+    this.requests.set(
+      previous.map((item) => (item.id === request.id ? { ...item, status: 'Cancelled' } : item)),
+    );
+    this.cancelTarget.set(null);
     try {
       await firstValueFrom(this.api.cancelRequest(request.id));
-      const items = await firstValueFrom(this.api.listMyRequests());
-      this.requests.set(items);
-      this.cancelTarget.set(null);
+      this.requests.set(await firstValueFrom(this.api.listMyRequests()));
     } catch (e) {
+      this.requests.set(previous);
+      this.cancelTarget.set(request);
       this.cancelError.set(apiErrorMessage(e, 'ยกเลิกงานไม่สำเร็จ'));
     } finally {
       this.cancelling.set(false);
