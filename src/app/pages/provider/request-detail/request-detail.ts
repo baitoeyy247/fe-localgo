@@ -13,10 +13,11 @@ import {
 } from '../../../shared/status-labels';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { formatScheduledAt } from '../../../shared/datetime.util';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 
 @Component({
   selector: 'app-provider-request-detail-page',
-  imports: [PageShell, RouterLink, ProviderBottomNav],
+  imports: [PageShell, RouterLink, ProviderBottomNav, LoadingSkeleton],
   templateUrl: './request-detail.html',
 })
 export class ProviderRequestDetailPage implements OnInit {

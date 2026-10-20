@@ -2,7 +2,7 @@
   <app-provider-setup-bar active="coverage" />
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else if (!provider()) {
       <div class="empty-state">
         <h3>ยังไม่มีโปรไฟล์</h3>
@@ -72,7 +72,13 @@
           </label>
           <p class="muted-label">พิกัด {{ editingLat().toFixed(5) }}, {{ editingLng().toFixed(5) }}</p>
           <button type="button" class="secondary secondary--pill" (click)="openPicker()">เลือกบนแผนที่</button>
-          <button type="button" class="primary" [disabled]="saving()" (click)="saveBranch()">
+          <button
+            type="button"
+            class="primary"
+            [disabled]="saving()"
+            (pointerdown)="beginSave($event)"
+            (click)="beginSave($event)"
+          >
             {{ saving() ? 'กำลังบันทึก…' : isEditingExisting() ? 'บันทึกการแก้ไข' : 'เพิ่มจุดนี้' }}
           </button>
         </div>

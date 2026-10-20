@@ -5,12 +5,14 @@ import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { apiErrorMessage } from '../../../core/api-error.util';
+import { priceTextError } from '../../../shared/form-rules';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { Category, ProviderDetail, ProviderService } from '../../../core/models';
 
 @Component({
   selector: 'app-edit-service-page',
-  imports: [PageShell, RouterLink, ProviderBottomNav],
+  imports: [PageShell, RouterLink, ProviderBottomNav, LoadingSkeleton],
   templateUrl: './edit-service.html',
 })
 export class EditServicePage implements OnInit {
@@ -25,6 +27,7 @@ export class EditServicePage implements OnInit {
   protected readonly saving = signal(false);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+  protected readonly priceError = signal<string | null>(null);
 
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(LocalGoApiService);
@@ -82,11 +85,25 @@ export class EditServicePage implements OnInit {
     return this.selectedBranchIds().has(branchId);
   }
 
+  protected pressSave(event: Event): void {
+    if (this.saving()) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    this.saving.set(true);
+    void this.save();
+  }
+
   protected async save(): Promise<void> {
     const p = this.provider();
     const svc = this.service();
     const categoryId = this.selectedCategoryId();
-    if (!p || !svc || !categoryId || !this.title().trim() || this.saving()) {
+    const priceError = priceTextError(this.basePriceText());
+    this.priceError.set(priceError);
+    if (!p || !svc || !categoryId || !this.title().trim() || priceError) {
+      this.error.set(!this.title().trim() ? 'กรุณากรอกชื่อบริการ' : null);
+      this.saving.set(false);
       return;
     }
     this.saving.set(true);

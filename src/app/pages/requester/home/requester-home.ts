@@ -9,10 +9,11 @@ import { ServiceRequestSummary } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import { requestStatusLabel, requestStatusBadgeClass } from '../../../shared/status-labels';
 import { AuthService } from '../../../core/auth.service';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 
 @Component({
   selector: 'app-requester-home-page',
-  imports: [PageShell, RouterLink, RequesterBottomNav, NgClass],
+  imports: [PageShell, RouterLink, RequesterBottomNav, NgClass, LoadingSkeleton],
   templateUrl: './requester-home.html',
 })
 export class RequesterHomePage implements OnInit {
@@ -56,8 +57,13 @@ export class RequesterHomePage implements OnInit {
 
   protected async openRequest(request: ServiceRequestSummary): Promise<void> {
     this.session.currentRequestId = request.id;
-    // Ensure requester journey stays in requester role before routing.
     await this.auth.setActiveRole('Requester');
+    if (request.status === 'Cancelled') {
+      await this.router.navigate(['/requester/bids'], {
+        queryParams: { requestId: request.id },
+      });
+      return;
+    }
     if (request.status === 'Completed') {
       await this.router.navigate(['/requester/review'], {
         queryParams: { requestId: request.id },
@@ -77,6 +83,9 @@ export class RequesterHomePage implements OnInit {
   }
 
   protected continueLabel(status: string): string {
+    if (status === 'Cancelled') {
+      return 'ดูรายละเอียด';
+    }
     if (status === 'Completed') {
       return 'ให้คะแนนและรีวิว';
     }
@@ -84,6 +93,17 @@ export class RequesterHomePage implements OnInit {
       return 'ดูสถานะงาน';
     }
     return 'ดำเนินงานต่อ';
+  }
+
+  protected formatWhen(iso: string): string {
+    try {
+      return new Date(iso).toLocaleString('th-TH', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      });
+    } catch {
+      return iso;
+    }
   }
 
   protected async switchToProvider(): Promise<void> {

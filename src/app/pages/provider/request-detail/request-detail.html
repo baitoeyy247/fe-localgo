@@ -1,7 +1,7 @@
 <app-page-shell title="รายละเอียดงาน" subtitle="ข้อมูลจาก API" [backLink]="'/provider/requests'">
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else if (error()) {
       <p class="error-text">{{ error() }}</p>
       <a routerLink="/provider/requests">กลับ</a>

@@ -6,12 +6,14 @@ import { PageShell } from '../../../demo/page-shell';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderDetail } from '../../../core/models';
 import { PROVIDER_TYPE_OPTIONS } from '../../../shared/status-labels';
+import { thaiMobileError } from '../../../shared/form-rules';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 import { ProviderSetupBar } from '../../../shared/provider-setup-bar';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 
 @Component({
   selector: 'app-provider-profile-setup-page',
-  imports: [PageShell, ProviderSetupBar, ProviderBottomNav],
+  imports: [PageShell, ProviderSetupBar, ProviderBottomNav, LoadingSkeleton],
   templateUrl: './provider-profile.html',
 })
 export class ProviderProfileSetupPage implements OnInit {
@@ -23,6 +25,8 @@ export class ProviderProfileSetupPage implements OnInit {
   protected readonly description = signal('');
   protected readonly contactLineId = signal('');
   protected readonly contactPhone = signal('');
+  protected readonly phoneError = signal<string | null>(null);
+  protected readonly nameError = signal<string | null>(null);
   protected readonly typeOptions = PROVIDER_TYPE_OPTIONS;
   private readonly api = inject(LocalGoApiService);
   private readonly router = inject(Router);
@@ -51,6 +55,7 @@ export class ProviderProfileSetupPage implements OnInit {
 
   protected updateName(value: string): void {
     this.name.set(value);
+    this.nameError.set(null);
   }
 
   protected updateDescription(value: string): void {
@@ -63,13 +68,27 @@ export class ProviderProfileSetupPage implements OnInit {
 
   protected updateContactPhone(value: string): void {
     this.contactPhone.set(value);
+    this.phoneError.set(thaiMobileError(value));
   }
 
-  protected async saveAndContinue(): Promise<void> {
-    if (this.saving() || !this.name().trim()) {
+  protected pressSave(event: Event): void {
+    if (this.saving()) {
+      event.preventDefault();
+      event.stopPropagation();
       return;
     }
     this.saving.set(true);
+    void this.saveAndContinue();
+  }
+
+  protected async saveAndContinue(): Promise<void> {
+    const phoneError = thaiMobileError(this.contactPhone());
+    this.phoneError.set(phoneError);
+    this.nameError.set(this.name().trim() ? null : 'กรุณากรอกชื่อที่แสดง');
+    if (phoneError || !this.name().trim()) {
+      this.saving.set(false);
+      return;
+    }
     try {
       const existing = this.provider();
       if (existing) {

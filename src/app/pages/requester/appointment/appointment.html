@@ -4,7 +4,7 @@
   }
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else {
       <div class="stack">
         <div class="summary-panel">

@@ -2,7 +2,7 @@
   <app-provider-setup-bar active="service" />
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else if (!provider()) {
       <div class="empty-state">
         <h3>สร้างโปรไฟล์ก่อน</h3>
@@ -12,23 +12,44 @@
       <div class="stack">
         <label class="form-field">
           <span>หมวดหมู่</span>
-          <select aria-label="หมวดหมู่" (change)="selectCategory($any($event.target).value)">
+          <select
+            aria-label="หมวดหมู่"
+            [value]="selectedCategoryId() ?? ''"
+            (change)="selectCategory($any($event.target).value)"
+          >
+            <option value="">เลือกหมวดหมู่</option>
             @for (cat of categories(); track cat.id) {
-              <option [value]="cat.id" [selected]="selectedCategoryId() === cat.id">{{ cat.name }}</option>
+              <option [value]="cat.id">{{ cat.name }}</option>
             }
           </select>
+          @if (fieldErrors().category) {
+            <p class="field-error">{{ fieldErrors().category }}</p>
+          }
         </label>
         <label class="form-field">
           <span>ชื่อบริการ</span>
           <input placeholder="เช่น ซักอบรีด รับส่งถึงที่" (input)="updateTitle($any($event.target).value)" />
+          @if (fieldErrors().title) {
+            <p class="field-error">{{ fieldErrors().title }}</p>
+          }
         </label>
         <label class="form-area">
           <span>รายละเอียด</span>
           <textarea rows="3" (input)="updateDescription($any($event.target).value)"></textarea>
+          @if (fieldErrors().description) {
+            <p class="field-error">{{ fieldErrors().description }}</p>
+          }
         </label>
         <label class="form-field">
           <span>ราคาเริ่มต้น</span>
-          <input placeholder="เช่น เริ่ม 40 บาท / กก." (input)="updateBasePrice($any($event.target).value)" />
+          <input
+            inputmode="decimal"
+            placeholder="เช่น 40 หรือ 40-80"
+            (input)="updateBasePrice($any($event.target).value)"
+          />
+          @if (fieldErrors().price) {
+            <p class="field-error">{{ fieldErrors().price }}</p>
+          }
         </label>
 
         <div class="section-title">
@@ -50,8 +71,17 @@
         } @empty {
           <p class="muted-label">เพิ่มจุดให้บริการในขั้นตอนพื้นที่ก่อน</p>
         }
+        @if (fieldErrors().branch) {
+          <p class="field-error">{{ fieldErrors().branch }}</p>
+        }
 
-        <button class="primary" type="button" [disabled]="saving()" (click)="saveAndContinue()">
+        <button
+          class="primary"
+          type="button"
+          [disabled]="saving()"
+          (pointerdown)="pressSave($event)"
+          (click)="pressSave($event)"
+        >
           {{ saving() ? 'กำลังบันทึก…' : 'บันทึกและจัดการบริการ' }}
         </button>
       </div>

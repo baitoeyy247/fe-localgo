@@ -10,19 +10,36 @@
     <div class="stack">
       <label class="form-field form-field--modern">
         <span>หมวดหมู่</span>
-        <select aria-label="หมวดหมู่" (change)="selectCategory($any($event.target).value)">
-          @for (cat of categories(); track cat.id) {
-            <option [value]="cat.id" [selected]="selectedCategoryId() === cat.id">{{ cat.name }}</option>
-          }
-        </select>
+        @if (categoriesError()) {
+          <p class="error-text">{{ categoriesError() }}</p>
+          <button class="secondary" type="button" (click)="retryCategories()">ลองใหม่</button>
+        } @else {
+          <select
+            aria-label="หมวดหมู่"
+            [value]="selectedCategoryId() ?? ''"
+            (change)="selectCategory($any($event.target).value)"
+          >
+            <option value="">เลือกหมวดหมู่</option>
+            @for (cat of categories(); track cat.id) {
+              <option [value]="cat.id">{{ cat.name }}</option>
+            }
+          </select>
+        }
+        @if (fieldErrors().category) {
+          <p class="field-error">{{ fieldErrors().category }}</p>
+        }
       </label>
       <label class="form-field form-field--modern">
         <span>หัวข้องาน</span>
         <input
           aria-label="หัวข้องาน"
           placeholder="เช่น ต้องการซักผ้าด่วน 5 กก."
+          [value]="title()"
           (input)="updateTitle($any($event.target).value)"
         />
+        @if (fieldErrors().title) {
+          <p class="field-error">{{ fieldErrors().title }}</p>
+        }
       </label>
       <label class="form-area form-area--modern">
         <span>รายละเอียด</span>
@@ -30,8 +47,12 @@
           rows="3"
           aria-label="รายละเอียด"
           placeholder="ระบุสถานที่ รอบเวลา และเงื่อนไขที่ต้องการ"
+          [value]="description()"
           (input)="updateDescription($any($event.target).value)"
         ></textarea>
+        @if (fieldErrors().description) {
+          <p class="field-error">{{ fieldErrors().description }}</p>
+        }
       </label>
 
       <section class="summary-panel summary-panel--interactive">
@@ -41,22 +62,49 @@
           <p>{{ requestLocation().subtitle }}</p>
           <div class="chips">
             <span>รัศมี {{ requestLocation().radiusKm }} กม.</span>
-            <span>{{ requestLocation().lat.toFixed(4) }}, {{ requestLocation().lng.toFixed(4) }}</span>
+            <span>{{ coordinateText() }}</span>
           </div>
         </div>
         <button type="button" class="secondary secondary--pill" (click)="openPicker()">
           เลือกตำแหน่ง
         </button>
+        @if (fieldErrors().location) {
+          <p class="field-error">{{ fieldErrors().location }}</p>
+        }
       </section>
 
-      <label class="form-field form-field--modern">
-        <span>งบประมาณ</span>
+      <fieldset class="form-field form-field--modern">
+        <legend>งบประมาณ</legend>
+        <label class="budget-choice">
+          <input
+            type="radio"
+            name="budget-mode"
+            [checked]="budgetMode() === 'open'"
+            (change)="setBudgetMode('open')"
+          />
+          <span>{{ openBudgetLabel }}</span>
+        </label>
+        <label class="budget-choice">
+          <input
+            type="radio"
+            name="budget-mode"
+            [checked]="budgetMode() === 'amount'"
+            (change)="setBudgetMode('amount')"
+          />
+          <span>ระบุจำนวน</span>
+        </label>
         <input
           aria-label="งบประมาณ"
-          [value]="budgetText()"
-          (input)="updateBudget($any($event.target).value)"
+          inputmode="numeric"
+          placeholder="เช่น 500"
+          [value]="budgetAmount()"
+          [disabled]="budgetMode() !== 'amount'"
+          (input)="updateBudgetAmount($any($event.target).value)"
         />
-      </label>
+        @if (fieldErrors().budget) {
+          <p class="field-error">{{ fieldErrors().budget }}</p>
+        }
+      </fieldset>
 
       <div class="glass-card">
         <span class="muted-label">สิ่งที่จะเกิดขึ้นหลังโพสต์</span>
@@ -64,11 +112,16 @@
         <p>คุณจะเห็น bid ทั้งหมดในหน้าเดียว และเลือกข้อเสนอได้เฉพาะคนที่ประกาศงานนี้</p>
       </div>
 
+      @if (submitError()) {
+        <p class="error-text">{{ submitError() }}</p>
+      }
+
       <button
         class="primary"
         type="button"
-        [disabled]="posting() || !title().trim()"
-        (click)="publish()"
+        [disabled]="posting()"
+        (pointerdown)="pressPublish($event)"
+        (click)="pressPublish($event)"
       >
         {{ posting() ? 'กำลังประกาศ…' : 'ประกาศงาน' }}
       </button>

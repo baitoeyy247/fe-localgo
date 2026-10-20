@@ -4,10 +4,11 @@ import { PageShell } from '../../../demo/page-shell';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { AdminDashboard, AdminNotificationRow, AdminUserRow } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 
 @Component({
   selector: 'app-admin-dashboard-page',
-  imports: [PageShell],
+  imports: [PageShell, LoadingSkeleton],
   templateUrl: './admin-dashboard.html',
 })
 export class AdminDashboardPage implements OnInit {

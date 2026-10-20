@@ -12,10 +12,11 @@ import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderBranch, ProviderDetail } from '../../../core/models';
 import { UserLocationService } from '../../../core/user-location.service';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 
 @Component({
   selector: 'app-coverage-page',
-  imports: [PageShell, RouterLink, LocationPickerModal, ProviderSetupBar, ProviderBottomNav],
+  imports: [PageShell, RouterLink, LocationPickerModal, ProviderSetupBar, ProviderBottomNav, LoadingSkeleton],
   templateUrl: './coverage.html',
 })
 export class CoveragePage implements OnInit {
@@ -77,11 +78,22 @@ export class CoveragePage implements OnInit {
     this.error.set(null);
   }
 
+  protected beginSave(event: Event): void {
+    if (this.saving()) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    this.saving.set(true);
+    void this.saveBranch();
+  }
+
   protected async saveBranch(): Promise<void> {
     const p = this.provider();
     const name = this.editingName().trim();
-    if (!p || !name || this.saving()) {
+    if (!p || !name) {
       this.error.set('กรุณาระบุชื่อจุดให้บริการ');
+      this.saving.set(false);
       return;
     }
     this.saving.set(true);

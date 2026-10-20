@@ -22,7 +22,7 @@
       </div>
 
       @if (loading()) {
-        <p class="state-message">กำลังโหลด…</p>
+        <app-loading-skeleton />
       } @else if (error()) {
         <p class="error-text">{{ error() }}</p>
       } @else {
@@ -37,6 +37,7 @@
                 @if (request.categoryName) { {{ request.categoryName }} · }
                 {{ request.bidCount }} ข้อเสนอ
               </span>
+              <small>สร้างเมื่อ {{ formatWhen(request.createdAt) }}</small>
             </div>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               <button
@@ -48,8 +49,7 @@
               @if (canCancel(request.status)) {
                 <button
                   type="button"
-                  class="danger"
-                  style="padding: 0.55rem 1.15rem; width: auto; min-height: auto;"
+                  class="danger danger--pill"
                   (click)="cancelRequest(request, $event)"
                 >
                   ยกเลิกงาน

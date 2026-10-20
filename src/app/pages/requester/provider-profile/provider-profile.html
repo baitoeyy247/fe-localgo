@@ -1,7 +1,7 @@
 <app-page-shell [title]="pageTitle()" backLink="/requester/search">
   <section class="screen">
     @if (loading()) {
-      <p>กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else if (provider(); as p) {
       <div class="stack">
         <a class="ghost-link" routerLink="/requester/search">← กลับไปค้นหา</a>

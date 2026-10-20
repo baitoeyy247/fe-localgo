@@ -1,7 +1,7 @@
 <app-page-shell title="จองบริการ" [backLink]="profileBackLink()">
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else if (provider(); as p) {
       <div class="stack">
         <div class="hero-panel hero-panel--compact">

@@ -7,10 +7,11 @@ import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ServiceRequestDetail } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 
 @Component({
   selector: 'app-submit-bid-page',
-  imports: [PageShell, RouterLink],
+  imports: [PageShell, RouterLink, LoadingSkeleton],
   templateUrl: './submit-bid.html',
 })
 export class SubmitBidPage implements OnInit {

@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 import {
   LocationPickerModal,
   LocationPickerValue,
@@ -24,7 +25,7 @@ import { redirectProviderFromRequesterRoute } from '../../../shared/requester-de
 
 @Component({
   selector: 'app-appointment-page',
-  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, LocationPickerModal],
+  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, LocationPickerModal, LoadingSkeleton],
   templateUrl: './appointment.html',
 })
 export class AppointmentPage implements OnInit {

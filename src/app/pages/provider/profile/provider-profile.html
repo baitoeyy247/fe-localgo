@@ -2,7 +2,7 @@
   <app-provider-setup-bar active="profile" />
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else {
       <div class="stack">
         <label class="form-field">
@@ -20,6 +20,9 @@
             aria-label="ชื่อบริการ"
             (input)="updateName($any($event.target).value)"
           />
+          @if (nameError()) {
+            <p class="field-error">{{ nameError() }}</p>
+          }
         </label>
         <label class="form-area">
           <span>รายละเอียด</span>
@@ -44,10 +47,21 @@
           <input
             [value]="contactPhone()"
             aria-label="เบอร์โทร"
+            inputmode="tel"
+            placeholder="06xxxxxxxx"
             (input)="updateContactPhone($any($event.target).value)"
           />
+          @if (phoneError()) {
+            <p class="field-error">{{ phoneError() }}</p>
+          }
         </label>
-        <button class="primary" type="button" [disabled]="saving() || !name().trim()" (click)="saveAndContinue()">
+        <button
+          class="primary"
+          type="button"
+          [disabled]="saving()"
+          (pointerdown)="pressSave($event)"
+          (click)="pressSave($event)"
+        >
           {{ saving() ? 'กำลังบันทึก…' : 'บันทึกและตั้งพื้นที่' }}
         </button>
       </div>

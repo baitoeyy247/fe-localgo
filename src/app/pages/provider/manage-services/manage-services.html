@@ -1,7 +1,7 @@
 <app-page-shell title="บริการของฉัน" backLink="/provider">
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else if (provider(); as p) {
       <div class="stack">
         <div class="summary-panel">
@@ -32,9 +32,17 @@
               <button
                 type="button"
                 class="secondary"
-                (click)="toggleService(service.id, !service.isActive)"
+                [disabled]="togglingId() === service.id"
+                (pointerdown)="pressToggle(service.id, !service.isActive, $event)"
+                (click)="pressToggle(service.id, !service.isActive, $event)"
               >
-                {{ service.isActive ? '⏸ หยุดชั่วคราว' : '▶ เปิดอีกครั้ง' }}
+                @if (togglingId() === service.id) {
+                  กำลังบันทึก…
+                } @else if (service.isActive) {
+                  ⏸ หยุดชั่วคราว
+                } @else {
+                  ▶ เปิดอีกครั้ง
+                }
               </button>
             </div>
           </article>

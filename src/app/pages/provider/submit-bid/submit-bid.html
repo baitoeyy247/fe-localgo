@@ -1,7 +1,7 @@
 <app-page-shell title="เสนอราคา" [backLink]="backLink()">
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else if (request(); as r) {
       <div class="stack">
         @if (error()) {

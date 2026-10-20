@@ -1,7 +1,7 @@
 <app-page-shell title="แก้ไขบริการ" backLink="/provider/manage">
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else if (!service()) {
       <p class="state-message">ไม่พบบริการ</p>
       <a routerLink="/provider/manage">กลับ</a>
@@ -28,7 +28,14 @@
         </label>
         <label class="form-field">
           <span>ราคาเริ่มต้น</span>
-          <input [value]="basePriceText()" (input)="basePriceText.set($any($event.target).value)" />
+          <input
+            inputmode="decimal"
+            [value]="basePriceText()"
+            (input)="basePriceText.set($any($event.target).value)"
+          />
+          @if (priceError()) {
+            <p class="field-error">{{ priceError() }}</p>
+          }
         </label>
         @for (branch of provider()!.branches; track branch.id) {
           @if (branch.isActive) {
@@ -45,7 +52,13 @@
             </label>
           }
         }
-        <button type="button" class="primary" [disabled]="saving()" (click)="save()">
+        <button
+          type="button"
+          class="primary"
+          [disabled]="saving()"
+          (pointerdown)="pressSave($event)"
+          (click)="pressSave($event)"
+        >
           {{ saving() ? 'กำลังบันทึก…' : 'บันทึกการแก้ไข' }}
         </button>
       </div>

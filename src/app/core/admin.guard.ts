@@ -5,10 +5,13 @@ import { AuthService } from './auth.service';
 export const adminGuard: CanActivateFn = async () => {
   const auth = inject(AuthService);
   const router = inject(Router);
-  await auth.ensureSession();
+  try {
+    await auth.ensureSession();
+  } catch {
+    return router.createUrlTree(['/'], { queryParams: { denied: 'admin' } });
+  }
   if (auth.isAdmin()) {
     return true;
   }
-  router.navigateByUrl('/');
-  return false;
+  return router.createUrlTree(['/'], { queryParams: { denied: 'admin' } });
 };

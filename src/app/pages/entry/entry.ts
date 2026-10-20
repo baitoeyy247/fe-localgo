@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { MapView } from '../../demo/map-view';
 import { PageShell } from '../../demo/page-shell';
@@ -7,10 +7,11 @@ import { AuthService } from '../../core/auth.service';
 import { LocalGoApiService } from '../../core/localgo-api.service';
 import { Category } from '../../core/models';
 import { environment } from '../../../environments/environment';
+import { LoadingSkeleton } from '../../shared/loading-skeleton';
 
 @Component({
   selector: 'app-entry-page',
-  imports: [PageShell, MapView],
+  imports: [PageShell, MapView, LoadingSkeleton],
   templateUrl: './entry.html',
 })
 export class EntryPage implements OnInit {
@@ -18,18 +19,37 @@ export class EntryPage implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly categories = signal<Category[]>([]);
   protected readonly lineHint = signal<string | null>(null);
+  protected readonly adminDenied = signal(false);
+  protected readonly pressedId = signal<string | null>(null);
   protected readonly allowDevLogin = environment.allowDevLogin;
   protected readonly auth = inject(AuthService);
   private readonly api = inject(LocalGoApiService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private navigationLock = false;
   private static readonly DEFAULT_AUTH_ERROR = 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
 
   protected liffEntryUrl(): string {
     return this.auth.liffEntryUrl();
   }
 
+  constructor() {
+    this.route.queryParamMap.subscribe((params) => {
+      this.adminDenied.set(params.get('denied') === 'admin');
+    });
+  }
+
   async ngOnInit(): Promise<void> {
     await this.bootstrapEntry();
+  }
+
+  protected armPress(id: string, event: Event): void {
+    if (this.navigationLock) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    this.pressedId.set(id);
   }
 
   protected async retryLogin(): Promise<void> {
@@ -124,12 +144,27 @@ export class EntryPage implements OnInit {
   }
 
   protected async enterAs(role: 'Requester' | 'Provider'): Promise<void> {
-    await this.auth.setActiveRole(role);
-    await this.router.navigateByUrl(role === 'Requester' ? '/requester' : '/provider');
+    if (this.navigationLock) {
+      return;
+    }
+    this.navigationLock = true;
+    this.pressedId.set(role);
+    try {
+      await this.auth.setActiveRole(role);
+      await this.router.navigateByUrl(role === 'Requester' ? '/requester' : '/provider');
+    } catch (e) {
+      this.navigationLock = false;
+      this.pressedId.set(null);
+      this.error.set(e instanceof Error ? e.message : 'เปิดหน้าไม่สำเร็จ');
+    }
   }
 
   protected async enterAdmin(): Promise<void> {
-    await this.auth.loginAsAdmin();
+    if (!this.auth.isAdmin() || this.navigationLock) {
+      await this.router.navigate(['/'], { queryParams: { denied: 'admin' } });
+      return;
+    }
+    this.navigationLock = true;
     await this.router.navigateByUrl('/admin');
   }
 
@@ -146,8 +181,21 @@ export class EntryPage implements OnInit {
   }
 
   protected async searchCategory(cat: Category): Promise<void> {
-    await this.auth.setActiveRole('Requester');
-    await this.router.navigate(['/requester/search'], { queryParams: { categoryId: cat.id, categoryName: cat.name } });
+    if (this.navigationLock) {
+      return;
+    }
+    this.navigationLock = true;
+    this.pressedId.set(cat.id);
+    try {
+      await this.auth.setActiveRole('Requester');
+      await this.router.navigate(['/requester/search'], {
+        queryParams: { categoryId: cat.id, categoryName: cat.name },
+      });
+    } catch (e) {
+      this.navigationLock = false;
+      this.pressedId.set(null);
+      this.error.set(e instanceof Error ? e.message : 'เปิดหน้าค้นหาไม่สำเร็จ');
+    }
   }
 
   private toAuthErrorMessage(error: unknown): string {

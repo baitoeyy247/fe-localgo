@@ -2,12 +2,12 @@
   <section class="screen">
     <div class="stack">
       <div class="section-title">
-        <h3>รายการงาน ({{ matchingRequests().length }})</h3>
+        <h3>รายการงาน@if (!loading()) { ({{ matchingRequests().length }}) }</h3>
         <button type="button" (click)="reload()" [disabled]="loading()">รีเฟรช</button>
       </div>
 
       @if (loading()) {
-        <p class="state-message">กำลังโหลดจาก API…</p>
+        <app-loading-skeleton />
       } @else if (error()) {
         <div class="empty-state">
           <h3>โหลดไม่สำเร็จ</h3>

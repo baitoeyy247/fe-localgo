@@ -100,6 +100,7 @@ export interface LocationPickerValue {
                 <span class="badge">ตำแหน่งที่กำลังเลือก</span>
                 <strong>{{ placeTitle() }}</strong>
                 <p>{{ placeSubtitle() }}</p>
+                <p>{{ radiusText() }}</p>
               </div>
               <div class="stat-row">
                 <article>
@@ -228,7 +229,7 @@ export class LocationPickerModal {
       lat: this.draftLat(),
       lng: this.draftLng(),
       title: this.placeTitle(),
-      subtitle: `${this.placeSubtitle()} · ${this.radiusText()}`,
+      subtitle: this.placeSubtitle(),
       radiusKm: this.draftRadiusKm(),
     });
   }
@@ -238,7 +239,8 @@ export class LocationPickerModal {
     this.draftLng.set(lng);
     const short = displayName.split(',').slice(0, 2).join(',').trim() || displayName;
     this.placeTitle.set(short);
-    this.placeSubtitle.set(this.radiusText());
+    this.placeSubtitle.set(displayName);
+    this.draftSearchQuery.set(short);
     this.mapRef?.flyTo(lat, lng, 16);
     setTimeout(() => this.mapRef?.refreshSize(), 400);
   }
@@ -248,7 +250,8 @@ export class LocationPickerModal {
       const label = await this.geo.reverseGeocode({ lat, lng });
       const short = label.split(',').slice(0, 2).join(',').trim() || label;
       this.placeTitle.set(short);
-      this.placeSubtitle.set(this.radiusText());
+      this.placeSubtitle.set(label);
+      this.draftSearchQuery.set(short);
     } catch {
       this.placeTitle.set('พิกัดที่เลือก');
       this.placeSubtitle.set(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);

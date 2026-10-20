@@ -5,6 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderDetail, ServiceRequestSummary } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
@@ -15,7 +16,7 @@ type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
 
 @Component({
   selector: 'app-matching-requests-page',
-  imports: [PageShell, RouterLink, ProviderBottomNav, NgClass],
+  imports: [PageShell, RouterLink, ProviderBottomNav, NgClass, LoadingSkeleton],
   templateUrl: './matching-requests.html',
   styles: [
     `
@@ -59,6 +60,7 @@ export class MatchingRequestsPage implements OnInit {
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+  private loadAttempt = 0;
   protected readonly setupIssue = signal<SetupIssue | null>(null);
   protected readonly pendingConfirmCount = signal(0);
   protected readonly statusLabel = requestStatusLabel;
@@ -75,14 +77,25 @@ export class MatchingRequestsPage implements OnInit {
   }
 
   protected async reload(): Promise<void> {
+    const attempt = ++this.loadAttempt;
     this.loading.set(true);
     this.error.set(null);
     this.setupIssue.set(null);
     this.pendingConfirmCount.set(0);
+    const timer = setTimeout(() => {
+      if (attempt !== this.loadAttempt) {
+        return;
+      }
+      this.error.set('ใช้เวลานานเกินไป ลองใหม่อีกครั้ง');
+      this.loading.set(false);
+    }, 10_000);
     try {
       const mine = await firstValueFrom(this.api.getMyProvider());
-      this.provider.set(mine);
       const items = await firstValueFrom(this.api.listMatchingRequests(true));
+      if (attempt !== this.loadAttempt || this.error()) {
+        return;
+      }
+      this.provider.set(mine);
       this.matchingRequests.set(items);
 
       this.pendingConfirmCount.set(items.filter((r) => r.needsAppointmentConfirm).length);
@@ -97,16 +110,26 @@ export class MatchingRequestsPage implements OnInit {
         }
       }
     } catch (e) {
+      if (attempt !== this.loadAttempt || this.error()) {
+        return;
+      }
       if (e instanceof HttpErrorResponse && e.status === 404) {
         this.setupIssue.set('no-profile');
         this.provider.set(null);
         this.matchingRequests.set([]);
       } else {
-        this.error.set(apiErrorMessage(e, 'โหลดรายการงานไม่สำเร็จ'));
+        this.error.set(this.safeError(apiErrorMessage(e, 'โหลดรายการงานไม่สำเร็จ')));
       }
     } finally {
-      this.loading.set(false);
+      clearTimeout(timer);
+      if (attempt === this.loadAttempt && !this.error()) {
+        this.loading.set(false);
+      }
     }
+  }
+
+  private safeError(message: string): string {
+    return /api/i.test(message) ? 'โหลดรายการงานไม่สำเร็จ' : message;
   }
 
   protected setupMessage(): string {

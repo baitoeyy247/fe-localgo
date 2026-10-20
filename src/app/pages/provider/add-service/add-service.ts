@@ -7,10 +7,12 @@ import { ProviderSetupBar } from '../../../shared/provider-setup-bar';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { Category, ProviderDetail } from '../../../core/models';
+import { priceTextError } from '../../../shared/form-rules';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 
 @Component({
   selector: 'app-add-service-page',
-  imports: [PageShell, RouterLink, ProviderSetupBar, ProviderBottomNav],
+  imports: [PageShell, RouterLink, ProviderSetupBar, ProviderBottomNav, LoadingSkeleton],
   templateUrl: './add-service.html',
 })
 export class AddServicePage implements OnInit {
@@ -23,6 +25,7 @@ export class AddServicePage implements OnInit {
   protected readonly selectedBranchIds = signal<Set<string>>(new Set());
   protected readonly saving = signal(false);
   protected readonly loading = signal(true);
+  protected readonly fieldErrors = signal<Partial<Record<'category' | 'title' | 'description' | 'price' | 'branch', string>>>({});
 
   constructor(
     private readonly api: LocalGoApiService,
@@ -30,10 +33,11 @@ export class AddServicePage implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    const cats = await firstValueFrom(this.api.listCategories());
-    this.categories.set(cats);
-    if (cats[0]) {
-      this.selectedCategoryId.set(cats[0].id);
+    try {
+      const cats = await firstValueFrom(this.api.listCategories());
+      this.categories.set(cats);
+    } catch {
+      this.categories.set([]);
     }
     try {
       const mine = await firstValueFrom(this.api.getMyProvider());
@@ -79,13 +83,29 @@ export class AddServicePage implements OnInit {
     this.basePriceText.set(value);
   }
 
-  protected async saveAndContinue(): Promise<void> {
-    const p = this.provider();
-    const categoryId = this.selectedCategoryId();
-    if (!p || !categoryId || !this.title().trim() || this.saving()) {
+  protected pressSave(event: Event): void {
+    if (this.saving()) {
+      event.preventDefault();
+      event.stopPropagation();
       return;
     }
     this.saving.set(true);
+    void this.saveAndContinue();
+  }
+
+  protected async saveAndContinue(): Promise<void> {
+    const errors = this.validate();
+    this.fieldErrors.set(errors);
+    const p = this.provider();
+    if (!p || Object.keys(errors).length > 0) {
+      this.saving.set(false);
+      return;
+    }
+    const categoryId = this.selectedCategoryId();
+    if (!categoryId) {
+      this.saving.set(false);
+      return;
+    }
     try {
       const branchIds = [...this.selectedBranchIds()];
       const service = await firstValueFrom(
@@ -104,5 +124,27 @@ export class AddServicePage implements OnInit {
     } finally {
       this.saving.set(false);
     }
+  }
+
+  private validate(): Partial<Record<'category' | 'title' | 'description' | 'price' | 'branch', string>> {
+    const errors: Partial<Record<'category' | 'title' | 'description' | 'price' | 'branch', string>> = {};
+    if (!this.selectedCategoryId()) {
+      errors.category = 'กรุณาเลือกหมวดหมู่';
+    }
+    if (!this.title().trim()) {
+      errors.title = 'กรุณากรอกชื่อบริการ';
+    }
+    if (!this.description().trim()) {
+      errors.description = 'กรุณากรอกรายละเอียด';
+    }
+    const priceError = priceTextError(this.basePriceText());
+    if (priceError) {
+      errors.price = priceError;
+    }
+    const branches = this.provider()?.branches ?? [];
+    if (branches.length > 0 && this.selectedBranchIds().size === 0) {
+      errors.branch = 'กรุณาเลือกจุดให้บริการ';
+    }
+    return errors;
   }
 }

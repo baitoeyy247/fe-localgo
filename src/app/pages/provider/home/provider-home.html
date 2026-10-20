@@ -1,7 +1,7 @@
 <app-page-shell title="ผู้ให้บริการ" [showBack]="true" backLink="/" backLabel="สลับบทบาท">
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else if (!hasProfile()) {
       <div class="hero-panel">
         <span class="badge badge--blue">เริ่มต้น</span>

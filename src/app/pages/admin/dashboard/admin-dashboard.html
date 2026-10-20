@@ -1,7 +1,7 @@
 <app-page-shell title="แอดมิน" [showBack]="true" backLink="/">
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลดจาก API…</p>
+      <app-loading-skeleton />
     } @else if (error()) {
       <p class="error-text">{{ error() }}</p>
     } @else {

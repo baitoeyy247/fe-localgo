@@ -13,10 +13,11 @@ import { SessionStateService } from '../../../core/session-state.service';
 import { UserLocationService } from '../../../core/user-location.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { defaultAppointmentDatetimeLocal } from '../../../shared/datetime.util';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 
 @Component({
   selector: 'app-requester-book-page',
-  imports: [PageShell, LocationPickerModal, RequesterBottomNav],
+  imports: [PageShell, LocationPickerModal, RequesterBottomNav, LoadingSkeleton],
   templateUrl: './book.html',
 })
 export class RequesterBookPage implements OnInit {

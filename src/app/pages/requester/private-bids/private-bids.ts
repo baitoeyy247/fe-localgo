@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 import { RequesterBottomNav } from '../../../shared/requester-bottom-nav';
 import { RequesterFlowBar } from '../../../shared/requester-flow-bar';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
@@ -15,7 +16,7 @@ import { redirectProviderFromRequesterRoute } from '../../../shared/requester-de
 
 @Component({
   selector: 'app-private-bids-page',
-  imports: [PageShell, RequesterBottomNav, RequesterFlowBar],
+  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, LoadingSkeleton],
   templateUrl: './private-bids.html',
 })
 export class PrivateBidsPage implements OnInit {
@@ -109,6 +110,15 @@ export class PrivateBidsPage implements OnInit {
 
   protected isExpired(): boolean {
     return this.request()?.status === 'Expired';
+  }
+
+  protected isReadOnly(): boolean {
+    const status = this.request()?.status;
+    return status === 'Cancelled' || status === 'Expired';
+  }
+
+  protected async retry(): Promise<void> {
+    await this.ngOnInit();
   }
 
   private async load(requestId: string): Promise<void> {
