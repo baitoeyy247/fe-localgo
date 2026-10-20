@@ -6,10 +6,12 @@ import { PageShell } from '../../../demo/page-shell';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderDetail, ProviderService, ReviewItem } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
+import { formatBaht } from '../../../shared/form-rules';
 
 @Component({
   selector: 'app-provider-profile-page',
-  imports: [PageShell, RouterLink, MapView],
+  imports: [PageShell, RouterLink, MapView, LoadingSkeleton],
   templateUrl: './provider-profile.html',
 })
 export class ProviderProfilePage implements OnInit {
@@ -18,6 +20,7 @@ export class ProviderProfilePage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly preferredServiceId = signal<string | null>(null);
   protected readonly showAllServices = signal(false);
+  protected readonly formatBaht = formatBaht;
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);

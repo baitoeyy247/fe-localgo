@@ -4,35 +4,44 @@
   }
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else {
       <div class="stack">
         <div class="summary-panel">
-          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
-            <h3 style="margin: 0;">{{ selectedBid()?.providerName ?? 'ผู้ให้บริการ' }}</h3>
-            @if (request()?.status; as st) {
-              <span class="badge">{{ statusLabel(st) }}</span>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="provider-avatar" aria-hidden="true">{{ initials(providerName()) }}</span>
+              <div>
+                <p class="muted-label" style="margin: 0;">ผู้ให้บริการ</p>
+                <h3 style="margin: 0;">{{ providerName() }}</h3>
+                <p style="margin: 0.2rem 0 0;">{{ request()?.title }}</p>
+              </div>
+            </div>
+            @if (displayStatus(); as st) {
+              <span class="badge">{{ st }}</span>
             }
           </div>
-          <p style="margin-top: 0.35rem;">{{ request()?.title }}</p>
           @if (selectedBid()) {
-            <small>ราคาที่เลือก: {{ selectedBid()!.priceText }}</small>
+            <small>ราคาที่เลือก: {{ formatBaht(selectedBid()!.priceText) }}</small>
           }
         </div>
 
+        @if (isOverdue()) {
+          <div class="access-alert" role="alert">
+            <p style="margin: 0;">เลยเวลานัดแล้ว</p>
+          </div>
+          <div class="action-stack">
+            <button type="button" class="secondary" (click)="startReschedule()">เลื่อนนัด</button>
+            <button type="button" class="secondary" (click)="contactProvider()">ติดต่อผู้ให้บริการ</button>
+          </div>
+        }
+
         @if (hasActiveAppointment()) {
           <div class="summary-panel">
-            <span class="badge badge--green">{{ appointmentStatusLabel(appointment()!.status) }}</span>
             <p><strong>วันและเวลา:</strong> {{ formatScheduledAt(appointment()?.scheduledAt) }}</p>
-            <p><strong>สถานที่:</strong> {{ addressText() || 'ยังไม่ระบุสถานที่' }}</p>
+            <p><strong>สถานที่:</strong> {{ placeLabel(addressText()) }}</p>
             @if (appointment()?.note) {
               <p><strong>หมายเหตุ:</strong> {{ appointment()!.note }}</p>
-            }
-            @if (request()?.status; as jobStatus) {
-              <p><strong>สถานะงาน:</strong> {{ statusLabel(jobStatus) }}</p>
-            }
-            @if (appointmentStatusHint(appointment()?.status); as hint) {
-              <p class="state-hint">{{ hint }}</p>
             }
             <button
               type="button"
@@ -46,7 +55,7 @@
           </div>
         }
 
-        @if (!hasActiveAppointment() && !isReadOnly()) {
+        @if ((!hasActiveAppointment() && !isReadOnly()) || rescheduling()) {
           <label class="form-field">
             <span>วันและเวลา</span>
             <input
@@ -101,28 +110,6 @@
         }
 
         <div class="action-stack">
-          @if (canClearBidSelection()) {
-            <button
-              class="danger"
-              type="button"
-              [disabled]="saving()"
-              (click)="clearBidSelection()"
-            >
-              {{ saving() ? 'กำลังยกเลิก…' : 'ยกเลิกการเลือกข้อเสนอ' }}
-            </button>
-          }
-
-          @if (canCancelAppointment()) {
-            <button
-              class="danger"
-              type="button"
-              [disabled]="saving()"
-              (click)="cancelAppointment()"
-            >
-              {{ saving() ? 'กำลังยกเลิก…' : 'ยกเลิกนัดหมาย' }}
-            </button>
-          }
-
           @if (showReviewAction()) {
             <button
               class="primary"
@@ -134,14 +121,26 @@
             </button>
           }
 
-          @if (!hasActiveAppointment() && !isReadOnly()) {
+          @if ((!hasActiveAppointment() && !isReadOnly()) || rescheduling()) {
             <button
               class="primary"
               type="button"
-              [disabled]="!canConfirm"
+              [disabled]="!canConfirm || saving()"
               (click)="confirm()"
             >
-              {{ saving() ? 'กำลังบันทึก…' : 'ยืนยันนัดหมาย' }}
+              {{ saving() ? 'กำลังบันทึก…' : rescheduling() ? 'บันทึกเวลานัดใหม่' : 'ยืนยันนัดหมาย' }}
+            </button>
+          }
+
+          @if (canClearBidSelection()) {
+            <button class="secondary" type="button" [disabled]="saving()" (click)="clearBidSelection()">
+              ยกเลิกการเลือกข้อเสนอ
+            </button>
+          }
+
+          @if (canCancelAppointment()) {
+            <button class="danger" type="button" [disabled]="saving()" (click)="cancelAppointment()">
+              ยกเลิกนัดหมาย
             </button>
           }
         </div>
@@ -159,6 +158,18 @@
     [lng]="mapLng() ?? 100.5018"
     (confirm)="applyPickedLocation($event)"
     (cancel)="closePicker()"
+  />
+
+  <app-confirm-modal
+    [open]="confirmKind() !== null"
+    [title]="confirmKind() === 'appointment' ? 'ยกเลิกนัดหมาย' : 'ยกเลิกการเลือกข้อเสนอ'"
+    [message]="confirmKind() === 'appointment' ? 'นัดหมายนี้จะถูกยกเลิก และคุณสามารถนัดหมายใหม่ได้' : 'ข้อเสนอที่เลือกไว้จะถูกยกเลิก และคุณสามารถกลับไปเลือกข้อเสนอใหม่ได้'"
+    confirmLabel="ยืนยันยกเลิก"
+    cancelLabel="กลับ"
+    [busy]="saving()"
+    busyLabel="กำลังยกเลิก…"
+    (confirm)="acceptConfirm()"
+    (cancel)="dismissConfirm()"
   />
 
   <app-requester-bottom-nav />

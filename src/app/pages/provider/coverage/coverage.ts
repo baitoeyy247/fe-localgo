@@ -12,10 +12,13 @@ import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderBranch, ProviderDetail } from '../../../core/models';
 import { UserLocationService } from '../../../core/user-location.service';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
+import { ConfirmModal } from '../../../shared/confirm-modal';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-coverage-page',
-  imports: [PageShell, RouterLink, LocationPickerModal, ProviderSetupBar, ProviderBottomNav],
+  imports: [PageShell, RouterLink, LocationPickerModal, ProviderSetupBar, ProviderBottomNav, LoadingSkeleton, ConfirmModal],
   templateUrl: './coverage.html',
 })
 export class CoveragePage implements OnInit {
@@ -25,6 +28,7 @@ export class CoveragePage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly message = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
+  protected readonly deactivateTarget = signal<ProviderBranch | null>(null);
 
   protected readonly pickerOpen = signal(false);
   /** null = สร้างจุดใหม่ */
@@ -32,8 +36,8 @@ export class CoveragePage implements OnInit {
   protected readonly editingName = signal('');
   protected readonly editingActive = signal(true);
   protected readonly editingRadiusKm = signal(5);
-  protected readonly editingLat = signal(0);
-  protected readonly editingLng = signal(0);
+  protected readonly editingLat = signal(environment.mapDefaultLat);
+  protected readonly editingLng = signal(environment.mapDefaultLng);
   protected readonly pickerTitle = signal('จุดให้บริการ');
 
   constructor(
@@ -66,22 +70,43 @@ export class CoveragePage implements OnInit {
 
   protected async startNewBranch(): Promise<void> {
     this.editingBranchId.set(null);
-    this.editingName.set('จุดให้บริการใหม่');
     this.editingActive.set(true);
     this.editingRadiusKm.set(5);
+    this.editingLat.set(environment.mapDefaultLat);
+    this.editingLng.set(environment.mapDefaultLng);
+    this.editingName.set('พื้นที่ของฉัน');
+    this.pickerTitle.set('พื้นที่ของฉัน');
     this.message.set('กำลังตั้งจุดใหม่');
+    this.error.set(null);
     const area = await this.userLocation.resolveSearchArea();
+    if (this.editingBranchId()) {
+      return;
+    }
     this.editingLat.set(area.lat);
     this.editingLng.set(area.lng);
-    this.pickerTitle.set(area.title);
-    this.error.set(null);
+    const district = area.title?.trim();
+    if (district && district !== 'พื้นที่ค้นหาเริ่มต้น' && district !== 'จุดให้บริการใหม่') {
+      this.editingName.set(district);
+      this.pickerTitle.set(district);
+    }
+  }
+
+  protected beginSave(event: Event): void {
+    if (this.saving()) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    this.saving.set(true);
+    void this.saveBranch();
   }
 
   protected async saveBranch(): Promise<void> {
     const p = this.provider();
     const name = this.editingName().trim();
-    if (!p || !name || this.saving()) {
+    if (!p || !name) {
       this.error.set('กรุณาระบุชื่อจุดให้บริการ');
+      this.saving.set(false);
       return;
     }
     this.saving.set(true);
@@ -120,7 +145,19 @@ export class CoveragePage implements OnInit {
     if (!p || this.saving()) {
       return;
     }
-    if (!confirm(`ปิดใช้งานจุด "${branch.name}"?`)) {
+    this.deactivateTarget.set(branch);
+  }
+
+  protected dismissDeactivate(): void {
+    if (!this.saving()) {
+      this.deactivateTarget.set(null);
+    }
+  }
+
+  protected async confirmDeactivate(): Promise<void> {
+    const branch = this.deactivateTarget();
+    const p = this.provider();
+    if (!branch || !p || this.saving()) {
       return;
     }
     this.saving.set(true);
@@ -134,11 +171,24 @@ export class CoveragePage implements OnInit {
           isActive: false,
         }),
       );
+      this.deactivateTarget.set(null);
       this.message.set('ปิดจุดให้บริการแล้ว');
       await this.reload();
     } finally {
       this.saving.set(false);
     }
+  }
+
+  protected deactivateMessage(): string {
+    const branch = this.deactivateTarget();
+    return branch
+      ? `ปิดใช้งานพื้นที่ "${branch.name}" แล้วงานใหม่ในรัศมีนี้จะไม่เข้ามา`
+      : '';
+  }
+
+  protected setupComplete(): boolean {
+    const profile = this.provider();
+    return !!profile && profile.branches.length > 0 && profile.services.length > 0;
   }
 
   protected openPicker(): void {

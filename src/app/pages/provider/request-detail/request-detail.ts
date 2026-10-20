@@ -13,13 +13,21 @@ import {
 } from '../../../shared/status-labels';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { formatScheduledAt } from '../../../shared/datetime.util';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
+import { formatBaht } from '../../../shared/form-rules';
+import { ConfirmModal } from '../../../shared/confirm-modal';
 
 @Component({
   selector: 'app-provider-request-detail-page',
-  imports: [PageShell, RouterLink, ProviderBottomNav],
+  imports: [PageShell, RouterLink, ProviderBottomNav, LoadingSkeleton, ConfirmModal],
   templateUrl: './request-detail.html',
 })
 export class ProviderRequestDetailPage implements OnInit {
+  protected readonly formatBaht = formatBaht;
+  protected readonly confirmOpen = signal(false);
+  protected readonly confirmTitle = signal('');
+  protected readonly confirmMessage = signal('');
+  private confirmResolver: ((accepted: boolean) => void) | null = null;
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly myBid = signal<BidItem | null>(null);
   protected readonly myProvider = signal<ProviderDetail | null>(null);
@@ -105,7 +113,14 @@ export class ProviderRequestDetailPage implements OnInit {
 
   protected async withdrawMyBid(): Promise<void> {
     const bid = this.myBid();
-    if (!bid || !this.canWithdrawBid() || !confirm('ถอนข้อเสนอราคานี้?')) {
+    if (!bid || !this.canWithdrawBid()) {
+      return;
+    }
+    const accepted = await this.askConfirm(
+      'ถอนข้อเสนอ',
+      'ถอนข้อเสนอราคานี้แล้วผู้ประกาศจะไม่เห็นราคาของคุณ',
+    );
+    if (!accepted) {
       return;
     }
     try {
@@ -173,7 +188,8 @@ export class ProviderRequestDetailPage implements OnInit {
   protected async confirmAppointment(): Promise<void> {
     await this.advanceAppointment('Confirmed', {
       allowed: () => this.canConfirmAppointment(),
-      confirmText: 'ยืนยันรับนัดหมายตามวัน เวลา และสถานที่ที่ลูกค้าส่งมา?',
+      confirmTitle: 'ยืนยันรับนัด',
+      confirmText: 'ยืนยันรับนัดหมายตามวัน เวลา และสถานที่ที่ลูกค้าส่งมา ลูกค้าจะเห็นว่าคุณรับนัดแล้ว',
       busyLabel: 'กำลังยืนยัน…',
       notice: 'ยืนยันรับนัดหมายแล้ว — กดเริ่มงานเมื่อถึงเวลานัด',
       errorFallback: 'ยืนยันนัดหมายไม่สำเร็จ',
@@ -183,7 +199,8 @@ export class ProviderRequestDetailPage implements OnInit {
   protected async startJob(): Promise<void> {
     await this.advanceAppointment('InProgress', {
       allowed: () => this.canStartJob(),
-      confirmText: 'เริ่มงานตามนัดหมายนี้?',
+      confirmTitle: 'เริ่มงาน',
+      confirmText: 'เริ่มงานตามนัดหมายนี้ ลูกค้าจะเห็นสถานะกำลังดำเนินงาน',
       busyLabel: 'กำลังเริ่มงาน…',
       notice: 'เริ่มงานแล้ว — ลูกค้าจะเห็นสถานะกำลังดำเนินงาน',
       errorFallback: 'เริ่มงานไม่สำเร็จ',
@@ -193,10 +210,26 @@ export class ProviderRequestDetailPage implements OnInit {
   protected async completeJob(): Promise<void> {
     await this.advanceAppointment('Completed', {
       allowed: () => this.canCompleteJob(),
-      confirmText: 'ยืนยันว่างานนี้เสร็จสิ้นแล้ว? ลูกค้าจะสามารถรีวิวได้',
+      confirmTitle: 'ปิดงาน',
+      confirmText: 'เมื่องานเสร็จ ลูกค้าจะสามารถให้คะแนนและรีวิวได้',
       busyLabel: 'กำลังปิดงาน…',
       notice: 'ปิดงานแล้ว — ลูกค้าสามารถให้คะแนนและรีวิวได้',
       errorFallback: 'ปิดงานไม่สำเร็จ',
+    });
+  }
+
+  protected resolveConfirm(accepted: boolean): void {
+    this.confirmOpen.set(false);
+    this.confirmResolver?.(accepted);
+    this.confirmResolver = null;
+  }
+
+  private askConfirm(title: string, message: string): Promise<boolean> {
+    this.confirmTitle.set(title);
+    this.confirmMessage.set(message);
+    this.confirmOpen.set(true);
+    return new Promise((resolve) => {
+      this.confirmResolver = resolve;
     });
   }
 
@@ -204,6 +237,7 @@ export class ProviderRequestDetailPage implements OnInit {
     status: 'Confirmed' | 'InProgress' | 'Completed',
     options: {
       allowed: () => boolean;
+      confirmTitle: string;
       confirmText: string;
       busyLabel: string;
       notice: string;
@@ -214,7 +248,8 @@ export class ProviderRequestDetailPage implements OnInit {
     if (!appt || !options.allowed() || this.acting()) {
       return;
     }
-    if (!confirm(options.confirmText)) {
+    const accepted = await this.askConfirm(options.confirmTitle, options.confirmText);
+    if (!accepted) {
       return;
     }
     this.acting.set(true);

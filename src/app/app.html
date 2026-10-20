@@ -1,4 +1,7 @@
 <div class="app-shell">
+  @if (booting()) {
+    <app-loading-skeleton />
+  }
   <main class="app-main">
     <router-outlet />
   </main>

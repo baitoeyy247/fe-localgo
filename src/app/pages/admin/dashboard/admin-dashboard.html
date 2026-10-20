@@ -1,7 +1,7 @@
 <app-page-shell title="แอดมิน" [showBack]="true" backLink="/">
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลดจาก API…</p>
+      <app-loading-skeleton />
     } @else if (error()) {
       <p class="error-text">{{ error() }}</p>
     } @else {
@@ -42,11 +42,11 @@
         }
 
         <div class="section-title">
-          <h3>ผู้ใช้ล่าสุด ({{ users().length }})</h3>
+          <h3>ผู้ใช้ล่าสุด ({{ listedUsers().length }})</h3>
         </div>
-        @for (u of users().slice(0, 8); track $index) {
+        @for (u of listedUsers().slice(0, 8); track u.id ?? u.lineUserId) {
           <article class="request-card">
-            <code>{{ userLine($any(u)) }}</code>
+            <code>{{ userLine(u) }}</code>
           </article>
         } @empty {
           <p class="muted-label">ยังไม่มีผู้ใช้</p>

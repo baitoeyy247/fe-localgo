@@ -1,0 +1,41 @@
+<app-page-shell title="รายละเอียดงาน" backLink="/requester">
+  <section class="screen">
+    @if (loading()) {
+      <app-loading-skeleton />
+    } @else if (notFound()) {
+      <div class="empty-state">
+        <h3>ไม่พบงานนี้</h3>
+        <p>ลิงก์นี้อาจไม่ถูกต้อง หรือไม่มีงานนี้อยู่แล้ว</p>
+        <a class="primary" routerLink="/">กลับหน้าหลัก</a>
+      </div>
+    } @else if (error()) {
+      <div class="empty-state">
+        <h3>โหลดรายละเอียดไม่สำเร็จ</h3>
+        <p class="error-text" role="alert">{{ error() }}</p>
+        <button class="primary" type="button" (click)="retry()">ลองใหม่</button>
+      </div>
+    } @else if (request(); as r) {
+      <div class="stack">
+        <div class="summary-panel">
+          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
+            <h3 style="margin: 0;">{{ r.title }}</h3>
+            <span class="badge">{{ statusLabel(r.status) }}</span>
+          </div>
+          <p style="margin-top: 0.35rem;">{{ r.categoryName ?? 'ทั่วไป' }}</p>
+          <p>งบประมาณ: {{ formatBaht(r.budgetText) }}</p>
+          @if (r.preferredStartAt) {
+            <p>วันที่และเวลาที่ต้องการ: {{ formatWhen(r.preferredStartAt) }}</p>
+          }
+          @if (isCancelled()) {
+            <p>งานนี้ถูกยกเลิกเมื่อ {{ formatWhen(r.updatedAt) }}</p>
+          }
+        </div>
+        <div class="form-area">
+          <span>รายละเอียด</span>
+          <p>{{ r.description?.trim() || 'ไม่มีรายละเอียดเพิ่ม' }}</p>
+        </div>
+      </div>
+    }
+  </section>
+  <app-requester-bottom-nav />
+</app-page-shell>

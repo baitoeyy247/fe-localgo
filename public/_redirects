@@ -1,1 +1,5 @@
-/*    /index.html   200
+# Cloudflare Pages only honors 200 and 3xx in _redirects. A 404 rewrite is ignored,
+# so a missing nested script was still served as index.html (MIME text/html).
+# Root chunks stay real files. A nested *.js URL is proxied to a JavaScript file.
+/:section/*.js  /module-missing.js  200
+/*              /index.html         200

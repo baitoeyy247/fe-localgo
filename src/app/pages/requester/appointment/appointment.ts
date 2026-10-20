@@ -2,6 +2,7 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 import {
   LocationPickerModal,
   LocationPickerValue,
@@ -21,10 +22,12 @@ import {
 } from '../../../shared/datetime.util';
 import { resolveRequesterRequestId } from '../../../shared/requester-request-flow';
 import { redirectProviderFromRequesterRoute } from '../../../shared/requester-deep-link-guard';
+import { formatBaht, jobPlaceLabel } from '../../../shared/form-rules';
+import { ConfirmModal } from '../../../shared/confirm-modal';
 
 @Component({
   selector: 'app-appointment-page',
-  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, LocationPickerModal],
+  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, LocationPickerModal, LoadingSkeleton, ConfirmModal],
   templateUrl: './appointment.html',
 })
 export class AppointmentPage implements OnInit {
@@ -39,11 +42,16 @@ export class AppointmentPage implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly success = signal<string | null>(null);
   protected readonly pickerOpen = signal(false);
+  protected readonly providerNameOverride = signal<string | null>(null);
+  protected readonly confirmKind = signal<'appointment' | 'selection' | null>(null);
+  protected readonly placeLabel = jobPlaceLabel;
   protected readonly mapLat = signal<number | null>(null);
   protected readonly mapLng = signal<number | null>(null);
   protected readonly formatScheduledAt = formatScheduledAt;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
   protected readonly statusLabel = requestStatusLabel;
+  protected readonly formatBaht = formatBaht;
+  protected readonly rescheduling = signal(false);
 
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
@@ -95,8 +103,66 @@ export class AppointmentPage implements OnInit {
     this.pickerOpen.set(false);
   }
 
+  protected startReschedule(event?: Event): void {
+    if (this.saving()) {
+      event?.preventDefault();
+      return;
+    }
+    this.rescheduling.set(true);
+  }
+
+  protected contactProvider(): void {
+    const providerId =
+      this.appointment()?.providerId ??
+      this.selectedBid()?.providerId ??
+      this.request()?.selectedProviderId;
+    if (!providerId) {
+      return;
+    }
+    void this.router.navigate(['/requester/provider', providerId]);
+  }
+
+  protected providerName(): string {
+    return (
+      this.providerNameOverride()?.trim() ||
+      this.selectedBid()?.providerName?.trim() ||
+      'ผู้ให้บริการ'
+    );
+  }
+
+  protected initials(name: string): string {
+    const parts = name.trim().split(/\s+/).filter(Boolean);
+    if (parts.length === 0) {
+      return '?';
+    }
+    return parts
+      .slice(0, 2)
+      .map((part) => Array.from(part)[0] ?? '')
+      .join('');
+  }
+
+  protected displayStatus(): string | null {
+    const appointment = this.appointment();
+    if (appointment && this.hasActiveAppointment()) {
+      return this.appointmentStatusLabel(appointment.status);
+    }
+    const status = this.request()?.status;
+    return status ? this.statusLabel(status) : null;
+  }
+
+  protected isOverdue(): boolean {
+    const appointment = this.appointment();
+    if (!appointment?.scheduledAt || !this.hasActiveAppointment()) {
+      return false;
+    }
+    if (appointment.status !== 'Pending' && appointment.status !== 'Confirmed') {
+      return false;
+    }
+    return new Date(appointment.scheduledAt).getTime() < Date.now();
+  }
+
   protected async confirm(): Promise<void> {
-    if (this.saving() || this.hasActiveAppointment() || this.isReadOnly()) {
+    if ((this.hasActiveAppointment() && !this.rescheduling()) || this.isReadOnly()) {
       return;
     }
     const requestId = this.request()?.id ?? this.session.requesterRequestId ?? null;
@@ -142,6 +208,7 @@ export class AppointmentPage implements OnInit {
         }),
       );
       this.success.set('บันทึกนัดหมายแล้ว ระบบจะแจ้งผู้ให้บริการให้ทราบ');
+      this.rescheduling.set(false);
       await this.loadRequestState(requestId);
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'ยืนยันนัดหมายไม่สำเร็จ'));
@@ -155,9 +222,32 @@ export class AppointmentPage implements OnInit {
     if (!existing || this.saving() || !this.canCancelAppointment()) {
       return;
     }
-    if (!confirm('ต้องการยกเลิกนัดหมายใช่หรือไม่?')) {
+    this.confirmKind.set('appointment');
+  }
+
+  protected dismissConfirm(): void {
+    if (!this.saving()) {
+      this.confirmKind.set(null);
+    }
+  }
+
+  protected async acceptConfirm(): Promise<void> {
+    const kind = this.confirmKind();
+    if (kind === 'appointment') {
+      await this.performCancelAppointment();
       return;
     }
+    if (kind === 'selection') {
+      await this.performClearBidSelection();
+    }
+  }
+
+  private async performCancelAppointment(): Promise<void> {
+    const existing = this.appointment();
+    if (!existing || this.saving()) {
+      return;
+    }
+    this.confirmKind.set(null);
     this.saving.set(true);
     this.error.set(null);
     this.success.set(null);
@@ -202,9 +292,15 @@ export class AppointmentPage implements OnInit {
     if (!requestId || !this.canClearBidSelection() || this.saving()) {
       return;
     }
-    if (!confirm('ยกเลิกการเลือกข้อเสนอและกลับไปเลือกใหม่?')) {
+    this.confirmKind.set('selection');
+  }
+
+  private async performClearBidSelection(): Promise<void> {
+    const requestId = this.request()?.id ?? this.session.requesterRequestId ?? null;
+    if (!requestId || this.saving()) {
       return;
     }
+    this.confirmKind.set(null);
     this.saving.set(true);
     this.error.set(null);
     this.success.set(null);
@@ -250,7 +346,10 @@ export class AppointmentPage implements OnInit {
   }
 
   protected get canConfirm(): boolean {
-    if (this.saving() || this.hasActiveAppointment() || this.isReadOnly()) {
+    if (this.saving() || this.isReadOnly()) {
+      return false;
+    }
+    if (this.hasActiveAppointment() && !this.rescheduling()) {
       return false;
     }
     const detail = this.request();
@@ -351,18 +450,32 @@ export class AppointmentPage implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const detail = await firstValueFrom(this.api.getRequest(requestId));
+      const [detail, existing, listedBids] = await Promise.all([
+        firstValueFrom(this.api.getRequest(requestId)),
+        firstValueFrom(this.api.getAppointment(requestId)),
+        firstValueFrom(this.api.listBids(requestId)),
+      ]);
       this.request.set(detail);
       this.session.requesterRequestId = detail.id;
-      const existing = await firstValueFrom(this.api.getAppointment(requestId));
       this.appointment.set(existing);
-      const bids = detail.bids ?? (await firstValueFrom(this.api.listBids(requestId)));
+      const bids = detail.bids?.length ? detail.bids : listedBids;
       const bid = this.resolveBid(bids, detail);
       this.selectedBid.set(bid);
+      const providerId = bid?.providerId ?? detail.selectedProviderId;
       if (bid) {
         this.session.currentProviderId = bid.providerId;
       } else if (detail.selectedProviderId) {
         this.session.currentProviderId = detail.selectedProviderId;
+      }
+      if (providerId && !bid?.providerName?.trim()) {
+        try {
+          const provider = await firstValueFrom(this.api.getProvider(providerId));
+          this.providerNameOverride.set(provider.name);
+        } catch {
+          this.providerNameOverride.set(null);
+        }
+      } else {
+        this.providerNameOverride.set(null);
       }
       if (existing) {
         this.applyAppointmentFields(existing);
@@ -382,7 +495,7 @@ export class AppointmentPage implements OnInit {
       this.scheduledAt.set(toDatetimeLocal(new Date(existing.scheduledAt)));
     }
     if (existing.addressText?.trim()) {
-      this.addressText.set(existing.addressText.trim());
+      this.addressText.set(jobPlaceLabel(existing.addressText));
     }
     if (existing.note?.trim()) {
       this.note.set(existing.note.trim());
@@ -429,9 +542,9 @@ export class AppointmentPage implements OnInit {
   }
 
   private applyRequestLocation(detail: ServiceRequestDetail): void {
-    const fromPost = detail.addressText?.trim();
+    const fromPost = jobPlaceLabel(detail.addressText, '');
     this.addressText.set(
-      fromPost || detail.description?.trim()?.slice(0, 120) || 'จุดรับงานตามประกาศ',
+      fromPost || jobPlaceLabel(detail.description?.trim()?.slice(0, 120), 'จุดรับงานตามประกาศ'),
     );
     if (typeof detail.latitude === 'number' && typeof detail.longitude === 'number') {
       this.mapLat.set(detail.latitude);

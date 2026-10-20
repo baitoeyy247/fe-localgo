@@ -5,17 +5,20 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
-import { ProviderDetail, ServiceRequestSummary } from '../../../core/models';
+import { ProviderCoverageArea, ProviderDetail, ServiceRequestSummary } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { requestStatusLabel, requestStatusBadgeClass } from '../../../shared/status-labels';
+import { formatDistanceMeters } from '../../../shared/coordinates';
+import { OPEN_BUDGET, formatBaht } from '../../../shared/form-rules';
 import { AuthService } from '../../../core/auth.service';
 
 type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
 
 @Component({
   selector: 'app-matching-requests-page',
-  imports: [PageShell, RouterLink, ProviderBottomNav, NgClass],
+  imports: [PageShell, RouterLink, ProviderBottomNav, NgClass, LoadingSkeleton],
   templateUrl: './matching-requests.html',
   styles: [
     `
@@ -51,17 +54,33 @@ type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
         padding: 0.85rem;
         text-align: center;
       }
+      :host .filter-note {
+        margin: 0;
+        color: #3e515c;
+        font-size: 0.95rem;
+        line-height: 1.45;
+      }
+      :host .filter-note a {
+        font-weight: 800;
+        margin-left: 0.35rem;
+      }
     `,
   ],
 })
 export class MatchingRequestsPage implements OnInit {
   protected readonly matchingRequests = signal<ServiceRequestSummary[]>([]);
   protected readonly provider = signal<ProviderDetail | null>(null);
+  protected readonly areas = signal<ProviderCoverageArea[]>([]);
+  protected readonly excludesOwnRequests = signal(false);
   protected readonly loading = signal(true);
+  protected readonly ready = signal(false);
+  protected readonly slow = signal(false);
   protected readonly error = signal<string | null>(null);
+  private loadAttempt = 0;
   protected readonly setupIssue = signal<SetupIssue | null>(null);
   protected readonly pendingConfirmCount = signal(0);
   protected readonly statusLabel = requestStatusLabel;
+  protected readonly formatBaht = formatBaht;
   protected readonly statusBadgeClass = requestStatusBadgeClass;
 
   constructor(
@@ -75,38 +94,100 @@ export class MatchingRequestsPage implements OnInit {
   }
 
   protected async reload(): Promise<void> {
+    const attempt = ++this.loadAttempt;
     this.loading.set(true);
+    this.ready.set(false);
+    this.slow.set(false);
     this.error.set(null);
     this.setupIssue.set(null);
     this.pendingConfirmCount.set(0);
-    try {
-      const mine = await firstValueFrom(this.api.getMyProvider());
-      this.provider.set(mine);
-      const items = await firstValueFrom(this.api.listMatchingRequests(true));
-      this.matchingRequests.set(items);
-
-      this.pendingConfirmCount.set(items.filter((r) => r.needsAppointmentConfirm).length);
-
-      const missingBranches = mine.branches.filter((b) => b.isActive).length === 0;
-      const missingServices = mine.services.filter((s) => s.isActive).length === 0;
-      if (items.length === 0) {
-        if (missingBranches) {
-          this.setupIssue.set('missing-branches');
-        } else if (missingServices) {
-          this.setupIssue.set('missing-services');
-        }
+    const timer = setTimeout(() => {
+      if (attempt === this.loadAttempt) {
+        this.slow.set(true);
       }
-    } catch (e) {
-      if (e instanceof HttpErrorResponse && e.status === 404) {
+    }, 10_000);
+    try {
+      const [mineResult, inboxResult] = await Promise.allSettled([
+        firstValueFrom(this.api.getMyProvider()),
+        firstValueFrom(this.api.listMatchingRequests(true)),
+      ]);
+      if (attempt !== this.loadAttempt) {
+        return;
+      }
+      if (inboxResult.status === 'rejected') {
+        this.error.set(this.safeError(apiErrorMessage(inboxResult.reason, 'โหลดรายการงานไม่สำเร็จ')));
+        return;
+      }
+
+      const inbox = inboxResult.value;
+      const areas = inbox.areas ?? [];
+      const excludesOwn = !!inbox.excludesOwnRequests;
+      const items = this.visibleItems(inbox.items ?? [], areas, excludesOwn);
+      this.matchingRequests.set(items);
+      this.excludesOwnRequests.set(excludesOwn);
+      this.areas.set(areas);
+      this.pendingConfirmCount.set(items.filter((r) => r.needsAppointmentConfirm).length);
+      this.ready.set(true);
+
+      if (mineResult.status === 'fulfilled') {
+        const mine = mineResult.value;
+        this.provider.set(mine);
+        if (items.length === 0) {
+          const missingBranches = mine.branches.filter((b) => b.isActive).length === 0;
+          const missingServices = mine.services.filter((s) => s.isActive).length === 0;
+          if (missingBranches) {
+            this.setupIssue.set('missing-branches');
+          } else if (missingServices) {
+            this.setupIssue.set('missing-services');
+          }
+        }
+      } else if (
+        mineResult.reason instanceof HttpErrorResponse &&
+        mineResult.reason.status === 404
+      ) {
         this.setupIssue.set('no-profile');
         this.provider.set(null);
-        this.matchingRequests.set([]);
-      } else {
-        this.error.set(apiErrorMessage(e, 'โหลดรายการงานไม่สำเร็จ'));
       }
     } finally {
-      this.loading.set(false);
+      clearTimeout(timer);
+      if (attempt === this.loadAttempt) {
+        this.loading.set(false);
+        this.slow.set(false);
+      }
     }
+  }
+
+  protected radiusLabel(meters: number): string {
+    if (meters < 100) {
+      return 'น้อยกว่า 100 เมตร';
+    }
+    if (meters < 1000) {
+      return `${Math.round(meters)} เมตร`;
+    }
+    const km = meters / 1000;
+    const text = Number.isInteger(km) ? String(km) : km.toFixed(1);
+    return `${text} กิโลเมตร`;
+  }
+
+  protected emptyReason(): string {
+    const reasons: string[] = [];
+    if (this.excludesOwnRequests()) {
+      reasons.push('งานที่คุณโพสต์เองจะไม่แสดงในรายการนี้');
+    }
+    if (this.areas().length > 0) {
+      const places = this.areas()
+        .map((area) => `รัศมี ${this.radiusLabel(area.serviceRadiusMeters)} รอบ ${area.name}`)
+        .join(' และ ');
+      reasons.push(`ระบบกรองตามพื้นที่ที่ตั้งไว้ (${places})`);
+    }
+    if (reasons.length === 0) {
+      return 'ยังไม่มีงานที่ตรงกับบริการที่เปิดอยู่';
+    }
+    return reasons.join(' ');
+  }
+
+  private safeError(message: string): string {
+    return /api/i.test(message) ? 'โหลดรายการงานไม่สำเร็จ' : message;
   }
 
   protected setupMessage(): string {
@@ -145,10 +226,7 @@ export class MatchingRequestsPage implements OnInit {
   }
 
   protected formatDistance(meters?: number | null): string {
-    if (meters == null) {
-      return '—';
-    }
-    return meters >= 1000 ? `${(meters / 1000).toFixed(1)} กม.` : `${Math.round(meters)} ม.`;
+    return formatDistanceMeters(meters);
   }
 
   protected formatWhen(iso: string): string {
@@ -164,6 +242,31 @@ export class MatchingRequestsPage implements OnInit {
 
   protected async openRequest(request: ServiceRequestSummary): Promise<void> {
     await this.router.navigate(['/provider/requests', request.id]);
+  }
+
+  protected showBudget(request: ServiceRequestSummary): boolean {
+    if (!request.budgetText) {
+      return false;
+    }
+    const openForBids = request.status === 'Open' || request.status === 'HasOffers';
+    return openForBids || request.budgetText !== OPEN_BUDGET;
+  }
+
+  private visibleItems(
+    items: ServiceRequestSummary[],
+    areas: ProviderCoverageArea[],
+    excludesOwn: boolean,
+  ): ServiceRequestSummary[] {
+    const maxRadius = areas.reduce((max, area) => Math.max(max, area.serviceRadiusMeters), 0);
+    return items.filter((item) => {
+      if (excludesOwn && item.isOwnRequest) {
+        return false;
+      }
+      if (maxRadius > 0 && typeof item.distanceMeters === 'number' && item.distanceMeters > maxRadius) {
+        return false;
+      }
+      return true;
+    });
   }
 
   protected isMyActiveJob(request: ServiceRequestSummary): boolean {

@@ -1,7 +1,7 @@
 <app-page-shell [title]="pageTitle()" backLink="/requester/search">
   <section class="screen">
     @if (loading()) {
-      <p>กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else if (provider(); as p) {
       <div class="stack">
         <a class="ghost-link" routerLink="/requester/search">← กลับไปค้นหา</a>
@@ -10,7 +10,7 @@
           <section class="summary-panel summary-panel--success">
             <h3>{{ focused.title }}</h3>
             <p>{{ focused.categoryName ?? 'บริการทั่วไป' }} · {{ p.name }}</p>
-            <small>{{ focused.basePriceText ?? 'ติดต่อสอบถามราคา' }}</small>
+            <small>{{ formatBaht(focused.basePriceText) }}</small>
           </section>
         }
 
@@ -64,7 +64,7 @@
             [id]="isFocusedService(svc.id) ? 'focused-service' : null"
           >
             <strong>{{ svc.title }}</strong>
-            <span>{{ svc.basePriceText ?? 'ติดต่อสอบถาม' }}</span>
+            <span>{{ formatBaht(svc.basePriceText) }}</span>
             <small>{{ branchLabels() }}</small>
           </article>
         } @empty {

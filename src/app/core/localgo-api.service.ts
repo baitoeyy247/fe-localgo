@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, of, throwError } from 'rxjs';
+import { Observable, catchError, of, shareReplay, tap, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
 import {
   AdminDashboard,
@@ -14,7 +14,10 @@ import {
   CreatedResource,
   LineConfig,
   ProviderBranch,
+  BidFormAccess,
   ProviderDetail,
+  ProviderBidListItem,
+  ProviderMatchingInbox,
   ProviderService,
   ProviderSummary,
   ReviewItem,
@@ -29,6 +32,11 @@ type HttpErrorLike = { status?: number };
 export class LocalGoApiService {
   private readonly http = inject(HttpClient);
   private readonly base = environment.apiBaseUrl.replace(/\/$/, '');
+  private providerEpoch = 0;
+  private providerCache: ProviderDetail | null = null;
+  private providerRequest: Observable<ProviderDetail> | null = null;
+  private categoryCache: Category[] | null = null;
+  private categoryRequest: Observable<Category[]> | null = null;
 
   // --- Auth & profile ---
 
@@ -59,7 +67,20 @@ export class LocalGoApiService {
   // --- Catalog & config ---
 
   listCategories(): Observable<Category[]> {
-    return this.get<Category[]>('/categories');
+    if (this.categoryCache) {
+      return of(this.categoryCache);
+    }
+    this.categoryRequest ??= this.get<Category[]>('/categories').pipe(
+      tap((items) => {
+        this.categoryCache = items;
+      }),
+      catchError((err) => {
+        this.categoryRequest = null;
+        return throwError(() => err);
+      }),
+      shareReplay(1),
+    );
+    return this.categoryRequest;
   }
 
   getLineConfig(): Observable<LineConfig> {
@@ -98,7 +119,27 @@ export class LocalGoApiService {
   }
 
   getMyProvider(): Observable<ProviderDetail> {
-    return this.get<ProviderDetail>('/providers/me');
+    if (this.providerCache) {
+      return of(this.providerCache);
+    }
+    if (!this.providerRequest) {
+      const epoch = this.providerEpoch;
+      this.providerRequest = this.get<ProviderDetail>('/providers/me').pipe(
+        tap((mine) => {
+          if (epoch === this.providerEpoch) {
+            this.providerCache = mine;
+          }
+        }),
+        catchError((err) => {
+          if (epoch === this.providerEpoch) {
+            this.providerRequest = null;
+          }
+          return throwError(() => err);
+        }),
+        shareReplay(1),
+      );
+    }
+    return this.providerRequest;
   }
 
   createProvider(body: {
@@ -109,6 +150,7 @@ export class LocalGoApiService {
     contactPhone?: string;
     contactUrl?: string;
   }): Observable<ProviderDetail> {
+    this.forgetProvider();
     return this.post<ProviderDetail>('/providers', body);
   }
 
@@ -122,6 +164,7 @@ export class LocalGoApiService {
       contactUrl?: string;
     },
   ): Observable<ProviderDetail> {
+    this.forgetProvider();
     return this.patch<ProviderDetail>(`/providers/${providerId}`, body);
   }
 
@@ -136,6 +179,7 @@ export class LocalGoApiService {
       isActive?: boolean;
     },
   ): Observable<ProviderBranch> {
+    this.forgetProvider();
     return this.post<ProviderBranch>(`/providers/${providerId}/branches`, body);
   }
 
@@ -151,6 +195,7 @@ export class LocalGoApiService {
       isActive?: boolean;
     },
   ): Observable<ProviderBranch> {
+    this.forgetProvider();
     return this.patch<ProviderBranch>(
       `/providers/${providerId}/branches/${branchId}`,
       body,
@@ -167,6 +212,7 @@ export class LocalGoApiService {
       branchIds?: string[];
     },
   ): Observable<ProviderService> {
+    this.forgetProvider();
     return this.post<ProviderService>(`/providers/${providerId}/services`, body);
   }
 
@@ -181,6 +227,7 @@ export class LocalGoApiService {
       branchIds?: string[];
     },
   ): Observable<ProviderService> {
+    this.forgetProvider();
     return this.patch<ProviderService>(
       `/providers/${providerId}/services/${serviceId}`,
       body,
@@ -188,8 +235,14 @@ export class LocalGoApiService {
   }
 
   setServiceActive(providerId: string, serviceId: string, active: boolean): Observable<void> {
+    this.forgetProvider();
     const action = active ? 'activate' : 'pause';
     return this.post<void>(`/providers/${providerId}/services/${serviceId}/${action}`, {});
+  }
+
+  deleteService(providerId: string, serviceId: string): Observable<void> {
+    this.forgetProvider();
+    return this.http.delete<void>(`${this.base}/providers/${providerId}/services/${serviceId}`);
   }
 
   setServiceBranches(
@@ -197,6 +250,7 @@ export class LocalGoApiService {
     serviceId: string,
     branchIds: string[],
   ): Observable<void> {
+    this.forgetProvider();
     return this.put<void>(`/providers/${providerId}/services/${serviceId}/branches`, branchIds);
   }
 
@@ -226,6 +280,8 @@ export class LocalGoApiService {
     latitude: number;
     longitude: number;
     searchRadiusMeters: number;
+    preferredStartAt?: string;
+    preferredEndAt?: string;
     budgetText?: string;
     publish: boolean;
   }): Observable<CreatedResource> {
@@ -331,11 +387,26 @@ export class LocalGoApiService {
     return this.post<ReviewItem>(`/providers/${providerId}/reviews`, body);
   }
 
+  findMyReview(providerId: string, serviceRequestId: string): Observable<ReviewItem | null> {
+    const params = new HttpParams().set('serviceRequestId', serviceRequestId);
+    return this.get<ReviewItem>(`/providers/${providerId}/reviews/mine`, { params }).pipe(
+      catchError((error: HttpErrorLike) => (error.status === 404 ? of(null) : throwError(() => error))),
+    );
+  }
+
+  listMyBids(): Observable<ProviderBidListItem[]> {
+    return this.get<ProviderBidListItem[]>('/provider/bids');
+  }
+
   // --- Provider inbox ---
 
-  listMatchingRequests(refresh = false): Observable<ServiceRequestSummary[]> {
+  listMatchingRequests(refresh = false): Observable<ProviderMatchingInbox> {
     const params = refresh ? new HttpParams().set('_t', String(Date.now())) : undefined;
-    return this.get<ServiceRequestSummary[]>('/provider/service-requests/matching', { params });
+    return this.get<ProviderMatchingInbox>('/provider/service-requests/matching', { params });
+  }
+
+  getBidForm(requestId: string): Observable<BidFormAccess> {
+    return this.get<BidFormAccess>(`/provider/service-requests/${requestId}/bid-form`);
   }
 
   // --- Admin ---
@@ -350,6 +421,12 @@ export class LocalGoApiService {
 
   listAdminNotifications(): Observable<AdminNotificationRow[]> {
     return this.get<AdminNotificationRow[]>('/admin/notifications');
+  }
+
+  private forgetProvider(): void {
+    this.providerEpoch += 1;
+    this.providerCache = null;
+    this.providerRequest = null;
   }
 
   private get<T>(path: string, options?: { params?: HttpParams }): Observable<T> {

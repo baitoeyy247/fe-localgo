@@ -7,16 +7,18 @@ import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderDetail } from '../../../core/models';
 import { AuthService } from '../../../core/auth.service';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 
 @Component({
   selector: 'app-provider-home-page',
-  imports: [PageShell, RouterLink, ProviderBottomNav],
+  imports: [PageShell, RouterLink, ProviderBottomNav, LoadingSkeleton],
   templateUrl: './provider-home.html',
 })
 export class ProviderHomePage implements OnInit {
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly hasProfile = signal(false);
   protected readonly loading = signal(true);
+  protected readonly switching = signal(false);
 
   constructor(
     private readonly api: LocalGoApiService,
@@ -38,13 +40,32 @@ export class ProviderHomePage implements OnInit {
     }
   }
 
+  protected activeServiceCount(): number {
+    return this.provider()?.services.filter((service) => service.isActive).length ?? 0;
+  }
+
+  protected pausedServiceCount(): number {
+    return (this.provider()?.services.length ?? 0) - this.activeServiceCount();
+  }
+
+  protected activeAreaCount(): number {
+    return this.provider()?.branches.filter((branch) => branch.isActive).length ?? 0;
+  }
+
+  protected disabledAreaCount(): number {
+    return (this.provider()?.branches.length ?? 0) - this.activeAreaCount();
+  }
+
   protected setupDone(): boolean {
     const p = this.provider();
     return !!p && p.branches.length > 0 && p.services.length > 0;
   }
 
-  protected async switchToRequester(): Promise<void> {
-    await this.auth.setActiveRole('Requester');
-    await this.router.navigateByUrl('/requester');
+  protected switchToRequester(): void {
+    if (this.switching()) {
+      return;
+    }
+    this.switching.set(true);
+    void this.auth.setActiveRole('Requester').then(() => this.router.navigateByUrl('/requester'));
   }
 }

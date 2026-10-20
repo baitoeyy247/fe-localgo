@@ -69,6 +69,24 @@ export interface ProviderDetail {
   services: ProviderService[];
 }
 
+export interface ProviderCoverageArea {
+  name: string;
+  serviceRadiusMeters: number;
+}
+
+export interface ProviderMatchingInbox {
+  items: ServiceRequestSummary[];
+  excludesOwnRequests: boolean;
+  areas: ProviderCoverageArea[];
+}
+
+export interface BidFormAccess {
+  allowed: boolean;
+  reason?: string | null;
+  reasonCode?: string | null;
+  request?: ServiceRequestDetail | null;
+}
+
 export interface ServiceRequestSummary {
   id: string;
   title: string;
@@ -80,6 +98,16 @@ export interface ServiceRequestSummary {
   distanceMeters?: number | null;
   alreadyBidByMe?: boolean;
   needsAppointmentConfirm?: boolean;
+  isOwnRequest?: boolean;
+}
+
+export interface ProviderBidListItem {
+  id: string;
+  serviceRequestId: string;
+  requestTitle: string;
+  priceText: string;
+  status: string;
+  createdAt: string;
 }
 
 export interface ServiceRequestDetail {
@@ -93,6 +121,8 @@ export interface ServiceRequestDetail {
   latitude: number;
   longitude: number;
   searchRadiusMeters: number;
+  preferredStartAt?: string | null;
+  preferredEndAt?: string | null;
   budgetText?: string | null;
   selectedProviderId?: string | null;
   selectedBidId?: string | null;
@@ -134,6 +164,8 @@ export interface ReviewItem {
   comment?: string | null;
   reviewType: string;
   createdAt: string;
+  reviewerDisplayName?: string | null;
+  serviceRequestId?: string | null;
 }
 
 export interface AdminDashboard {

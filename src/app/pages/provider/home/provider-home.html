@@ -1,7 +1,7 @@
-<app-page-shell title="ผู้ให้บริการ" [showBack]="true" backLink="/" backLabel="สลับบทบาท">
+<app-page-shell title="ผู้ให้บริการ" [showBack]="true" backLink="/" backLabel="สลับบทบาท" [backAsText]="true">
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else if (!hasProfile()) {
       <div class="hero-panel">
         <span class="badge badge--blue">เริ่มต้น</span>
@@ -16,8 +16,11 @@
           <span class="badge">พร้อมรับงาน</span>
         </div>
         <p style="margin-top: 0.35rem;">
-          {{ provider()!.services.length }} บริการ · {{ provider()!.branches.length }} จุด ·
-          ★ {{ provider()!.averageVerifiedRating }} ({{ provider()!.verifiedReviewCount }} รีวิว)
+          {{ activeServiceCount() }} บริการที่เปิดอยู่
+          @if (pausedServiceCount() > 0) { · {{ pausedServiceCount() }} หยุดชั่วคราว }
+          · {{ activeAreaCount() }} พื้นที่ที่เปิดอยู่
+          @if (disabledAreaCount() > 0) { · {{ disabledAreaCount() }} ปิดอยู่ }
+          · ★ {{ provider()!.averageVerifiedRating }} ({{ provider()!.verifiedReviewCount }} รีวิว)
         </p>
       </div>
 
@@ -46,6 +49,13 @@
           </span>
           <b>→</b>
         </a>
+        <a class="action-card" routerLink="/provider/my-bids">
+          <span>
+            <strong>ข้อเสนอของฉัน</strong>
+            <small>ดูราคาและสถานะที่ส่งไปแล้ว</small>
+          </span>
+          <b>→</b>
+        </a>
         <a class="action-card" routerLink="/provider/manage">
           <span>
             <strong>จัดการบริการ</strong>
@@ -56,8 +66,8 @@
       </div>
     }
 
-    <button type="button" class="ghost-link role-switch" (click)="switchToRequester()">
-      สลับไปโหมดผู้รับบริการ
+    <button type="button" class="ghost-link role-switch" [disabled]="switching()" (click)="switchToRequester()">
+      {{ switching() ? 'กำลังสลับ…' : 'สลับไปโหมดผู้รับบริการ' }}
     </button>
   </section>
 
