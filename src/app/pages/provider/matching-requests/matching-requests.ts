@@ -7,7 +7,7 @@ import { PageShell } from '../../../demo/page-shell';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
-import { ProviderDetail, ServiceRequestSummary } from '../../../core/models';
+import { ProviderCoverageArea, ProviderDetail, ServiceRequestSummary } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { requestStatusLabel, requestStatusBadgeClass } from '../../../shared/status-labels';
 import { AuthService } from '../../../core/auth.service';
@@ -52,13 +52,27 @@ type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
         padding: 0.85rem;
         text-align: center;
       }
+      :host .filter-note {
+        margin: 0;
+        color: #3e515c;
+        font-size: 0.95rem;
+        line-height: 1.45;
+      }
+      :host .filter-note a {
+        font-weight: 800;
+        margin-left: 0.35rem;
+      }
     `,
   ],
 })
 export class MatchingRequestsPage implements OnInit {
   protected readonly matchingRequests = signal<ServiceRequestSummary[]>([]);
   protected readonly provider = signal<ProviderDetail | null>(null);
+  protected readonly areas = signal<ProviderCoverageArea[]>([]);
+  protected readonly excludesOwnRequests = signal(false);
   protected readonly loading = signal(true);
+  protected readonly ready = signal(false);
+  protected readonly slow = signal(false);
   protected readonly error = signal<string | null>(null);
   private loadAttempt = 0;
   protected readonly setupIssue = signal<SetupIssue | null>(null);
@@ -79,53 +93,89 @@ export class MatchingRequestsPage implements OnInit {
   protected async reload(): Promise<void> {
     const attempt = ++this.loadAttempt;
     this.loading.set(true);
+    this.ready.set(false);
+    this.slow.set(false);
     this.error.set(null);
     this.setupIssue.set(null);
     this.pendingConfirmCount.set(0);
     const timer = setTimeout(() => {
+      if (attempt === this.loadAttempt) {
+        this.slow.set(true);
+      }
+    }, 10_000);
+    try {
+      const [mineResult, inboxResult] = await Promise.allSettled([
+        firstValueFrom(this.api.getMyProvider()),
+        firstValueFrom(this.api.listMatchingRequests(true)),
+      ]);
       if (attempt !== this.loadAttempt) {
         return;
       }
-      this.error.set('ใช้เวลานานเกินไป ลองใหม่อีกครั้ง');
-      this.loading.set(false);
-    }, 10_000);
-    try {
-      const mine = await firstValueFrom(this.api.getMyProvider());
-      const items = await firstValueFrom(this.api.listMatchingRequests(true));
-      if (attempt !== this.loadAttempt || this.error()) {
+      if (inboxResult.status === 'rejected') {
+        this.error.set(this.safeError(apiErrorMessage(inboxResult.reason, 'โหลดรายการงานไม่สำเร็จ')));
         return;
       }
-      this.provider.set(mine);
+
+      const inbox = inboxResult.value;
+      const items = inbox.items ?? [];
       this.matchingRequests.set(items);
-
+      this.excludesOwnRequests.set(!!inbox.excludesOwnRequests);
+      this.areas.set(inbox.areas ?? []);
       this.pendingConfirmCount.set(items.filter((r) => r.needsAppointmentConfirm).length);
+      this.ready.set(true);
 
-      const missingBranches = mine.branches.filter((b) => b.isActive).length === 0;
-      const missingServices = mine.services.filter((s) => s.isActive).length === 0;
-      if (items.length === 0) {
-        if (missingBranches) {
-          this.setupIssue.set('missing-branches');
-        } else if (missingServices) {
-          this.setupIssue.set('missing-services');
+      if (mineResult.status === 'fulfilled') {
+        const mine = mineResult.value;
+        this.provider.set(mine);
+        if (items.length === 0) {
+          const missingBranches = mine.branches.filter((b) => b.isActive).length === 0;
+          const missingServices = mine.services.filter((s) => s.isActive).length === 0;
+          if (missingBranches) {
+            this.setupIssue.set('missing-branches');
+          } else if (missingServices) {
+            this.setupIssue.set('missing-services');
+          }
         }
-      }
-    } catch (e) {
-      if (attempt !== this.loadAttempt || this.error()) {
-        return;
-      }
-      if (e instanceof HttpErrorResponse && e.status === 404) {
+      } else if (
+        mineResult.reason instanceof HttpErrorResponse &&
+        mineResult.reason.status === 404
+      ) {
         this.setupIssue.set('no-profile');
         this.provider.set(null);
-        this.matchingRequests.set([]);
-      } else {
-        this.error.set(this.safeError(apiErrorMessage(e, 'โหลดรายการงานไม่สำเร็จ')));
       }
     } finally {
       clearTimeout(timer);
-      if (attempt === this.loadAttempt && !this.error()) {
+      if (attempt === this.loadAttempt) {
         this.loading.set(false);
+        this.slow.set(false);
       }
     }
+  }
+
+  protected radiusLabel(meters: number): string {
+    if (meters >= 1000) {
+      const km = meters / 1000;
+      const text = Number.isInteger(km) ? String(km) : km.toFixed(1);
+      return `${text} กม.`;
+    }
+    return `${Math.round(meters)} ม.`;
+  }
+
+  protected emptyReason(): string {
+    const reasons: string[] = [];
+    if (this.excludesOwnRequests()) {
+      reasons.push('งานที่คุณโพสต์เองจะไม่แสดงในรายการนี้');
+    }
+    if (this.areas().length > 0) {
+      const places = this.areas()
+        .map((area) => `รัศมี ${this.radiusLabel(area.serviceRadiusMeters)} รอบ ${area.name}`)
+        .join(' และ ');
+      reasons.push(`ระบบกรองตามพื้นที่ที่ตั้งไว้ (${places})`);
+    }
+    if (reasons.length === 0) {
+      return 'ยังไม่มีงานที่ตรงกับบริการที่เปิดอยู่';
+    }
+    return reasons.join(' ');
   }
 
   private safeError(message: string): string {

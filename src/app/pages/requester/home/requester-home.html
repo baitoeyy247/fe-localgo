@@ -50,7 +50,7 @@
                 <button
                   type="button"
                   class="danger danger--pill"
-                  (click)="cancelRequest(request, $event)"
+                  (click)="askCancel(request, $event)"
                 >
                   ยกเลิกงาน
                 </button>
@@ -73,4 +73,29 @@
   </section>
 
   <app-requester-bottom-nav />
+
+  @if (cancelTarget(); as target) {
+    <div class="cancel-modal" role="dialog" aria-modal="true" aria-labelledby="cancel-job-title">
+      <div class="cancel-modal__sheet">
+        <h2 id="cancel-job-title">ยกเลิกงาน</h2>
+        <p>
+          ยกเลิก "{{ target.title }}" แล้วงานนี้จะถูกปิด และผู้ที่เสนอราคาไว้จะได้รับแจ้งเตือน
+        </p>
+        @if (cancelError()) {
+          <p class="error-text">{{ cancelError() }}</p>
+        }
+        <div class="cancel-modal__actions">
+          <button type="button" (click)="dismissCancel()" [disabled]="cancelling()">กลับ</button>
+          <button
+            type="button"
+            class="cancel-modal__confirm"
+            [disabled]="cancelling()"
+            (click)="confirmCancel()"
+          >
+            {{ cancelling() ? 'กำลังยกเลิก…' : 'ยืนยันยกเลิก' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </app-page-shell>

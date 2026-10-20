@@ -43,8 +43,11 @@
         </button>
       </div>
     } @else {
-      <p class="state-message">เลือกงานจากรายการก่อน</p>
-      <a routerLink="/provider/requests">ไปรายการงาน</a>
+      <article class="empty-state">
+        <h3>ยังเสนอราคาไม่ได้</h3>
+        <p>{{ denied() || 'เลือกงานจากรายการก่อน' }}</p>
+        <a class="primary" routerLink="/provider/requests">ไปรายการงาน</a>
+      </article>
     }
   </section>
 </app-page-shell>

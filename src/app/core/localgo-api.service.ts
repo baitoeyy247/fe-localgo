@@ -14,7 +14,9 @@ import {
   CreatedResource,
   LineConfig,
   ProviderBranch,
+  BidFormAccess,
   ProviderDetail,
+  ProviderMatchingInbox,
   ProviderService,
   ProviderSummary,
   ReviewItem,
@@ -333,9 +335,13 @@ export class LocalGoApiService {
 
   // --- Provider inbox ---
 
-  listMatchingRequests(refresh = false): Observable<ServiceRequestSummary[]> {
+  listMatchingRequests(refresh = false): Observable<ProviderMatchingInbox> {
     const params = refresh ? new HttpParams().set('_t', String(Date.now())) : undefined;
-    return this.get<ServiceRequestSummary[]>('/provider/service-requests/matching', { params });
+    return this.get<ProviderMatchingInbox>('/provider/service-requests/matching', { params });
+  }
+
+  getBidForm(requestId: string): Observable<BidFormAccess> {
+    return this.get<BidFormAccess>(`/provider/service-requests/${requestId}/bid-form`);
   }
 
   // --- Admin ---

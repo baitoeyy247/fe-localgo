@@ -69,6 +69,23 @@ export interface ProviderDetail {
   services: ProviderService[];
 }
 
+export interface ProviderCoverageArea {
+  name: string;
+  serviceRadiusMeters: number;
+}
+
+export interface ProviderMatchingInbox {
+  items: ServiceRequestSummary[];
+  excludesOwnRequests: boolean;
+  areas: ProviderCoverageArea[];
+}
+
+export interface BidFormAccess {
+  allowed: boolean;
+  reason?: string | null;
+  request?: ServiceRequestDetail | null;
+}
+
 export interface ServiceRequestSummary {
   id: string;
   title: string;

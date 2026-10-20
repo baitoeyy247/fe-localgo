@@ -1,6 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
@@ -23,10 +23,13 @@ export class SubmitBidPage implements OnInit {
   protected readonly submitting = signal(false);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+  protected readonly denied = signal<string | null>(null);
 
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
+  private activeRequestId: string | null = null;
 
   protected backLink(): string {
     const id = this.request()?.id;
@@ -34,36 +37,61 @@ export class SubmitBidPage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    const requestId = this.session.providerRequestId;
+    const fromQuery = this.route.snapshot.queryParamMap.get('requestId')?.trim() ?? '';
+    const requestId = fromQuery || this.session.providerRequestId;
     if (!requestId) {
       this.loading.set(false);
-      this.error.set('เลือกงานจากรายการก่อน');
+      this.denied.set('เลือกงานจากรายการก่อน');
       return;
     }
+    this.activeRequestId = requestId;
     try {
-      const [detail, myProvider] = await Promise.all([
-        firstValueFrom(this.api.getRequest(requestId)),
+      const [formResult, providerResult] = await Promise.allSettled([
+        firstValueFrom(this.api.getBidForm(requestId)),
         firstValueFrom(this.api.getMyProvider()),
       ]);
-      this.providerId.set(myProvider.id);
+      if (formResult.status === 'rejected') {
+        const reason = formResult.reason;
+        this.denied.set(
+          reason instanceof HttpErrorResponse && reason.status === 404
+            ? 'ไม่พบงานนี้'
+            : apiErrorMessage(reason, 'โหลดงานไม่สำเร็จ'),
+        );
+        return;
+      }
+      const form = formResult.value;
+      if (!form.allowed || !form.request) {
+        this.denied.set(form.reason || 'ไม่สามารถเสนอราคางานนี้ได้');
+        return;
+      }
+      this.session.providerRequestId = requestId;
+      const detail = form.request;
       this.request.set(detail);
+      const providerId =
+        providerResult.status === 'fulfilled' ? providerResult.value.id : null;
+      this.providerId.set(providerId);
       const existing = detail.bids?.find(
-        (bid) => bid.providerId === myProvider.id && bid.status === 'Submitted',
+        (bid) =>
+          (!providerId || bid.providerId === providerId) &&
+          (bid.status === 'Submitted' || bid.status === 'Pending'),
       );
       if (existing) {
         this.existingBidId.set(existing.id);
         this.priceText.set(existing.priceText);
         this.description.set(existing.description ?? '');
+        if (!providerId) {
+          this.providerId.set(existing.providerId);
+        }
       }
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'โหลดงานไม่สำเร็จ'));
+      this.denied.set(apiErrorMessage(e, 'โหลดงานไม่สำเร็จ'));
     } finally {
       this.loading.set(false);
     }
   }
 
   protected async submit(): Promise<void> {
-    const requestId = this.session.providerRequestId;
+    const requestId = this.activeRequestId;
     const providerId = this.providerId();
     if (!requestId || !providerId || !this.priceText().trim() || this.submitting()) {
       return;

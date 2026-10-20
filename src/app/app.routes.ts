@@ -118,5 +118,8 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/admin/dashboard/admin-dashboard').then((m) => m.AdminDashboardPage),
   },
-  { path: '**', redirectTo: '' },
+  {
+    path: '**',
+    loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFoundPage),
+  },
 ];
