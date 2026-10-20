@@ -279,6 +279,8 @@ export class LocalGoApiService {
     latitude: number;
     longitude: number;
     searchRadiusMeters: number;
+    preferredStartAt?: string;
+    preferredEndAt?: string;
     budgetText?: string;
     publish: boolean;
   }): Observable<CreatedResource> {

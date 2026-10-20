@@ -2,6 +2,7 @@ const FIELD_ORDER = [
   '#post-category',
   '#post-title',
   '#post-description',
+  '#post-preferred',
   '#post-budget',
   '#service-category',
   '#service-title',

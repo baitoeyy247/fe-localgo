@@ -61,6 +61,21 @@
         <small>{{ description().length }}/{{ detailsMax }}</small>
         <app-field-error [message]="fieldErrors().description" errorId="post-description-error" />
       </label>
+      <label class="form-field form-field--modern">
+        <span>วันที่และเวลาที่ต้องการ <abbr class="required-mark" title="จำเป็น">*</abbr></span>
+        <input
+          id="post-preferred"
+          type="datetime-local"
+          aria-label="วันที่และเวลาที่ต้องการ"
+          [attr.min]="minPreferredLocal()"
+          [attr.aria-invalid]="fieldErrors().preferred ? 'true' : null"
+          [attr.aria-describedby]="fieldErrors().preferred ? 'post-preferred-error' : null"
+          [value]="preferredWhen()"
+          (input)="updatePreferredWhen($any($event.target).value)"
+        />
+        <small>ต้องเป็นเวลาปัจจุบันหรือหลังจากนั้น</small>
+        <app-field-error [message]="fieldErrors().preferred" errorId="post-preferred-error" />
+      </label>
 
       <section class="summary-panel summary-panel--interactive">
         <div class="summary-panel__content">

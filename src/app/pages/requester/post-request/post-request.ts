@@ -13,13 +13,14 @@ import { Category } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import { UserLocationService } from '../../../core/user-location.service';
 import { formatCoordinates } from '../../../shared/coordinates';
-import { OPEN_BUDGET, REQUEST_DETAILS_MAX, REQUEST_TITLE_MAX, budgetAmountError } from '../../../shared/form-rules';
+import { OPEN_BUDGET, REQUEST_DETAILS_MAX, REQUEST_TITLE_MAX, budgetAmountError, preferredTimeError } from '../../../shared/form-rules';
+import { toDatetimeLocal } from '../../../shared/datetime.util';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { focusFirstInvalid } from '../../../shared/focus-invalid';
 import { FieldError } from '../../../shared/field-error';
 import { environment } from '../../../../environments/environment';
 
-type FieldKey = 'category' | 'title' | 'description' | 'location' | 'budget';
+type FieldKey = 'category' | 'title' | 'description' | 'preferred' | 'location' | 'budget';
 
 @Component({
   selector: 'app-post-request-page',
@@ -36,6 +37,7 @@ export class PostRequestPage implements OnInit {
   protected readonly description = signal('');
   protected readonly budgetMode = signal<'open' | 'amount'>('open');
   protected readonly budgetAmount = signal('');
+  protected readonly preferredWhen = signal('');
   protected readonly posting = signal(false);
   protected readonly locating = signal(false);
   protected readonly titleMax = REQUEST_TITLE_MAX;
@@ -82,6 +84,20 @@ export class PostRequestPage implements OnInit {
   protected updateDescription(value: string): void {
     this.description.set(value.slice(0, REQUEST_DETAILS_MAX));
     this.clearField('description');
+  }
+
+  protected minPreferredLocal(): string {
+    return toDatetimeLocal(new Date());
+  }
+
+  protected updatePreferredWhen(value: string): void {
+    this.preferredWhen.set(value);
+    const error = preferredTimeError(value);
+    if (value.trim() && error) {
+      this.fieldErrors.set({ ...this.fieldErrors(), preferred: error });
+      return;
+    }
+    this.clearField('preferred');
   }
 
   protected setBudgetMode(mode: 'open' | 'amount'): void {
@@ -152,6 +168,7 @@ export class PostRequestPage implements OnInit {
           latitude: loc.lat,
           longitude: loc.lng,
           searchRadiusMeters: loc.radiusKm * 1000,
+          preferredStartAt: new Date(this.preferredWhen()).toISOString(),
           budgetText: this.budgetPayload(),
           publish: true,
         }),
@@ -185,6 +202,10 @@ export class PostRequestPage implements OnInit {
       errors.description = 'กรุณากรอกรายละเอียด';
     } else if (this.description().trim().length > REQUEST_DETAILS_MAX) {
       errors.description = `รายละเอียดต้องไม่เกิน ${REQUEST_DETAILS_MAX} ตัวอักษร`;
+    }
+    const preferredError = preferredTimeError(this.preferredWhen());
+    if (preferredError) {
+      errors.preferred = preferredError;
     }
     const loc = this.requestLocation();
     if (this.locating() || (loc.lat === 0 && loc.lng === 0)) {

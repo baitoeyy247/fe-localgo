@@ -10,6 +10,9 @@
             <h3 style="margin: 0;">{{ r.title }}</h3>
             <span class="badge" [class.badge--warn]="isExpired()">{{ statusLabel(r.status) }}</span>
           </div>
+          @if (r.preferredStartAt) {
+            <p style="margin-top: 0.35rem;">วันที่และเวลาที่ต้องการ: {{ formatWhen(r.preferredStartAt) }}</p>
+          }
           @if (isCancelled()) {
             <p style="margin-top: 0.35rem;">งานนี้ถูกยกเลิกเมื่อ {{ formatWhen(r.updatedAt) }}</p>
           } @else if (!justPosted() && (r.status === 'Open' || r.status === 'HasOffers')) {

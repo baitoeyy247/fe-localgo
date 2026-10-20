@@ -110,6 +110,8 @@ export interface ServiceRequestDetail {
   latitude: number;
   longitude: number;
   searchRadiusMeters: number;
+  preferredStartAt?: string | null;
+  preferredEndAt?: string | null;
   budgetText?: string | null;
   selectedProviderId?: string | null;
   selectedBidId?: string | null;

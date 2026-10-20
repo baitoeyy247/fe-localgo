@@ -26,7 +26,10 @@
         <div class="chips">
           <span>รัศมี {{ (r.searchRadiusMeters / 1000).toFixed(0) }} กม.</span>
           @if (r.budgetText) {
-            <span>{{ r.budgetText }}</span>
+            <span>{{ formatBaht(r.budgetText) }}</span>
+          }
+          @if (r.preferredStartAt) {
+            <span>ต้องการ {{ formatScheduledAt(r.preferredStartAt) }}</span>
           }
         </div>
 

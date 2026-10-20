@@ -1,4 +1,4 @@
-import { budgetAmountError, isPriceText, priceTextError, thaiMobileError } from './form-rules';
+import { budgetAmountError, isPriceText, preferredTimeError, priceTextError, thaiMobileError } from './form-rules';
 
 describe('form rules', () => {
   it('accepts a 10-digit Thai mobile and rejects abc or 123', () => {
@@ -15,6 +15,14 @@ describe('form rules', () => {
     expect(budgetAmountError('-5')).toBeTruthy();
     expect(budgetAmountError('abc')).toBeTruthy();
     expect(budgetAmountError('1000001')).toBeTruthy();
+  });
+
+  it('rejects a missing or past desired time', () => {
+    const now = new Date(2026, 9, 21, 15, 0, 0);
+    expect(preferredTimeError('', now)).toContain('กรุณาเลือกวันที่');
+    expect(preferredTimeError('2026-10-21T14:00', now)).toContain('ไม่เป็นเวลาในอดีต');
+    expect(preferredTimeError('2026-10-21T15:00', now)).toBeNull();
+    expect(preferredTimeError('2026-10-22T09:30', now)).toBeNull();
   });
 
   it('accepts a price number or range', () => {

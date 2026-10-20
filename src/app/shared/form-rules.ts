@@ -18,6 +18,25 @@ export function thaiMobileError(value: string): string | null {
   return null;
 }
 
+export function preferredTimeError(value: string, now = new Date()): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return 'กรุณาเลือกวันที่และเวลาที่ต้องการ';
+  }
+  const parsed = new Date(trimmed);
+  if (Number.isNaN(parsed.getTime())) {
+    return 'กรุณาเลือกวันที่และเวลาที่ต้องการ';
+  }
+  const chosen = new Date(parsed);
+  chosen.setSeconds(0, 0);
+  const current = new Date(now);
+  current.setSeconds(0, 0);
+  if (chosen.getTime() < current.getTime()) {
+    return 'วันที่และเวลาที่ต้องการต้องไม่เป็นเวลาในอดีต';
+  }
+  return null;
+}
+
 export function budgetAmountError(value: string): string | null {
   const trimmed = value.trim();
   if (!/^\d+$/.test(trimmed)) {

@@ -17,6 +17,9 @@
           </div>
           <p style="margin-top: 0.35rem;">{{ r.categoryName ?? 'ทั่วไป' }}</p>
           <p>งบประมาณ: {{ formatBaht(r.budgetText) }}</p>
+          @if (r.preferredStartAt) {
+            <p>วันที่และเวลาที่ต้องการ: {{ formatWhen(r.preferredStartAt) }}</p>
+          }
           @if (isCancelled()) {
             <p>งานนี้ถูกยกเลิกเมื่อ {{ formatWhen(r.updatedAt) }}</p>
           }
