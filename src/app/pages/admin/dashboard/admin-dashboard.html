@@ -56,9 +56,13 @@
               <br /><span class="muted">บัญชีทดสอบ</span>
             }
           </span>
-          <button type="button" class="btn btn-ghost btn-sm" [disabled]="acting() || !u.id" (click)="toggleUser(u)">
-            {{ userStatus(u) === 'Suspended' ? 'เปิดใช้งาน' : 'ระงับ' }}
-          </button>
+          @if (canToggleUserStatus(u)) {
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="acting()" (click)="toggleUser(u)">
+              {{ userStatus(u) === 'Suspended' ? 'เปิดใช้งาน' : 'ระงับ' }}
+            </button>
+          } @else if (auth.user()?.id === u.id) {
+            <span class="muted" style="font-size: 13px">บัญชีของคุณ</span>
+          }
         </div>
       } @empty {
         <p class="muted" style="padding: 16px">ยังไม่มีผู้ใช้</p>

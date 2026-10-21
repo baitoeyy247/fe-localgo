@@ -368,21 +368,24 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.actingLabel.set('กำลังปฏิเสธนัด…');
     this.error.set(null);
     this.rejectOpen.set(false);
-    this.appointment.set({ ...appt, status: 'Rejected' });
-    this.toast.show('ปฏิเสธนัดแล้ว');
     try {
       const updated = await firstValueFrom(
         this.api.updateAppointmentStatus(appt.id, 'Rejected', reason || undefined),
       );
       this.appointment.set(updated);
       this.cache.invalidateAll();
+      this.toast.show('ปฏิเสธนัดแล้ว');
       this.notice.set('ปฏิเสธนัดแล้ว — ลูกค้าจะเห็นสถานะผู้ให้บริการปฏิเสธ');
-      const requestId = this.request()?.id;
+      const current = this.request();
+      if (current) {
+        this.request.set({ ...current, appointmentStatus: updated.status });
+      }
+      const requestId = current?.id;
       if (requestId) {
         try {
           this.request.set(await firstValueFrom(this.api.getRequest(requestId)));
         } catch {
-          /* keep appointment status */
+          /* appointment + appointmentStatus already updated */
         }
       }
     } catch (e) {
@@ -497,12 +500,11 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.actingLabel.set(options.busyLabel);
     this.error.set(null);
     this.advanceConfirmOpen.set(false);
-    this.appointment.set({ ...appt, status });
-    this.toast.show(options.notice);
     try {
       const updated = await firstValueFrom(this.api.updateAppointmentStatus(appt.id, status));
       this.appointment.set(updated);
       this.cache.invalidateAll();
+      this.toast.show(options.notice);
       const requestId = this.request()?.id;
       if (requestId) {
         try {

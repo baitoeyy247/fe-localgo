@@ -18,6 +18,7 @@ import {
   requestStatusLabel,
 } from '../../../shared/status-labels';
 import { displayInitial } from '../../../shared/display-initial';
+import { AuthService } from '../../../core/auth.service';
 
 @Component({
   selector: 'app-admin-dashboard-page',
@@ -48,6 +49,7 @@ export class AdminDashboardPage implements OnInit {
   protected readonly displayInitial = displayInitial;
 
   private readonly api = inject(LocalGoApiService);
+  protected readonly auth = inject(AuthService);
 
   ngOnInit(): void {
     void this.load(true);
@@ -129,8 +131,13 @@ export class AdminDashboardPage implements OnInit {
     );
   }
 
+  protected canToggleUserStatus(u: AdminUserRow): boolean {
+    const me = this.auth.user();
+    return !!u.id && (!me?.id || me.id !== u.id);
+  }
+
   protected async toggleUser(u: AdminUserRow): Promise<void> {
-    if (!u.id || this.acting()) {
+    if (!this.canToggleUserStatus(u) || this.acting()) {
       return;
     }
     const currentStatus = this.userStatus(u);

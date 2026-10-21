@@ -15,6 +15,11 @@
       <p class="muted" style="text-align: center; margin-top: 12px">
         {{ hint.slow() ? 'กำลังเชื่อมต่อเซิร์ฟเวอร์…' : 'กำลังโหลด…' }}
       </p>
+      @if (hint.timedOut()) {
+        <button class="btn btn-primary btn-block" type="button" style="margin-top: 12px" (click)="retryLogin()">
+          ลองใหม่
+        </button>
+      }
     </div>
   } @else if (error() && !showTestMode()) {
     <div class="state" role="alert">

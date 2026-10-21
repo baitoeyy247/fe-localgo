@@ -49,7 +49,7 @@ export class EntryPage implements OnInit, OnDestroy {
     try {
       this.auth.clearSession();
       this.auth.resetBootstrap();
-      await this.auth.ensureSession();
+      await this.ensureSessionWithTimeout();
       await this.loadCategories();
       await this.loadLineHint();
     } catch (e) {
@@ -95,13 +95,14 @@ export class EntryPage implements OnInit, OnDestroy {
   private async bootstrapEntry(): Promise<void> {
     if (this.showTestMode() && !this.auth.isAuthenticated()) {
       void this.loadLineHint();
+      this.loading.set(false);
       return;
     }
 
     this.hint.begin();
     try {
       this.auth.resetBootstrap();
-      await this.auth.ensureSession();
+      await this.ensureSessionWithTimeout();
       if (this.auth.isAuthenticated()) {
         await this.loadCategories();
       }
@@ -172,6 +173,26 @@ export class EntryPage implements OnInit, OnDestroy {
     await this.router.navigate(['/requester/search'], {
       queryParams: { categoryId: cat.id, categoryName: cat.name },
     });
+  }
+
+  private static readonly SESSION_TIMEOUT_MS = 12_000;
+
+  private async ensureSessionWithTimeout(): Promise<void> {
+    try {
+      await Promise.race([
+        this.auth.ensureSession(),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error('การเชื่อมต่อใช้เวลานานเกินไป — กรุณาลองใหม่')),
+            EntryPage.SESSION_TIMEOUT_MS,
+          ),
+        ),
+      ]);
+    } catch (e) {
+      this.auth.clearSession();
+      this.auth.resetBootstrap();
+      throw e;
+    }
   }
 
   private toAuthErrorMessage(error: unknown): string {
