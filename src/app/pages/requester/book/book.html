@@ -11,7 +11,7 @@
         <span class="badge b-blue">บริการที่จอง</span>
         <h3 style="margin: 8px 0 4px">{{ svc.title }}</h3>
         <p class="muted" style="margin: 0">{{ svc.categoryName ?? 'บริการทั่วไป' }}</p>
-        <p class="price" style="margin: 8px 0 0; font-size: 16px">{{ svc.basePriceText ?? 'ติดต่อสอบถามราคา' }}</p>
+        <p class="price" style="margin: 8px 0 0; font-size: 16px">{{ formatPrice(svc.basePriceText) }}</p>
       </div>
     }
 
@@ -50,7 +50,7 @@
       <div class="banner ok">{{ success() }}</div>
     }
 
-    <button class="btn btn-primary btn-block" type="button" [disabled]="saving()" (click)="confirm()">
+    <button class="btn btn-primary btn-block sticky-cta" type="button" [disabled]="saving()" (click)="confirm()">
       {{ saving() ? 'กำลังจอง…' : 'ยืนยันการจอง' }}
     </button>
   }
@@ -62,6 +62,7 @@
     locationTitle="จุดนัดหมาย"
     [lat]="mapLat() ?? 13.7563"
     [lng]="mapLng() ?? 100.5018"
+    [radiusOptions]="[1, 3, 5, 8, 10, 15]"
     (confirm)="applyPickedLocation($event)"
     (cancel)="closePicker()"
   />

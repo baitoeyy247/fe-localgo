@@ -10,6 +10,7 @@ import { RequesterBottomNav } from '../../../shared/requester-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { Category, ProviderSummary } from '../../../core/models';
 import { UserLocationService } from '../../../core/user-location.service';
+import { formatDistanceMeters } from '../../../shared/geo-distance';
 
 @Component({
   selector: 'app-requester-search-page',
@@ -107,7 +108,7 @@ export class RequesterSearchPage implements OnInit {
   }
 
   protected formatDistance(meters: number): string {
-    return meters >= 1000 ? `${(meters / 1000).toFixed(1)} กม.` : `${Math.round(meters)} ม.`;
+    return formatDistanceMeters(meters);
   }
 
   private async reload(): Promise<void> {

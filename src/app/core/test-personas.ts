@@ -54,13 +54,13 @@ export const TEST_PERSONAS: TestPersona[] = [
     key: 'both-01',
     displayName: 'ทดสอบ สองบทบาท 01',
     activeRole: 'Requester',
-    blurb: 'เริ่มเป็นผู้รับ — สลับไปผู้ให้ได้',
+    blurb: 'เริ่มผู้รับ — สลับบทบาทไม่ลบข้อมูลเดิม',
   },
   {
     key: 'both-02',
     displayName: 'ทดสอบ สองบทบาท 02',
     activeRole: 'Provider',
-    blurb: 'เริ่มเป็นผู้ให้ — สลับไปผู้รับได้',
+    blurb: 'เริ่มผู้ให้ (มีโปรไฟล์) — สลับไม่ลบข้อมูล',
   },
   {
     key: 'admin-01',

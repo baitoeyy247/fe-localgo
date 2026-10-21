@@ -1,6 +1,8 @@
 <app-page-shell title="บริการของฉัน" backLink="/provider">
   @if (loading()) {
     <p class="muted" style="text-align: center">กำลังโหลด…</p>
+  } @else if (error()) {
+    <app-error-state [message]="error()!" (retry)="reload()" />
   } @else if (provider(); as p) {
     <div class="card">
       <div class="row between">
@@ -8,10 +10,12 @@
         <span class="badge b-green">{{ p.status === 'Active' ? 'พร้อมรับงาน' : p.status }}</span>
       </div>
       <p class="muted" style="margin: 4px 0 0">
-        {{ p.services.length }} บริการ · {{ p.branches.length }} จุดให้บริการ · ★ {{ p.averageVerifiedRating }} ({{
-          p.verifiedReviewCount
-        }}
-        รีวิว)
+        {{ p.services.length }} บริการ · {{ p.branches.length }} จุดให้บริการ ·
+        @if (p.verifiedReviewCount > 0) {
+          ★ {{ p.averageVerifiedRating }} ({{ p.verifiedReviewCount }} รีวิว)
+        } @else {
+          ยังไม่มีรีวิว
+        }
       </p>
     </div>
 
@@ -28,7 +32,9 @@
             service.isActive ? 'เปิด' : 'หยุด'
           }}</span>
         </div>
-        <p class="muted" style="margin: 4px 0 12px">{{ service.categoryName ?? 'บริการ' }} · {{ service.basePriceText ?? 'ติดต่อสอบถาม' }}</p>
+        <p class="muted" style="margin: 4px 0 12px">
+          {{ service.categoryName ?? 'บริการ' }} · {{ formatPrice(service.basePriceText) }}
+        </p>
         <div class="row">
           <a class="btn btn-secondary btn-sm grow" [routerLink]="['/provider/service', service.id, 'edit']">แก้ไข</a>
           <button type="button" class="btn btn-ghost btn-sm grow" (click)="toggleService(service.id, !service.isActive)">

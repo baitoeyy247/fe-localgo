@@ -1,7 +1,7 @@
 import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { catchError, throwError, timeout, TimeoutError } from 'rxjs';
 
-export const API_TIMEOUT_MS = 15_000;
+export const API_TIMEOUT_MS = 10_000;
 export const API_TIMEOUT_MESSAGE =
   'เซิร์ฟเวอร์ตอบสนองช้า ใช้เวลานานเกินไป กรุณาลองใหม่อีกครั้ง';
 

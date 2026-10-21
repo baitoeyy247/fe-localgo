@@ -5,7 +5,7 @@
     <span><b>โพสต์แล้วรอรับราคา</b><br />กำหนดจุดรับงานให้ชัด แล้วเปิดรับข้อเสนอจากผู้ให้บริการรอบพื้นที่นั้น</span>
   </div>
 
-  <label class="field">
+  <label class="field" [class.field--error]="!!fieldErrors()['title']">
     <span>หมวดหมู่</span>
     <select class="input" aria-label="หมวดหมู่" (change)="selectCategory($any($event.target).value)">
       @for (cat of categories(); track cat.id) {
@@ -13,14 +13,18 @@
       }
     </select>
   </label>
-  <label class="field">
+  <label class="field" [class.field--error]="!!fieldErrors()['title']">
     <span>หัวข้องาน</span>
     <input
       class="input"
+      [class.err]="!!fieldErrors()['title']"
       aria-label="หัวข้องาน"
       placeholder="เช่น ต้องการซักผ้าด่วน 5 กก."
       (input)="updateTitle($any($event.target).value)"
     />
+    @if (fieldErrors()['title']; as msg) {
+      <p class="error-text">{{ msg }}</p>
+    }
   </label>
   <label class="field">
     <span>รายละเอียด</span>
@@ -33,12 +37,36 @@
     ></textarea>
   </label>
 
+  <div class="field" [class.field--error]="!!fieldErrors()['preferredAt']">
+    <span>วันที่และเวลาที่ต้องการ <span class="req">*</span></span>
+    <div class="datetime-pair">
+      <input
+        class="input"
+        type="date"
+        aria-label="วันที่ต้องการ"
+        [min]="preferredMinDate()"
+        [value]="preferredDate()"
+        (change)="updatePreferredDate($any($event.target).value)"
+      />
+      <input
+        class="input"
+        type="time"
+        aria-label="เวลาที่ต้องการ"
+        [value]="preferredTime()"
+        (change)="updatePreferredTime($any($event.target).value)"
+      />
+    </div>
+    @if (fieldErrors()['preferredAt']; as msg) {
+      <p class="error-text">{{ msg }}</p>
+    }
+  </div>
+
   <div class="card row">
     <span class="ico">📍</span>
     <span class="grow">
       <b>{{ requestLocation().title }}</b><br />
       <span class="muted"
-        >{{ requestLocation().subtitle }} · รัศมี {{ requestLocation().radiusKm }} กม.
+        >{{ requestLocation().subtitle }}
         @if (showCoords()) {
           · {{ requestLocation().lat.toFixed(4) }}, {{ requestLocation().lng.toFixed(4) }}
         }
@@ -47,7 +75,7 @@
     <button type="button" class="btn btn-secondary btn-sm" (click)="openPicker()">เลือกตำแหน่ง</button>
   </div>
 
-  <div class="field">
+  <div class="field" [class.field--error]="!!fieldErrors()['budget']">
     <span>งบประมาณ</span>
     <div class="budget-seg" role="radiogroup" aria-label="รูปแบบงบประมาณ">
       <label class="budget-seg__option" [class.is-active]="budgetMode() === 'open'">
@@ -76,6 +104,8 @@
         <span>จำนวนเงิน</span>
         <div class="input-with-unit">
           <input
+            class="input"
+            [class.err]="!!fieldErrors()['budget']"
             aria-label="งบประมาณ"
             inputmode="numeric"
             placeholder="400"
@@ -86,6 +116,9 @@
         </div>
       </label>
     }
+    @if (fieldErrors()['budget']; as msg) {
+      <p class="error-text">{{ msg }}</p>
+    }
   </div>
 
   <div class="card">
@@ -94,10 +127,10 @@
     <p class="muted" style="margin: 4px 0 0">คุณจะเห็นข้อเสนอราคาทั้งหมดในหน้าเดียว และเลือกข้อเสนอได้เฉพาะคนที่ประกาศงานนี้</p>
   </div>
 
-  @if (error()) {
+  @if (error() && !fieldErrors()['title'] && !fieldErrors()['budget'] && !fieldErrors()['preferredAt']) {
     <p class="error-text">{{ error() }}</p>
   }
-  <button class="btn btn-primary btn-block" type="button" [disabled]="posting() || !title().trim()" (click)="publish()">
+  <button class="btn btn-primary btn-block" type="button" [disabled]="posting()" (click)="publish()">
     {{ posting() ? 'กำลังประกาศ…' : 'ประกาศงาน' }}
   </button>
 
@@ -113,7 +146,7 @@
     [radiusKm]="requestLocation().radiusKm"
     [lat]="requestLocation().lat"
     [lng]="requestLocation().lng"
-    [radiusOptions]="[1, 3, 5, 10]"
+    [radiusOptions]="[1, 3, 5, 8, 10, 15]"
     (cancel)="closePicker()"
     (confirm)="applyLocation($event)"
   />

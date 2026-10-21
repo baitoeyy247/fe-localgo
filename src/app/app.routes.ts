@@ -68,6 +68,22 @@ export const routes: Routes = [
       import('./pages/requester/appointment/appointment').then((m) => m.AppointmentPage),
   },
   {
+    path: 'requester/appointments/:id',
+    title: 'นัดหมาย | LocalGo',
+    canActivate: [authGuard],
+    data: { role: 'requester' },
+    loadComponent: () =>
+      import('./pages/shared/appointment-by-id').then((m) => m.AppointmentByIdPage),
+  },
+  {
+    path: 'provider/appointments/:id',
+    title: 'นัดหมาย | LocalGo',
+    canActivate: [authGuard],
+    data: { role: 'provider' },
+    loadComponent: () =>
+      import('./pages/shared/appointment-by-id').then((m) => m.AppointmentByIdPage),
+  },
+  {
     path: 'requester/review',
     title: 'รีวิวและให้คะแนน | LocalGo',
     canActivate: [authGuard],

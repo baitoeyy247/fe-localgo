@@ -43,7 +43,7 @@
         <p class="muted" style="margin: 4px 0 12px; font-size: 13px">
           โพสต์ {{ formatWhen(request.createdAt) }} · {{ request.bidCount }} ข้อเสนอ
           @if (request.budgetText) {
-            · {{ request.budgetText }}
+            · {{ formatPrice(request.budgetText) }}
           }
         </p>
         <button type="button" class="btn btn-primary btn-sm btn-block" (click)="openRequest(request)">
@@ -67,7 +67,7 @@
         <p class="muted" style="margin: 4px 0 12px; font-size: 13px">
           โพสต์ {{ formatWhen(request.createdAt) }} · {{ request.bidCount }} ข้อเสนอ
           @if (request.budgetText) {
-            · {{ request.budgetText }}
+            · {{ formatPrice(request.budgetText) }}
           }
         </p>
         <button type="button" class="btn btn-primary btn-sm btn-block" (click)="openRequest(request)">

@@ -68,7 +68,19 @@ export interface LocationPickerValue {
                 <p class="error-text">{{ geoError() }}</p>
               }
 
-              <div class="pill-tabs" aria-label="ตัวเลือกรัศมี">
+              <label class="field" style="margin: 0">
+                <span>รัศมี {{ draftRadiusKm() }} กม.</span>
+                <input
+                  type="range"
+                  min="1"
+                  max="15"
+                  step="1"
+                  [value]="draftRadiusKm()"
+                  aria-label="รัศมีกิโลเมตร"
+                  (input)="setRadius(+$any($event.target).value)"
+                />
+              </label>
+              <div class="pill-tabs" aria-label="ตัวเลือกรัศมีด่วน">
                 @for (radius of radiusOptions(); track radius) {
                   <button
                     type="button"
@@ -112,12 +124,12 @@ export interface LocationPickerValue {
                 </article>
               </div>
             </section>
-
-            <section class="location-modal__actions" aria-label="ยืนยันตำแหน่ง">
-              <button type="button" class="primary" (click)="confirmSelection()">ยืนยันและใช้ตำแหน่งนี้</button>
-              <button type="button" class="secondary" (click)="cancel.emit()">ยกเลิก</button>
-            </section>
           </div>
+
+          <section class="location-modal__actions" aria-label="ยืนยันตำแหน่ง">
+            <button type="button" class="primary" (click)="confirmSelection()">ยืนยันและใช้ตำแหน่งนี้</button>
+            <button type="button" class="secondary" (click)="cancel.emit()">ยกเลิก</button>
+          </section>
         </div>
       </div>
     }
@@ -133,7 +145,7 @@ export class LocationPickerModal {
   readonly radiusKm = input(5);
   readonly lat = input(13.7563);
   readonly lng = input(100.5018);
-  readonly radiusOptions = input<number[]>([1, 3, 5, 8]);
+  readonly radiusOptions = input<number[]>([1, 3, 5, 8, 10, 15]);
   /** เมื่อเปิด modal ครั้งแรก ให้พยายามโฟกัสตำแหน่งปัจจุบันอัตโนมัติ */
   readonly autoLocateOnOpen = input(true);
 
@@ -224,11 +236,13 @@ export class LocationPickerModal {
   }
 
   protected confirmSelection(): void {
+    // Avoid duplicating "รัศมี X กม." in title/subtitle/parent card.
+    const subtitle = this.placeSubtitle().replace(/\s*·\s*รัศมี\s+\d+\s*กม\./gu, '').trim();
     this.confirm.emit({
       lat: this.draftLat(),
       lng: this.draftLng(),
       title: this.placeTitle(),
-      subtitle: `${this.placeSubtitle()} · ${this.radiusText()}`,
+      subtitle: subtitle || this.radiusText(),
       radiusKm: this.draftRadiusKm(),
     });
   }

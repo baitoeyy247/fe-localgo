@@ -20,13 +20,14 @@ export class ProviderProfileSetupPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly provider = signal<ProviderDetail | null>(null);
-  protected readonly providerType = signal('Shop');
+  protected readonly providerType = signal('');
   protected readonly name = signal('');
   protected readonly description = signal('');
   protected readonly contactLineId = signal('');
   protected readonly contactPhone = signal('');
   protected readonly typeOptions = PROVIDER_TYPE_OPTIONS;
   protected readonly error = signal<string | null>(null);
+  protected readonly fieldErrors = signal<Record<string, string>>({});
   private readonly api = inject(LocalGoApiService);
   private readonly router = inject(Router);
 
@@ -69,15 +70,23 @@ export class ProviderProfileSetupPage implements OnInit {
   }
 
   protected async saveAndContinue(): Promise<void> {
-    if (this.saving() || !this.name().trim()) {
-      if (!this.name().trim()) {
-        this.error.set('กรุณาระบุชื่อที่แสดง');
-        scrollToFirstError();
-      }
+    if (this.saving()) {
+      return;
+    }
+    const errors: Record<string, string> = {};
+    if (!this.provider() && !this.providerType()) {
+      errors['providerType'] = 'กรุณาเลือกประเภทผู้ให้บริการ';
+    }
+    if (!this.name().trim()) {
+      errors['name'] = 'กรุณาระบุชื่อที่แสดง';
+    }
+    this.fieldErrors.set(errors);
+    this.error.set(null);
+    if (Object.keys(errors).length > 0) {
+      scrollToFirstError();
       return;
     }
     this.saving.set(true);
-    this.error.set(null);
     try {
       const existing = this.provider();
       if (existing) {

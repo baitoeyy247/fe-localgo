@@ -18,11 +18,7 @@ import { SlowLoadHint } from '../../../shared/load-state';
 import { ErrorState } from '../../../shared/ui/error-state';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
-import {
-  defaultAppointmentDatetimeLocal,
-  formatScheduledAt,
-  toDatetimeLocal,
-} from '../../../shared/datetime.util';
+import { formatScheduledAt, toDatetimeLocal } from '../../../shared/datetime.util';
 import { resolveRequesterRequestId } from '../../../shared/requester-request-flow';
 import { redirectProviderFromRequesterRoute } from '../../../shared/requester-deep-link-guard';
 import { ThaiDatetimeField } from '../../../shared/ui/thai-datetime-field';
@@ -210,7 +206,9 @@ export class AppointmentPage implements OnInit, OnDestroy {
     this.success.set(null);
     try {
       await firstValueFrom(this.api.updateAppointmentStatus(existing.id, 'Cancelled'));
-      this.success.set('ยกเลิกนัดหมายแล้ว คุณสามารถนัดหมายใหม่ได้');
+      this.success.set(null);
+      this.error.set(null);
+      // Clear sticky cancel banner — show a short toast-style notice only once via notice field if needed.
       const requestId = this.request()?.id ?? this.session.requesterRequestId;
       if (requestId) {
         await this.loadRequestState(requestId);
@@ -422,7 +420,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
       if (existing) {
         this.applyAppointmentFields(existing);
       } else {
-        this.scheduledAt.set(defaultAppointmentDatetimeLocal());
+        this.scheduledAt.set('');
         this.applyRequestLocation(detail);
       }
     } catch (e) {

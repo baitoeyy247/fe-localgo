@@ -184,6 +184,8 @@ export interface AdminUserRow {
   displayName?: string;
   lineUserId?: string;
   systemRole?: string;
+  status?: string;
+  isTestUser?: boolean;
 }
 
 export interface AdminNotificationRow {

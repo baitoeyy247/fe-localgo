@@ -1,7 +1,8 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, of, throwError } from 'rxjs';
+import { Observable, catchError, map, of, throwError } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { normalizeList, normalizeMatchingInbox } from '../shared/normalize-list';
 import {
   AdminDashboard,
   AdminNotificationRow,
@@ -232,6 +233,8 @@ export class LocalGoApiService {
     latitude: number;
     longitude: number;
     searchRadiusMeters: number;
+    preferredStartAt?: string;
+    preferredEndAt?: string;
     budgetText?: string;
     publish: boolean;
   }): Observable<CreatedResource> {
@@ -345,7 +348,13 @@ export class LocalGoApiService {
 
   listMatchingRequests(refresh = false): Observable<ServiceRequestSummary[]> {
     const params = refresh ? new HttpParams().set('_t', String(Date.now())) : undefined;
-    return this.get<ServiceRequestSummary[]>('/provider/service-requests/matching', { params });
+    return this.get<unknown>('/provider/service-requests/matching', { params }).pipe(
+      map((raw) => normalizeMatchingInbox(raw).all),
+    );
+  }
+
+  getAppointmentById(appointmentId: string): Observable<AppointmentDetail> {
+    return this.get<AppointmentDetail>(`/appointments/${appointmentId}`);
   }
 
   // --- Admin ---
@@ -354,12 +363,54 @@ export class LocalGoApiService {
     return this.get<AdminDashboard>('/admin/dashboard');
   }
 
-  listAdminUsers(): Observable<AdminUserRow[]> {
-    return this.get<AdminUserRow[]>('/admin/users');
+  listAdminUsers(page = 1, pageSize = 20): Observable<{ items: AdminUserRow[]; total: number }> {
+    const params = new HttpParams()
+      .set('page', String(page))
+      .set('pageSize', String(pageSize));
+    return this.get<unknown>('/admin/users', { params }).pipe(
+      map((raw) => {
+        if (raw && typeof raw === 'object' && Array.isArray((raw as { items?: unknown }).items)) {
+          const body = raw as { items: AdminUserRow[]; total?: number };
+          return { items: body.items, total: body.total ?? body.items.length };
+        }
+        const items = normalizeList<AdminUserRow>(raw);
+        return { items, total: items.length };
+      }),
+    );
+  }
+
+  setAdminUserStatus(userId: string, status: 'Active' | 'Suspended'): Observable<void> {
+    return this.patch<void>(`/admin/users/${userId}/status`, { status });
+  }
+
+  listAdminServiceRequests(status?: string): Observable<ServiceRequestSummary[]> {
+    let params = new HttpParams();
+    if (status) {
+      params = params.set('status', status);
+    }
+    return this.get<unknown>('/admin/service-requests', { params }).pipe(
+      map((raw) => normalizeList<ServiceRequestSummary>(raw)),
+    );
+  }
+
+  listAdminAppointments(status?: string): Observable<AppointmentDetail[]> {
+    let params = new HttpParams();
+    if (status) {
+      params = params.set('status', status);
+    }
+    return this.get<unknown>('/admin/appointments', { params }).pipe(
+      map((raw) => normalizeList<AppointmentDetail>(raw)),
+    );
   }
 
   listAdminNotifications(): Observable<AdminNotificationRow[]> {
-    return this.get<AdminNotificationRow[]>('/admin/notifications');
+    return this.get<unknown>('/admin/notifications').pipe(
+      map((raw) => normalizeList<AdminNotificationRow>(raw)),
+    );
+  }
+
+  resetTestData(): Observable<{ deletedUsers: number }> {
+    return this.post<{ deletedUsers: number }>('/admin/test-data/reset', {});
   }
 
   private get<T>(path: string, options?: { params?: HttpParams }): Observable<T> {

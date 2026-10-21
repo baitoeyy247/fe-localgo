@@ -84,7 +84,7 @@ export class CoveragePage implements OnInit {
 
   protected async startNewBranch(): Promise<void> {
     this.editingBranchId.set(null);
-    this.editingName.set('จุดให้บริการใหม่');
+    this.editingName.set('');
     this.editingActive.set(true);
     this.editingRadiusKm.set(5);
     this.formOpen.set(true);
@@ -93,6 +93,10 @@ export class CoveragePage implements OnInit {
     this.editingLng.set(area.lng);
     this.pickerTitle.set(area.title);
     this.error.set(null);
+  }
+
+  protected canContinueToServices(): boolean {
+    return this.branches().some((b) => b.isActive);
   }
 
   protected async saveBranch(): Promise<void> {

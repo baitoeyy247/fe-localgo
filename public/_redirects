@@ -1,1 +1,3 @@
+# SPA fallback. Cloudflare Pages serves real static files first; this only
+# applies when no matching asset exists (prevents deep-link 404s).
 /*    /index.html   200

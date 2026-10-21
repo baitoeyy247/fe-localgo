@@ -12,9 +12,9 @@ import { ProviderDetail } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import { UserLocationService } from '../../../core/user-location.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
-import { defaultAppointmentDatetimeLocal } from '../../../shared/datetime.util';
 import { ThaiDatetimeField } from '../../../shared/ui/thai-datetime-field';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
+import { formatPrice } from '../../../shared/format-price';
 
 @Component({
   selector: 'app-requester-book-page',
@@ -24,6 +24,7 @@ import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 export class RequesterBookPage implements OnInit {
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly serviceId = signal<string | null>(null);
+  /** Empty until user picks — avoids display/value mismatch. */
   protected readonly scheduledAt = signal('');
   protected readonly addressText = signal('');
   protected readonly note = signal('');
@@ -34,6 +35,7 @@ export class RequesterBookPage implements OnInit {
   protected readonly pickerOpen = signal(false);
   protected readonly mapLat = signal<number | null>(null);
   protected readonly mapLng = signal<number | null>(null);
+  protected readonly formatPrice = formatPrice;
 
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
@@ -72,7 +74,6 @@ export class RequesterBookPage implements OnInit {
         return;
       }
       this.serviceId.set(svc.id);
-      this.scheduledAt.set(defaultAppointmentDatetimeLocal());
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'โหลดข้อมูลไม่สำเร็จ'));
     } finally {
@@ -122,8 +123,15 @@ export class RequesterBookPage implements OnInit {
     const lng = this.mapLng();
     const dt = this.datetimeField();
     dt?.markTouched();
+    this.error.set(null);
+
     if (dt && !dt.isValid()) {
-      this.error.set('กรุณาเลือกวันและเวลาในอนาคต');
+      this.error.set(dt.errorMessage());
+      scrollToFirstError();
+      return;
+    }
+    if (!this.scheduledAt()) {
+      this.error.set('กรุณาเลือกวันที่และเวลา');
       scrollToFirstError();
       return;
     }
@@ -134,12 +142,11 @@ export class RequesterBookPage implements OnInit {
     }
 
     this.saving.set(true);
-    this.error.set(null);
     this.success.set(null);
     try {
       const result = await firstValueFrom(
         this.api.bookProviderService(providerId, serviceId, {
-          scheduledAt: this.scheduledAt() ? new Date(this.scheduledAt()).toISOString() : undefined,
+          scheduledAt: new Date(this.scheduledAt()).toISOString(),
           addressText: this.addressText().trim() || undefined,
           latitude: lat,
           longitude: lng,
@@ -149,8 +156,8 @@ export class RequesterBookPage implements OnInit {
       this.session.requesterRequestId = result.serviceRequestId;
       this.success.set('จองนัดหมายแล้ว ระบบจะแจ้งผู้ให้บริการให้ทราบ');
       setTimeout(() => {
-        void this.router.navigateByUrl('/requester/appointment');
-      }, 1200);
+        void this.router.navigate(['/requester/appointments', result.appointmentId]);
+      }, 800);
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'จองนัดหมายไม่สำเร็จ'));
       scrollToFirstError();

@@ -4,17 +4,31 @@
   @if (loading()) {
     <p class="muted" style="text-align: center">กำลังโหลด…</p>
   } @else {
-    <label class="field">
+    <label class="field" [class.field--error]="!!fieldErrors()['providerType']">
       <span>ประเภทผู้ให้บริการ</span>
-      <select class="input" aria-label="ประเภท" (change)="selectProviderType($any($event.target).value)">
+      <select class="input" aria-label="ประเภทผู้ให้บริการ" (change)="selectProviderType($any($event.target).value)">
+        <option value="" [selected]="!providerType()">-- เลือกประเภท --</option>
         @for (opt of typeOptions; track opt.value) {
           <option [value]="opt.value" [selected]="providerType() === opt.value">{{ opt.label }}</option>
         }
       </select>
+      @if (fieldErrors()['providerType']; as msg) {
+        <p class="error-text">{{ msg }}</p>
+      }
     </label>
-    <label class="field">
-      <span>ชื่อที่แสดง (ร้าน / บริษัท / ชื่อเล่น)</span>
-      <input class="input" [value]="name()" aria-label="ชื่อบริการ" (input)="updateName($any($event.target).value)" />
+    <label class="field" [class.field--error]="!!fieldErrors()['name']">
+      <span>ชื่อที่แสดง</span>
+      <input
+        class="input"
+        [class.err]="!!fieldErrors()['name']"
+        [value]="name()"
+        aria-label="ชื่อที่แสดง"
+        placeholder="ชื่อร้าน / บริษัท / ชื่อเล่น"
+        (input)="updateName($any($event.target).value)"
+      />
+      @if (fieldErrors()['name']; as msg) {
+        <p class="error-text">{{ msg }}</p>
+      }
     </label>
     <label class="field">
       <span>รายละเอียด</span>
@@ -31,7 +45,7 @@
     @if (error()) {
       <p class="error-text">{{ error() }}</p>
     }
-    <button class="btn btn-primary btn-block" type="button" [disabled]="saving() || !name().trim()" (click)="saveAndContinue()">
+    <button class="btn btn-primary btn-block" type="button" [disabled]="saving()" (click)="saveAndContinue()">
       {{ saving() ? 'กำลังบันทึก…' : 'บันทึกและตั้งพื้นที่' }}
     </button>
   }

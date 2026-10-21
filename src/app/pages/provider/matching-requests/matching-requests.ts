@@ -16,6 +16,9 @@ import { SlowLoadHint } from '../../../shared/load-state';
 import { ErrorState } from '../../../shared/ui/error-state';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { AuthService } from '../../../core/auth.service';
+import { formatDistanceMeters } from '../../../shared/geo-distance';
+import { formatPrice } from '../../../shared/format-price';
+import { normalizeList } from '../../../shared/normalize-list';
 
 type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
 
@@ -71,12 +74,18 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   protected readonly statusBadgeClass = displayRequestStatusBadgeClass;
   protected readonly hint = new SlowLoadHint();
 
+  protected readonly formatPrice = formatPrice;
+
   /** M6: jobs open for bidding (not yet mine). */
-  protected readonly openJobs = computed(() =>
-    this.matchingRequests().filter((r) => !this.isMine(r) && this.isBiddable(r)),
-  );
+  protected readonly openJobs = computed(() => {
+    const list = normalizeList<ServiceRequestSummary>(this.matchingRequests());
+    return list.filter((r) => !this.isMine(r) && this.isBiddable(r));
+  });
   /** M6: jobs I already bid on / need confirm / are in progress. */
-  protected readonly myJobs = computed(() => this.matchingRequests().filter((r) => this.isMine(r)));
+  protected readonly myJobs = computed(() => {
+    const list = normalizeList<ServiceRequestSummary>(this.matchingRequests());
+    return list.filter((r) => this.isMine(r));
+  });
 
   constructor(
     private readonly api: LocalGoApiService,
@@ -196,10 +205,7 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   }
 
   protected formatDistance(meters?: number | null): string {
-    if (meters == null) {
-      return '—';
-    }
-    return meters >= 1000 ? `${(meters / 1000).toFixed(1)} กม.` : `${Math.round(meters)} ม.`;
+    return formatDistanceMeters(meters);
   }
 
   protected formatWhen(iso: string): string {

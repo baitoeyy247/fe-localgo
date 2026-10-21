@@ -7,6 +7,10 @@
   } @else {
     <p class="muted" style="margin: 0">ข้อมูลจาก API จริง — ต้องล็อกอินด้วยบัญชี Admin</p>
 
+    @if (notice()) {
+      <div class="banner ok">{{ notice() }}</div>
+    }
+
     @if (dashboard(); as d) {
       <div class="kpi">
         <div>
@@ -30,26 +34,113 @@
       </div>
     }
 
-    <div class="sec-title">ผู้ใช้ล่าสุด ({{ users().length }})</div>
-    <div class="list">
-      @for (u of users().slice(0, 8); track $index) {
+    <div class="sec-title">
+      ผู้ใช้ ({{ usersTotal() }})
+      <button type="button" class="btn btn-danger-o btn-sm" [disabled]="acting()" (click)="resetTestData()">
+        รีเซ็ตข้อมูลทดสอบ
+      </button>
+    </div>
+    <div class="list admin-wide">
+      @for (u of users(); track u.id ?? $index) {
         <div class="li">
           <span class="avatar">{{ userLine($any(u))[0] ?? '?' }}</span>
-          <span class="grow"><span class="t">{{ userLine($any(u)) }}</span></span>
+          <span class="grow">
+            <span class="t">{{ userLine($any(u)) }}</span>
+            @if (isTestUser(u)) {
+              <br /><span class="muted">บัญชีทดสอบ</span>
+            }
+          </span>
+          <button type="button" class="btn btn-ghost btn-sm" [disabled]="acting() || !u.id" (click)="toggleUser(u)">
+            {{ userStatus(u) === 'Suspended' ? 'เปิดใช้งาน' : 'ระงับ' }}
+          </button>
         </div>
       } @empty {
-        <p class="muted">ยังไม่มีผู้ใช้</p>
+        <p class="muted" style="padding: 16px">ยังไม่มีผู้ใช้</p>
       }
     </div>
+    <div class="pagination">
+      <button type="button" class="btn btn-ghost btn-sm" [disabled]="usersPage() <= 1" (click)="goUsersPage(-1)">ก่อนหน้า</button>
+      <span class="muted">หน้า {{ usersPage() }} / {{ totalPages() }}</span>
+      <button type="button" class="btn btn-ghost btn-sm" [disabled]="usersPage() >= totalPages()" (click)="goUsersPage(1)">ถัดไป</button>
+    </div>
+
+    <div class="sec-title">
+      รายการงาน
+      <select class="input" style="max-width: 180px; min-height: 40px" [value]="requestStatusFilter()" (change)="setRequestFilter($any($event.target).value)">
+        <option value="">ทุกสถานะ</option>
+        <option value="Open">เปิดรับข้อเสนอ</option>
+        <option value="HasOffers">มีข้อเสนอ</option>
+        <option value="Scheduled">นัดหมายแล้ว</option>
+        <option value="InProgress">กำลังดำเนินงาน</option>
+        <option value="Completed">เสร็จสิ้น</option>
+        <option value="Cancelled">ยกเลิก</option>
+      </select>
+    </div>
+    <table class="admin-table admin-wide">
+      <thead>
+        <tr>
+          <th>หัวข้อ</th>
+          <th>สถานะ</th>
+          <th>งบ</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (r of requests(); track r.id) {
+          <tr>
+            <td>{{ r.title }}</td>
+            <td>{{ requestStatusLabel(r.status) }}</td>
+            <td>{{ r.budgetText || '—' }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="3" class="muted">ไม่มีงาน</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="sec-title">
+      นัดหมาย
+      <select class="input" style="max-width: 180px; min-height: 40px" [value]="appointmentStatusFilter()" (change)="setAppointmentFilter($any($event.target).value)">
+        <option value="">ทุกสถานะ</option>
+        <option value="Pending">รอยืนยัน</option>
+        <option value="Confirmed">ยืนยันแล้ว</option>
+        <option value="InProgress">กำลังทำ</option>
+        <option value="Completed">เสร็จ</option>
+        <option value="Cancelled">ยกเลิก</option>
+      </select>
+    </div>
+    <table class="admin-table admin-wide">
+      <thead>
+        <tr>
+          <th>สถานะ</th>
+          <th>เวลานัด</th>
+          <th>สถานที่</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (a of appointments(); track a.id) {
+          <tr>
+            <td>{{ appointmentStatusLabel(a.status) }}</td>
+            <td>{{ formatWhen(a.scheduledAt) }}</td>
+            <td>{{ a.addressText || '—' }}</td>
+          </tr>
+        } @empty {
+          <tr>
+            <td colspan="3" class="muted">ไม่มีนัด</td>
+          </tr>
+        }
+      </tbody>
+    </table>
 
     <div class="sec-title">บันทึกแจ้งเตือนล่าสุด</div>
     <div class="list">
-      @for (n of notifications().slice(0, 8); track $index) {
+      @for (n of notifications().slice(0, 12); track $index) {
         <div class="li">
           <span class="grow"><span class="t">{{ notificationLabel(n) }}</span></span>
         </div>
       } @empty {
-        <p class="muted">ยังไม่มีบันทึกแจ้งเตือน</p>
+        <p class="muted" style="padding: 16px">ยังไม่มีบันทึกแจ้งเตือน</p>
       }
     </div>
   }

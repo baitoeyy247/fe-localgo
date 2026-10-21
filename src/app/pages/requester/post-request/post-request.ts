@@ -14,6 +14,7 @@ import { SessionStateService } from '../../../core/session-state.service';
 import { UserLocationService } from '../../../core/user-location.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
+import { toDatetimeLocal } from '../../../shared/datetime.util';
 
 @Component({
   selector: 'app-post-request-page',
@@ -28,7 +29,10 @@ export class PostRequestPage implements OnInit {
   protected readonly description = signal('');
   protected readonly budgetMode = signal<'open' | 'fixed'>('open');
   protected readonly budgetAmount = signal('');
+  protected readonly preferredDate = signal('');
+  protected readonly preferredTime = signal('');
   protected readonly posting = signal(false);
+  protected readonly fieldErrors = signal<Record<string, string>>({});
   protected readonly error = signal<string | null>(null);
   protected readonly requestLocation = signal({
     title: 'จุดรับงานปัจจุบัน',
@@ -66,6 +70,7 @@ export class PostRequestPage implements OnInit {
 
   protected updateTitle(value: string): void {
     this.title.set(value);
+    this.clearFieldError('title');
   }
 
   protected updateDescription(value: string): void {
@@ -74,10 +79,26 @@ export class PostRequestPage implements OnInit {
 
   protected setBudgetMode(mode: 'open' | 'fixed'): void {
     this.budgetMode.set(mode);
+    this.clearFieldError('budget');
   }
 
   protected updateBudgetAmount(value: string): void {
-    this.budgetAmount.set(value.replace(/[^\d–-]/gu, ''));
+    this.budgetAmount.set(value.replace(/[^\d]/gu, ''));
+    this.clearFieldError('budget');
+  }
+
+  protected updatePreferredDate(value: string): void {
+    this.preferredDate.set(value);
+    this.clearFieldError('preferredAt');
+  }
+
+  protected updatePreferredTime(value: string): void {
+    this.preferredTime.set(value);
+    this.clearFieldError('preferredAt');
+  }
+
+  protected preferredMinDate(): string {
+    return toDatetimeLocal(new Date()).slice(0, 10);
   }
 
   protected showCoords(): boolean {
@@ -107,17 +128,26 @@ export class PostRequestPage implements OnInit {
   }
 
   protected async publish(): Promise<void> {
-    const categoryId = this.selectedCategoryId();
-    const title = this.title().trim();
-    if (!categoryId || !title || this.posting()) {
-      if (!title) {
-        this.error.set('กรุณาระบุหัวข้องาน');
-        scrollToFirstError();
-      }
+    if (this.posting()) {
       return;
     }
-    this.posting.set(true);
+
+    const errors = this.validateLocal();
+    this.fieldErrors.set(errors);
     this.error.set(null);
+    if (Object.keys(errors).length > 0) {
+      scrollToFirstError();
+      return;
+    }
+
+    const categoryId = this.selectedCategoryId();
+    const title = this.title().trim();
+    const preferredIso = this.resolvePreferredIso();
+    if (!categoryId || !title || !preferredIso) {
+      return;
+    }
+
+    this.posting.set(true);
     try {
       const loc = this.requestLocation();
       const created = await firstValueFrom(
@@ -129,6 +159,7 @@ export class PostRequestPage implements OnInit {
           latitude: loc.lat,
           longitude: loc.lng,
           searchRadiusMeters: loc.radiusKm * 1000,
+          preferredStartAt: preferredIso,
           budgetText: this.resolveBudgetText(),
           publish: true,
         }),
@@ -138,21 +169,76 @@ export class PostRequestPage implements OnInit {
         queryParams: { posted: '1', requestId: created.id },
       });
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'ประกาศงานไม่สำเร็จ'));
+      const message = apiErrorMessage(e, 'ประกาศงานไม่สำเร็จ');
+      this.mapApiError(message);
+      this.error.set(message);
       scrollToFirstError();
     } finally {
       this.posting.set(false);
     }
   }
 
-  private resolveBudgetText(): string | undefined {
+  private validateLocal(): Record<string, string> {
+    const errors: Record<string, string> = {};
+    if (!this.title().trim()) {
+      errors['title'] = 'กรุณาระบุหัวข้องาน';
+    }
+    if (!this.preferredDate() || !this.preferredTime()) {
+      errors['preferredAt'] = 'กรุณาเลือกวันที่และเวลาที่ต้องการ';
+    } else {
+      const iso = this.resolvePreferredIso();
+      if (!iso || new Date(iso).getTime() < Date.now() - 60_000) {
+        errors['preferredAt'] = 'วันที่และเวลาที่ต้องการต้องไม่เป็นเวลาในอดีต';
+      }
+    }
+    if (this.budgetMode() === 'fixed') {
+      const amount = Number(this.budgetAmount().trim());
+      if (!Number.isInteger(amount) || amount < 1 || amount > 1_000_000) {
+        errors['budget'] = 'งบประมาณต้องเป็นจำนวนเต็มตั้งแต่ 1 ถึง 1000000';
+      }
+    }
+    return errors;
+  }
+
+  private resolvePreferredIso(): string | null {
+    const date = this.preferredDate();
+    const time = this.preferredTime();
+    if (!date || !time) {
+      return null;
+    }
+    const local = `${date}T${time}`;
+    const d = new Date(local);
+    if (Number.isNaN(d.getTime())) {
+      return null;
+    }
+    return d.toISOString();
+  }
+
+  /** API contract: open → "เปิดรับราคา"; fixed → integer digits only. */
+  private resolveBudgetText(): string {
     if (this.budgetMode() === 'open') {
       return 'เปิดรับราคา';
     }
-    const amount = this.budgetAmount().trim();
-    if (!amount) {
-      return undefined;
+    return this.budgetAmount().trim();
+  }
+
+  private mapApiError(message: string): void {
+    const next = { ...this.fieldErrors() };
+    if (/งบ|budget|ราคา/iu.test(message)) {
+      next['budget'] = message;
     }
-    return amount.includes('บาท') ? amount : `${amount} บาท`;
+    if (/วัน|เวลา|preferred/iu.test(message)) {
+      next['preferredAt'] = message;
+    }
+    if (/หัวข้อ|title/iu.test(message)) {
+      next['title'] = message;
+    }
+    this.fieldErrors.set(next);
+  }
+
+  private clearFieldError(key: string): void {
+    const next = { ...this.fieldErrors() };
+    delete next[key];
+    this.fieldErrors.set(next);
   }
 }
