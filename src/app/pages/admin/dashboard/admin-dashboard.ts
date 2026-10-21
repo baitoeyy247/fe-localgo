@@ -13,6 +13,7 @@ import {
 } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { appointmentStatusLabel, requestStatusLabel } from '../../../shared/status-labels';
+import { displayInitial } from '../../../shared/display-initial';
 
 @Component({
   selector: 'app-admin-dashboard-page',
@@ -33,9 +34,11 @@ export class AdminDashboardPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly acting = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly actionError = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
   protected readonly requestStatusLabel = requestStatusLabel;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
+  protected readonly displayInitial = displayInitial;
 
   private readonly api = inject(LocalGoApiService);
 
@@ -108,7 +111,7 @@ export class AdminDashboardPage implements OnInit {
       this.notice.set(target === 'Suspended' ? 'ระงับผู้ใช้แล้ว' : 'เปิดใช้งานผู้ใช้แล้ว');
       await this.load();
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'อัปเดตสถานะผู้ใช้ไม่สำเร็จ'));
+      this.actionError.set(apiErrorMessage(e, 'อัปเดตสถานะผู้ใช้ไม่สำเร็จ'));
     } finally {
       this.acting.set(false);
     }
@@ -122,6 +125,7 @@ export class AdminDashboardPage implements OnInit {
       return;
     }
     this.acting.set(true);
+    this.actionError.set(null);
     try {
       const result = await firstValueFrom(this.api.resetTestData());
       const kept = (result as { keptUsers?: number }).keptUsers ?? 10;
@@ -131,7 +135,7 @@ export class AdminDashboardPage implements OnInit {
       );
       await this.load();
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'รีเซ็ตข้อมูลทดสอบไม่สำเร็จ'));
+      this.actionError.set(apiErrorMessage(e, 'รีเซ็ตข้อมูลทดสอบไม่สำเร็จ'));
     } finally {
       this.acting.set(false);
     }
@@ -142,6 +146,7 @@ export class AdminDashboardPage implements OnInit {
       return;
     }
     this.acting.set(true);
+    this.actionError.set(null);
     try {
       const result = await firstValueFrom(this.api.repairTestData());
       const moved = result.reviewReassigned ? 'ย้ายรีวิวแล้ว' : 'รีวิวตรงอยู่แล้วหรือไม่พบ';
@@ -150,7 +155,7 @@ export class AdminDashboardPage implements OnInit {
       );
       await this.load();
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'ซ่อมข้อมูลทดสอบไม่สำเร็จ'));
+      this.actionError.set(apiErrorMessage(e, 'ซ่อมข้อมูลทดสอบไม่สำเร็จ'));
     } finally {
       this.acting.set(false);
     }

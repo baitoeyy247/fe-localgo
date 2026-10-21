@@ -317,7 +317,7 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
       return 'ดูรายละเอียด';
     }
     if (request.needsAppointmentConfirm || request.appointmentStatus === 'Pending') {
-      return 'ยืนยันรับนัด';
+      return 'ดูรายละเอียด';
     }
     if (request.appointmentStatus === 'InProgress' || request.status === 'InProgress') {
       return 'งานเสร็จสิ้น';

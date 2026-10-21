@@ -151,15 +151,18 @@ export class RequesterBookPage implements OnInit, OnDestroy {
       return;
     }
 
+    this.saving.set(true);
+    this.hint.begin();
+
     // Allow typed address alone — geocode when map pin is missing.
     if ((lat === null || lng === null) && address) {
-      this.saving.set(true);
       this.toast.show('กำลังค้นหาพิกัดจากที่อยู่…');
       try {
         const place = await this.geo.searchPlace(address);
         if (!place) {
           this.error.set('หาพิกัดจากที่อยู่ไม่เจอ — ลองพิมพ์ละเอียดขึ้น หรือปักหมุดบนแผนที่');
           scrollToFirstError();
+          this.hint.end();
           this.saving.set(false);
           return;
         }
@@ -170,6 +173,7 @@ export class RequesterBookPage implements OnInit, OnDestroy {
       } catch (e) {
         this.error.set(e instanceof Error ? e.message : 'ค้นหาพิกัดไม่สำเร็จ');
         scrollToFirstError();
+        this.hint.end();
         this.saving.set(false);
         return;
       }
@@ -178,10 +182,11 @@ export class RequesterBookPage implements OnInit, OnDestroy {
     if (lat === null || lng === null) {
       this.error.set('กรุณาพิมพ์ที่อยู่นัดหมาย หรือปักหมุดบนแผนที่');
       scrollToFirstError();
+      this.hint.end();
+      this.saving.set(false);
       return;
     }
 
-    this.saving.set(true);
     this.error.set(null);
     this.success.set('กำลังบันทึกนัดหมาย…');
     this.toast.show('กำลังบันทึกนัดหมาย…');

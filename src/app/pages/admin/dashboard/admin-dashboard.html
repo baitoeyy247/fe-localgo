@@ -10,6 +10,9 @@
     @if (notice()) {
       <div class="banner ok">{{ notice() }}</div>
     }
+    @if (actionError()) {
+      <p class="error-text" role="alert">{{ actionError() }}</p>
+    }
 
     @if (dashboard(); as d) {
       <div class="kpi">
@@ -46,7 +49,7 @@
     <div class="list admin-wide">
       @for (u of users(); track u.id ?? $index) {
         <div class="li">
-          <span class="avatar">{{ userLine($any(u))[0] ?? '?' }}</span>
+          <span class="avatar">{{ displayInitial(u.displayName ?? u.lineUserId) }}</span>
           <span class="grow">
             <span class="t">{{ userLine($any(u)) }}</span>
             @if (isTestUser(u)) {

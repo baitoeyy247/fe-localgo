@@ -9,6 +9,7 @@ import { ProviderDetail, ProviderService, ReviewItem } from '../../../core/model
 import { SessionStateService } from '../../../core/session-state.service';
 import { providerTypeLabel } from '../../../shared/status-labels';
 import { formatPrice } from '../../../shared/format-price';
+import { formatVerifiedRatingLine } from '../../../shared/format-verified-rating';
 
 @Component({
   selector: 'app-provider-profile-page',
@@ -23,6 +24,7 @@ export class ProviderProfilePage implements OnInit {
   protected readonly showAllServices = signal(false);
   protected readonly providerTypeLabel = providerTypeLabel;
   protected readonly formatPrice = formatPrice;
+  protected readonly formatVerifiedRatingLine = formatVerifiedRatingLine;
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);

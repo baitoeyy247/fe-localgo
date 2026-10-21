@@ -129,7 +129,14 @@ export interface LocationPickerValue {
           </div>
 
           <section class="location-modal__actions" aria-label="ยืนยันตำแหน่ง">
-            <button type="button" class="primary" (click)="confirmSelection()">ยืนยันและใช้ตำแหน่งนี้</button>
+            @if (!pinConfirmed()) {
+              <p class="muted" style="margin: 0 0 0.75rem; text-align: center">
+                อนุญาต GPS ค้นหาสถานที่ หรือแตะบนแผนที่ก่อนกดยืนยัน
+              </p>
+            }
+            <button type="button" class="primary" [disabled]="!pinConfirmed()" (click)="confirmSelection()">
+              ยืนยันและใช้ตำแหน่งนี้
+            </button>
             <button type="button" class="secondary" (click)="cancel.emit()">ยกเลิก</button>
           </section>
         </div>
@@ -167,16 +174,21 @@ export class LocationPickerModal {
   protected readonly searching = signal(false);
   protected readonly locating = signal(false);
   protected readonly geoError = signal<string | null>(null);
+  /** User picked GPS / map / search — not the map default center. */
+  protected readonly pinConfirmed = signal(false);
 
   protected readonly radiusText = computed(() => `รัศมี ${this.draftRadiusKm()} กม.`);
 
   private readonly geo = inject(GeoService);
   private autoLocateAttempted = false;
+  private wasOpen = false;
 
   constructor() {
     effect(() => {
-      if (this.open()) {
+      const isOpen = this.open();
+      if (isOpen && !this.wasOpen) {
         this.syncDraft();
+        this.pinConfirmed.set(false);
         this.draftSearchQuery.set(this.searchText() || this.locationTitle());
         this.geoError.set(null);
         queueMicrotask(() => this.refreshMapSoon());
@@ -185,6 +197,10 @@ export class LocationPickerModal {
           void this.useCurrentLocation(true);
         }
       }
+      if (!isOpen && this.wasOpen) {
+        this.autoLocateAttempted = false;
+      }
+      this.wasOpen = isOpen;
     });
   }
 
@@ -200,6 +216,7 @@ export class LocationPickerModal {
   protected updateSelection(selection: MapSelection): void {
     this.draftLat.set(selection.lat);
     this.draftLng.set(selection.lng);
+    this.pinConfirmed.set(true);
     void this.refreshPlaceLabel(selection.lat, selection.lng);
   }
 
@@ -258,6 +275,7 @@ export class LocationPickerModal {
   private applyPlace(lat: number, lng: number, displayName: string): void {
     this.draftLat.set(lat);
     this.draftLng.set(lng);
+    this.pinConfirmed.set(true);
     const short = displayName.split(',').slice(0, 2).join(',').trim() || displayName;
     this.placeTitle.set(short);
     this.placeSubtitle.set(this.radiusText());

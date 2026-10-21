@@ -52,11 +52,11 @@ export function displayRequestStatusLabel(
   status: string,
   appointmentStatus?: string | null,
 ): string {
-  if (appointmentStatus === 'Cancelled' || status === 'Cancelled') {
-    return 'ยกเลิกแล้ว';
-  }
   if (appointmentStatus === 'Rejected') {
     return 'ผู้ให้บริการปฏิเสธ';
+  }
+  if (appointmentStatus === 'Cancelled' || status === 'Cancelled') {
+    return 'ยกเลิกแล้ว';
   }
   if (status === 'Scheduled' || status === 'ProviderSelected' || status === 'Selected') {
     if (appointmentStatus === 'Confirmed') {
@@ -79,11 +79,11 @@ export function displayRequestStatusBadgeClass(
   status: string,
   appointmentStatus?: string | null,
 ): string {
-  if (appointmentStatus === 'Cancelled' || status === 'Cancelled') {
-    return 'badge--muted';
-  }
   if (appointmentStatus === 'Rejected') {
     return 'badge--red';
+  }
+  if (appointmentStatus === 'Cancelled' || status === 'Cancelled') {
+    return 'badge--muted';
   }
   if (status === 'Scheduled' || status === 'ProviderSelected' || status === 'Selected') {
     if (appointmentStatus === 'Confirmed') {

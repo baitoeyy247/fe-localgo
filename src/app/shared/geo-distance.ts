@@ -17,7 +17,7 @@ export function haversineMeters(
 }
 
 export function formatDistanceMeters(meters?: number | null): string {
-  if (meters == null || Number.isNaN(meters)) {
+  if (meters == null || Number.isNaN(meters) || meters <= 0) {
     return '—';
   }
   if (meters >= 1000) {

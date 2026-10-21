@@ -7,7 +7,9 @@ const feRoot = path.resolve(__dirname, '..');
 const outFile = path.join(feRoot, 'src/environments/environment.sit.ts');
 
 function env(name, fallback = '') {
-  return (process.env[name] ?? fallback).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const raw = process.env[name];
+  const value = raw === undefined || raw === '' ? fallback : raw;
+  return value.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 }
 
 const apiBaseUrl = env('NG_APP_API_BASE_URL', 'https://be-localgo.onrender.com/api');

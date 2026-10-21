@@ -24,9 +24,8 @@
       </p>
       <p style="margin: 8px 0 0">
         @if (p.verifiedReviewCount > 0) {
-          <span class="stars">★</span>
-          <b>{{ p.averageVerifiedRating }}</b>
-          <span class="muted"> ({{ p.verifiedReviewCount }} รีวิว) · คะแนนจากงานจริง</span>
+          <span class="stars">{{ formatVerifiedRatingLine(p.averageVerifiedRating, p.verifiedReviewCount) }}</span>
+          <span class="muted"> · คะแนนจากงานจริง</span>
         } @else {
           <span class="muted">ยังไม่มีรีวิว</span>
         }
