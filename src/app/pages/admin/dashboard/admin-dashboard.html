@@ -39,11 +39,11 @@
 
     <div class="sec-title">
       ผู้ใช้ ({{ usersTotal() }})
-      <button type="button" class="btn btn-secondary btn-sm" [disabled]="acting()" (click)="repairTestData()">
-        ซ่อมข้อมูลทดสอบ
+      <button type="button" class="btn btn-secondary btn-sm" [disabled]="acting() || resetting() || repairing()" (click)="repairTestData()">
+        {{ repairing() ? 'กำลังซ่อม…' : 'ซ่อมข้อมูลทดสอบ' }}
       </button>
-      <button type="button" class="btn btn-danger-o btn-sm" [disabled]="acting()" (click)="resetTestData()">
-        รีเซ็ตข้อมูลทดสอบ
+      <button type="button" class="btn btn-danger-o btn-sm" [disabled]="acting() || resetting() || repairing()" (click)="resetTestData()">
+        {{ resetting() ? 'กำลังรีเซ็ต…' : 'รีเซ็ตข้อมูลทดสอบ' }}
       </button>
     </div>
     <div class="list admin-wide">
@@ -82,12 +82,15 @@
         <option value="Cancelled">ยกเลิกแล้ว</option>
       </select>
     </div>
+    @if (listsLoading()) {
+      <p class="muted" style="text-align: center">กำลังอัปเดตรายการ…</p>
+    }
     <div class="admin-table-wrap admin-wide">
       <table class="admin-table">
         <thead>
           <tr>
             <th>หัวข้อ</th>
-            <th>สถานะ</th>
+            <th>สถานะงาน</th>
             <th>งบ</th>
           </tr>
         </thead>
@@ -95,7 +98,7 @@
           @for (r of requests(); track r.id) {
             <tr>
               <td>{{ r.title }}</td>
-              <td>{{ requestStatusLabel(r.status) }}</td>
+              <td>{{ adminRequestStatusLabel(r) }}</td>
               <td>{{ r.budgetText || '—' }}</td>
             </tr>
           } @empty {

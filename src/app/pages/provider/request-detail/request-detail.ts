@@ -122,33 +122,20 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       this.myBid.set(
         myProvider ? (detail.bids?.find((bid) => bid.providerId === myProvider.id) ?? null) : null,
       );
-      try {
-        const matching = await firstValueFrom(this.api.listMatchingRequests());
-        const hit = matching.find((item) => item.id === id);
-        let meters = hit?.distanceMeters ?? null;
-        if (
-          (meters == null || meters < 0.5) &&
-          detail.latitude != null &&
-          detail.longitude != null
-        ) {
-          const branch =
-            myProvider?.branches.find((b) => b.isActive) ?? myProvider?.branches[0] ?? null;
-          if (branch) {
-            const computed = haversineMeters(
-              branch.latitude,
-              branch.longitude,
-              detail.latitude,
-              detail.longitude,
-            );
-            if (computed > 0.5 || meters == null) {
-              meters = computed;
-            }
-          }
+      let meters: number | null = null;
+      if (detail.latitude != null && detail.longitude != null && myProvider) {
+        const branch =
+          myProvider.branches.find((b) => b.isActive) ?? myProvider.branches[0] ?? null;
+        if (branch) {
+          meters = haversineMeters(
+            branch.latitude,
+            branch.longitude,
+            detail.latitude,
+            detail.longitude,
+          );
         }
-        this.distanceMeters.set(meters);
-      } catch {
-        this.distanceMeters.set(null);
       }
+      this.distanceMeters.set(meters);
       if (myProvider && this.hasActiveEngagement(detail, myProvider.id)) {
         await this.loadAppointment(id);
       }

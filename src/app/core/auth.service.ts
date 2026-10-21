@@ -164,11 +164,15 @@ export class AuthService {
     asAdmin?: boolean;
     personaKey?: string;
   }): Promise<void> {
-    // Switching playtest accounts must not carry over search area / flow ids.
-    this.locations.clear();
-    this.session.clearRequesterFlow();
-    this.session.clearProviderRequest();
-    this.cache.invalidateAll();
+    const previousPersona = sessionStorage.getItem(PERSONA_KEY);
+    const nextPersona = options?.personaKey ?? null;
+    const personaChanged = nextPersona !== previousPersona;
+    if (personaChanged) {
+      this.locations.clear();
+      this.session.clearRequesterFlow();
+      this.session.clearProviderRequest();
+      this.cache.invalidateAll();
+    }
     const response = await firstValueFrom(
       this.api.devLogin({
         displayName: options?.displayName ?? (environment.devLoginDisplayName || 'Dev User'),

@@ -12,7 +12,11 @@ import {
   ServiceRequestSummary,
 } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
-import { appointmentStatusLabel, requestStatusLabel } from '../../../shared/status-labels';
+import {
+  appointmentStatusLabel,
+  displayRequestStatusLabel,
+  requestStatusLabel,
+} from '../../../shared/status-labels';
 import { displayInitial } from '../../../shared/display-initial';
 
 @Component({
@@ -34,6 +38,8 @@ export class AdminDashboardPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly listsLoading = signal(true);
   protected readonly acting = signal(false);
+  protected readonly resetting = signal(false);
+  protected readonly repairing = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly actionError = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
@@ -44,46 +50,54 @@ export class AdminDashboardPage implements OnInit {
   private readonly api = inject(LocalGoApiService);
 
   ngOnInit(): void {
-    void this.load();
+    void this.load(true);
   }
 
-  protected async load(): Promise<void> {
-    this.loading.set(true);
+  protected async load(initial = false): Promise<void> {
+    if (initial) {
+      this.loading.set(true);
+    }
     this.listsLoading.set(true);
     this.error.set(null);
     try {
-      const [dashboard, usersPage] = await Promise.all([
-        firstValueFrom(this.api.getAdminDashboard()),
-        firstValueFrom(this.api.listAdminUsers(this.usersPage(), this.pageSize)),
-      ]);
-      this.dashboard.set(dashboard);
-      this.users.set(usersPage.items);
-      this.usersTotal.set(usersPage.total);
+      await this.fetchAllAdminData();
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'โหลดหลังบ้านไม่สำเร็จ'));
-      this.listsLoading.set(false);
     } finally {
       this.loading.set(false);
+      this.listsLoading.set(false);
     }
+  }
 
-    if (this.error()) {
-      return;
-    }
-
+  /** Refresh KPI + lists after reset/repair without hiding the whole page. */
+  private async refreshAfterMutation(): Promise<void> {
+    this.listsLoading.set(true);
+    this.requests.set([]);
+    this.appointments.set([]);
+    this.notifications.set([]);
     try {
-      const [notifications, requests, appointments] = await Promise.all([
-        firstValueFrom(this.api.listAdminNotifications()),
-        firstValueFrom(this.api.listAdminServiceRequests(this.requestStatusFilter() || undefined)),
-        firstValueFrom(this.api.listAdminAppointments(this.appointmentStatusFilter() || undefined)),
-      ]);
-      this.notifications.set(notifications);
-      this.requests.set(requests);
-      this.appointments.set(appointments);
+      await this.fetchAllAdminData();
     } catch (e) {
-      this.actionError.set(apiErrorMessage(e, 'โหลดรายการบางส่วนไม่สำเร็จ'));
+      this.actionError.set(apiErrorMessage(e, 'โหลดข้อมูลหลังรีเซ็ตไม่สำเร็จ'));
     } finally {
       this.listsLoading.set(false);
     }
+  }
+
+  private async fetchAllAdminData(): Promise<void> {
+    const [dashboard, usersPage, notifications, requests, appointments] = await Promise.all([
+      firstValueFrom(this.api.getAdminDashboard()),
+      firstValueFrom(this.api.listAdminUsers(this.usersPage(), this.pageSize)),
+      firstValueFrom(this.api.listAdminNotifications()),
+      firstValueFrom(this.api.listAdminServiceRequests(this.requestStatusFilter() || undefined)),
+      firstValueFrom(this.api.listAdminAppointments(this.appointmentStatusFilter() || undefined)),
+    ]);
+    this.dashboard.set(dashboard);
+    this.users.set(usersPage.items);
+    this.usersTotal.set(usersPage.total);
+    this.notifications.set(notifications);
+    this.requests.set(requests);
+    this.appointments.set(appointments);
   }
 
   protected totalPages(): number {
@@ -134,49 +148,57 @@ export class AdminDashboardPage implements OnInit {
   }
 
   protected async resetTestData(): Promise<void> {
-    if (this.acting()) {
+    if (this.resetting() || this.repairing()) {
       return;
     }
     if (!confirm('ล้างงาน/นัด/รีวิวของบัญชีทดสอบ? (คงไว้ 10 บัญชีทดสอบ)')) {
       return;
     }
-    this.acting.set(true);
+    this.resetting.set(true);
     this.actionError.set(null);
+    this.notice.set(null);
     try {
       const result = await firstValueFrom(this.api.resetTestData());
       const kept = (result as { keptUsers?: number }).keptUsers ?? 10;
       const deletedReq = (result as { deletedRequests?: number }).deletedRequests ?? 0;
       const seeded = (result as { sampleReviewsSeeded?: number }).sampleReviewsSeeded ?? 0;
       const automated = (result as { deletedAutomatedRequests?: number }).deletedAutomatedRequests ?? 0;
+      const deletedUsers = (result as { deletedAutomatedUsers?: number }).deletedAutomatedUsers ?? 0;
+      this.usersPage.set(1);
+      await this.refreshAfterMutation();
       this.notice.set(
-        `ล้างงานทดสอบแล้ว (ลบ ${deletedReq} งาน${automated ? ` รวม automated ${automated}` : ''}) — คงบัญชี ${kept} · seed รีวิว QA ผู้ให้ 01: ${seeded} รายการ`,
+        `รีเซ็ตสำเร็จ — ลบ ${deletedReq} งาน${automated ? ` (automated ${automated})` : ''}${deletedUsers ? ` · ลบผู้ใช้ค้าง ${deletedUsers}` : ''} · คงบัญชีทดสอบ ${kept} · seed รีวิว QA ผู้ให้ 01: ${seeded} รายการ`,
       );
-      await this.load();
     } catch (e) {
       this.actionError.set(apiErrorMessage(e, 'รีเซ็ตข้อมูลทดสอบไม่สำเร็จ'));
     } finally {
-      this.acting.set(false);
+      this.resetting.set(false);
     }
   }
 
   protected async repairTestData(): Promise<void> {
-    if (this.acting()) {
+    if (this.resetting() || this.repairing()) {
       return;
     }
-    this.acting.set(true);
+    this.repairing.set(true);
     this.actionError.set(null);
     try {
       const result = await firstValueFrom(this.api.repairTestData());
       const moved = result.reviewReassigned ? 'ย้ายรีวิวแล้ว' : 'รีวิวตรงอยู่แล้วหรือไม่พบ';
+      await this.refreshAfterMutation();
       this.notice.set(
-        `ซ่อมข้อมูลทดสอบ: ${moved} · ลบงานเก่า ${result.staleRequestsRemoved ?? 0} รายการ`,
+        `ซ่อมข้อมูลทดสอบสำเร็จ: ${moved} · ลบงานเก่า ${result.staleRequestsRemoved ?? 0} รายการ`,
       );
-      await this.load();
     } catch (e) {
       this.actionError.set(apiErrorMessage(e, 'ซ่อมข้อมูลทดสอบไม่สำเร็จ'));
     } finally {
-      this.acting.set(false);
+      this.repairing.set(false);
     }
+  }
+
+  protected adminRequestStatusLabel(r: ServiceRequestSummary): string {
+    const appt = this.appointments().find((a) => a.serviceRequestId === r.id);
+    return displayRequestStatusLabel(r.status, appt?.status ?? null);
   }
 
   protected userLine(u: AdminUserRow): string {
