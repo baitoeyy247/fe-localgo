@@ -31,6 +31,7 @@ import { redirectProviderFromRequesterRoute } from '../../../shared/requester-de
 import { ThaiDatetimeField } from '../../../shared/ui/thai-datetime-field';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { formatPrice } from '../../../shared/format-price';
+import { GLOSSARY } from '../../../shared/glossary';
 
 @Component({
   selector: 'app-appointment-page',
@@ -47,6 +48,7 @@ import { formatPrice } from '../../../shared/format-price';
   templateUrl: './appointment.html',
 })
 export class AppointmentPage implements OnInit, OnDestroy {
+  protected readonly GLOSSARY = GLOSSARY;
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly appointment = signal<AppointmentDetail | null>(null);
   protected readonly selectedBid = signal<BidItem | null>(null);
@@ -499,6 +501,10 @@ export class AppointmentPage implements OnInit, OnDestroy {
 
   protected async goRebook(): Promise<void> {
     await this.goBookOtherProvider();
+  }
+
+  protected primaryStatusLine(): string | null {
+    return this.statusHeadline();
   }
 
   protected statusHeadline(): string | null {

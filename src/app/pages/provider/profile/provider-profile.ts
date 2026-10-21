@@ -11,10 +11,11 @@ import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { ToastService } from '../../../core/toast.service';
+import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 
 @Component({
   selector: 'app-provider-profile-setup-page',
-  imports: [PageShell, ProviderSetupBar, ProviderBottomNav],
+  imports: [PageShell, ProviderSetupBar, ProviderBottomNav, SkeletonCard],
   templateUrl: './provider-profile.html',
 })
 export class ProviderProfileSetupPage implements OnInit {
@@ -113,7 +114,7 @@ export class ProviderProfileSetupPage implements OnInit {
         );
         this.provider.set(created);
       }
-      this.toast.show('บันทึกโปรไฟล์แล้ว');
+      this.toast.show('บันทึกและตั้งพื้นที่แล้ว');
       await this.router.navigateByUrl('/provider/coverage');
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'บันทึกโปรไฟล์ไม่สำเร็จ'));

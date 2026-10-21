@@ -1,8 +1,12 @@
-/** คำศัพท์มาตรฐานทั้งแอป (QA18/19) */
+/** คำศัพท์มาตรฐานทั้งแอป (QA18–21) */
 export const GLOSSARY = {
+  dialogConfirm: 'ยืนยัน',
+  dialogCancel: 'ยกเลิก',
   confirmAppointment: 'ยืนยันนัดหมาย',
+  confirmReceiveAppointment: 'ยืนยันรับนัดหมาย',
   saveAppointment: 'บันทึกนัดหมาย',
   cancelAppointment: 'ยกเลิกนัดหมาย',
+  rescheduleAppointment: 'เลื่อนนัดหมาย',
   clearBidSelection: 'ยกเลิกการเลือกข้อเสนอ',
   selectBidAndAppointment: 'เลือกข้อเสนอและนัดหมาย',
   reviewAction: 'ให้คะแนนและรีวิว',
@@ -10,4 +14,8 @@ export const GLOSSARY = {
   bookService: 'จองบริการ',
   submitReview: 'ส่งรีวิว',
   backHome: 'กลับหน้าหลัก',
+  savingAppointment: 'กำลังบันทึก…',
+  rejectAppointment: 'ปฏิเสธนัด',
+  startJob: 'เริ่มงาน',
+  completeJob: 'งานเสร็จสิ้น',
 } as const;

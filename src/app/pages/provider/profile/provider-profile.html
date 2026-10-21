@@ -2,10 +2,11 @@
   <app-provider-setup-bar active="profile" />
 
   @if (loading()) {
-    <p class="muted" style="text-align: center">กำลังโหลด…</p>
+    <app-skeleton-card [count]="3" />
+    <p class="muted" style="text-align: center">กำลังโหลดข้อมูล…</p>
   } @else {
     <label class="field" [class.field--error]="!!fieldErrors()['providerType']">
-      <span>ประเภทผู้ให้บริการ</span>
+      <span>ประเภทผู้ให้บริการ <span class="req">*</span></span>
       <select class="input" aria-label="ประเภทผู้ให้บริการ" (change)="selectProviderType($any($event.target).value)">
         <option value="" [selected]="!providerType()">-- เลือกประเภท --</option>
         @for (opt of typeOptions; track opt.value) {
@@ -17,7 +18,7 @@
       }
     </label>
     <label class="field" [class.field--error]="!!fieldErrors()['name']">
-      <span>ชื่อที่แสดง</span>
+      <span>ชื่อที่แสดง <span class="req">*</span></span>
       <input
         class="input"
         [class.err]="!!fieldErrors()['name']"
@@ -37,6 +38,7 @@
     <label class="field">
       <span>LINE ติดต่อ</span>
       <input class="input" [value]="contactLineId()" aria-label="LINE" placeholder="@username" (input)="updateContactLine($any($event.target).value)" />
+      <small class="muted">ใส่ LINE ID หรือ @username ที่ลูกค้าติดต่อได้ (ไม่บังคับ)</small>
     </label>
     <label class="field">
       <span>เบอร์โทร</span>
@@ -45,7 +47,7 @@
     @if (error()) {
       <p class="error-text">{{ error() }}</p>
     }
-    <button class="btn btn-primary btn-block" type="button" [disabled]="saving()" (click)="saveAndContinue()">
+    <button class="btn btn-primary btn-block" type="button" [class.is-busy]="saving()" [disabled]="saving()" (click)="saveAndContinue()">
       {{ saving() ? 'กำลังบันทึก…' : 'บันทึกและตั้งพื้นที่' }}
     </button>
   }

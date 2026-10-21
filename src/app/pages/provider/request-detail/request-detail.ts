@@ -73,6 +73,36 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     return displayRequestStatusLabel(status, this.effectiveAppointmentStatus());
   }
 
+  /** Single status chip on the page header. */
+  protected pageStatusLabel(): string {
+    const appt = this.appointment();
+    if (this.showAppointmentSection() && appt) {
+      return this.appointmentStatusLabel(appt.status);
+    }
+    const r = this.request();
+    return r ? this.statusLabel(r.status) : '';
+  }
+
+  protected appointmentActionHint(): string | null {
+    const appt = this.appointment();
+    if (!appt || this.isTerminal()) {
+      return null;
+    }
+    if (appt.status === 'Pending') {
+      return 'รอคุณยืนยันนัด';
+    }
+    if (appt.status === 'Confirmed') {
+      return this.startWindowHint() ?? 'กดเริ่มงานเมื่อถึงเวลานัด';
+    }
+    if (appt.status === 'InProgress') {
+      return 'กำลังดำเนินงาน — กดเมื่องานเสร็จ';
+    }
+    if (appt.status === 'Completed') {
+      return 'งานเสร็จแล้ว';
+    }
+    return null;
+  }
+
   protected effectiveAppointmentStatus(): string | null | undefined {
     return this.appointment()?.status ?? this.request()?.appointmentStatus ?? null;
   }
@@ -433,7 +463,6 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       this.appointment.set(updated);
       this.cache.invalidateAll();
       this.toast.show('ปฏิเสธนัดแล้ว');
-      this.notice.set('ปฏิเสธนัดแล้ว — ลูกค้าจะเห็นสถานะผู้ให้บริการปฏิเสธ');
       const current = this.request();
       if (current) {
         this.request.set({ ...current, appointmentStatus: updated.status });
@@ -562,27 +591,28 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       const updated = await firstValueFrom(this.api.updateAppointmentStatus(appt.id, status));
       this.appointment.set(updated);
       this.cache.invalidateAll();
-      this.toast.show(options.notice);
-      const requestId = this.request()?.id;
+      const current = this.request();
+      if (current) {
+        const nextStatus =
+          status === 'InProgress'
+            ? 'InProgress'
+            : status === 'Completed'
+              ? 'Completed'
+              : status === 'Confirmed'
+                ? current.status
+                : current.status;
+        this.request.set({
+          ...current,
+          status: nextStatus,
+          appointmentStatus: updated.status,
+        });
+      }
+      const requestId = current?.id;
       if (requestId) {
         try {
-          const refreshed = await firstValueFrom(this.api.getRequest(requestId));
-          this.request.set(refreshed);
+          this.request.set(await firstValueFrom(this.api.getRequest(requestId)));
         } catch {
-          const current = this.request();
-          if (current) {
-            const nextStatus =
-              status === 'InProgress'
-                ? 'InProgress'
-                : status === 'Completed'
-                  ? 'Completed'
-                  : current.status;
-            this.request.set({
-              ...current,
-              status: nextStatus,
-              appointmentStatus: updated.status,
-            });
-          }
+          /* local patch already applied */
         }
       }
       this.notice.set(null);

@@ -29,7 +29,7 @@
     <div class="card">
       <div class="row between" style="align-items: flex-start">
         <b>{{ r.title }}</b>
-        <span class="badge b-blue">{{ statusLabel(r.status) }}</span>
+        <span class="badge b-blue">{{ pageStatusLabel() }}</span>
       </div>
       <p class="muted" style="margin: 4px 0 0">{{ r.categoryName ?? 'ทั่วไป' }}</p>
     </div>
@@ -71,13 +71,13 @@
 
     @if (showAppointmentSection()) {
       <article class="card">
-        <div class="row between">
-          <b>รายละเอียดนัดหมาย</b>
-          <span class="badge b-green">นัดหมายจากลูกค้า</span>
-        </div>
+        <b>รายละเอียดนัดหมาย</b>
         @if (appointmentLoading()) {
           <p class="muted" style="margin-top: 8px">กำลังโหลดรายละเอียดนัด…</p>
         } @else if (appointment(); as appt) {
+          @if (appointmentActionHint(); as hint) {
+            <p class="muted" style="margin-top: 8px">{{ hint }}</p>
+          }
           <p style="margin-top: 8px"><b>วันและเวลา:</b> {{ formatScheduledAt(appt.scheduledAt) }}</p>
           <p><b>สถานที่:</b> {{ appt.addressText?.trim() || 'ยังไม่ระบุสถานที่' }}</p>
           @if (customerNote(appt); as cnote) {
@@ -86,44 +86,28 @@
           @if (appt.status === 'Rejected' && rejectReason(appt); as reason) {
             <p><b>เหตุผลที่ปฏิเสธ:</b> {{ reason }}</p>
           }
-          <p>
-            <b>สถานะ:</b>
-            <span
-              class="badge"
-              [class.badge--muted]="appt.status === 'Cancelled'"
-              [class.badge--red]="appt.status === 'Rejected'"
-              [class.badge--green]="appt.status !== 'Cancelled' && appt.status !== 'Rejected'"
-              >{{ appointmentStatusLabel(appt.status) }}</span
-            >
-          </p>
 
           @if (isTerminal()) {
             <p class="muted">นัดนี้ปิดแล้ว ไม่ต้องดำเนินการเพิ่ม</p>
           } @else if (canConfirmAppointment()) {
-            <p class="muted">รอคุณยืนยันนัด</p>
-            <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" [disabled]="acting()" (click)="openConfirmAppointment()">
+            <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" [class.is-busy]="acting()" [disabled]="acting()" (click)="openConfirmAppointment()">
               {{ acting() ? actingLabel() : 'ยืนยันรับนัดหมาย' }}
             </button>
             <button class="btn btn-danger-o btn-block" type="button" style="margin-top: 8px" [disabled]="acting()" (click)="rejectOpen.set(true)">
               ปฏิเสธนัด
             </button>
           } @else if (appt.status === 'Confirmed') {
-            @if (startWindowHint(); as hint) {
-              <p class="muted">{{ hint }}</p>
+            @if (startWindowHint()) {
               <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" disabled>เริ่มงาน</button>
             } @else {
-              <p class="muted">ยืนยันรับนัดแล้ว — กดเริ่มงานเมื่อถึงเวลานัด</p>
-              <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" [disabled]="acting()" (click)="openStartJob()">
+              <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" [class.is-busy]="acting()" [disabled]="acting()" (click)="openStartJob()">
                 {{ acting() ? actingLabel() : 'เริ่มงาน' }}
               </button>
             }
           } @else if (canCompleteJob()) {
-            <p class="muted">กำลังดำเนินงาน — กดเมื่องานเสร็จ</p>
-            <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" [disabled]="acting()" (click)="openCompleteJob()">
+            <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" [class.is-busy]="acting()" [disabled]="acting()" (click)="openCompleteJob()">
               {{ acting() ? actingLabel() : 'งานเสร็จสิ้น' }}
             </button>
-          } @else if (appt.status === 'Completed') {
-            <p class="muted">งานเสร็จแล้ว — ลูกค้าสามารถให้คะแนนและรีวิวได้</p>
           }
         } @else if (appointmentError()) {
           <p class="error-text">{{ appointmentError() }}</p>

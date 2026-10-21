@@ -44,29 +44,15 @@
     ></textarea>
   </label>
 
-  <div class="field" [class.field--error]="!!fieldErrors()['preferredAt']">
-    <span>วันที่และเวลาที่ต้องการ <span class="req">*</span></span>
-    <div class="datetime-pair">
-      <input
-        class="input"
-        type="date"
-        aria-label="วันที่ต้องการ"
-        [min]="preferredMinDate()"
-        [value]="preferredDate()"
-        (change)="updatePreferredDate($any($event.target).value)"
-      />
-      <input
-        class="input"
-        type="time"
-        aria-label="เวลาที่ต้องการ"
-        [value]="preferredTime()"
-        (change)="updatePreferredTime($any($event.target).value)"
-      />
-    </div>
-    @if (fieldErrors()['preferredAt']; as msg) {
-      <p class="error-text">{{ msg }}</p>
-    }
-  </div>
+  <app-thai-datetime-field
+    label="วันที่และเวลาที่ต้องการ *"
+    [value]="preferredAt()"
+    [requireFuture]="true"
+    (valueChange)="preferredAt.set($event); clearFieldError('preferredAt')"
+  />
+  @if (fieldErrors()['preferredAt']; as msg) {
+    <p class="error-text">{{ msg }}</p>
+  }
 
   <div class="card row">
     <span class="ico">📍</span>

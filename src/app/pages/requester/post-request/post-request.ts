@@ -14,11 +14,11 @@ import { SessionStateService } from '../../../core/session-state.service';
 import { UserLocationService } from '../../../core/user-location.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
-import { toDatetimeLocal } from '../../../shared/datetime.util';
+import { ThaiDatetimeField } from '../../../shared/ui/thai-datetime-field';
 
 @Component({
   selector: 'app-post-request-page',
-  imports: [PageShell, LocationPickerModal, RequesterBottomNav, RequesterFlowBar],
+  imports: [PageShell, LocationPickerModal, RequesterBottomNav, RequesterFlowBar, ThaiDatetimeField],
   templateUrl: './post-request.html',
 })
 export class PostRequestPage implements OnInit {
@@ -29,8 +29,7 @@ export class PostRequestPage implements OnInit {
   protected readonly description = signal('');
   protected readonly budgetMode = signal<'open' | 'fixed'>('open');
   protected readonly budgetAmount = signal('');
-  protected readonly preferredDate = signal('');
-  protected readonly preferredTime = signal('');
+  protected readonly preferredAt = signal('');
   protected readonly posting = signal(false);
   protected readonly fieldErrors = signal<Record<string, string>>({});
   protected readonly error = signal<string | null>(null);
@@ -90,20 +89,6 @@ export class PostRequestPage implements OnInit {
     this.clearFieldError('budget');
   }
 
-  protected updatePreferredDate(value: string): void {
-    this.preferredDate.set(value);
-    this.clearFieldError('preferredAt');
-  }
-
-  protected updatePreferredTime(value: string): void {
-    this.preferredTime.set(value);
-    this.clearFieldError('preferredAt');
-  }
-
-  protected preferredMinDate(): string {
-    return toDatetimeLocal(new Date()).slice(0, 10);
-  }
-
   protected showCoords(): boolean {
     const loc = this.requestLocation();
     return loc.title === 'พื้นที่ค้นหาเริ่มต้น' || loc.title === 'จุดรับงานปัจจุบัน';
@@ -145,7 +130,7 @@ export class PostRequestPage implements OnInit {
 
     const categoryId = this.selectedCategoryId();
     const title = this.title().trim();
-    const preferredIso = this.resolvePreferredIso();
+    const preferredIso = this.preferredAt().trim();
     if (!categoryId || !title || !preferredIso) {
       return;
     }
@@ -162,7 +147,7 @@ export class PostRequestPage implements OnInit {
           latitude: loc.lat,
           longitude: loc.lng,
           searchRadiusMeters: loc.radiusKm * 1000,
-          preferredStartAt: preferredIso,
+          preferredStartAt: new Date(preferredIso).toISOString(),
           budgetText: this.resolveBudgetText(),
           publish: true,
         }),
@@ -186,13 +171,11 @@ export class PostRequestPage implements OnInit {
     if (!this.title().trim()) {
       errors['title'] = 'กรุณาระบุหัวข้องาน';
     }
-    if (!this.preferredDate() || !this.preferredTime()) {
+    const iso = this.preferredAt().trim();
+    if (!iso) {
       errors['preferredAt'] = 'กรุณาเลือกวันที่และเวลาที่ต้องการ';
-    } else {
-      const iso = this.resolvePreferredIso();
-      if (!iso || new Date(iso).getTime() < Date.now() - 60_000) {
-        errors['preferredAt'] = 'วันที่และเวลาที่ต้องการต้องไม่เป็นเวลาในอดีต';
-      }
+    } else if (new Date(iso).getTime() < Date.now() - 60_000) {
+      errors['preferredAt'] = 'วันที่และเวลาที่ต้องการต้องไม่เป็นเวลาในอดีต';
     }
     if (this.budgetMode() === 'fixed') {
       const amount = Number(this.budgetAmount().trim());
@@ -201,20 +184,6 @@ export class PostRequestPage implements OnInit {
       }
     }
     return errors;
-  }
-
-  private resolvePreferredIso(): string | null {
-    const date = this.preferredDate();
-    const time = this.preferredTime();
-    if (!date || !time) {
-      return null;
-    }
-    const local = `${date}T${time}`;
-    const d = new Date(local);
-    if (Number.isNaN(d.getTime())) {
-      return null;
-    }
-    return d.toISOString();
   }
 
   /** API contract: open → "เปิดรับราคา"; fixed → integer digits only. */
@@ -239,7 +208,7 @@ export class PostRequestPage implements OnInit {
     this.fieldErrors.set(next);
   }
 
-  private clearFieldError(key: string): void {
+  protected clearFieldError(key: string): void {
     const next = { ...this.fieldErrors() };
     delete next[key];
     this.fieldErrors.set(next);

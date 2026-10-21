@@ -13,8 +13,8 @@
     <div class="card">
       <div class="row between">
         <b>{{ selectedBid()?.providerName ?? 'ผู้ให้บริการ' }}</b>
-        @if (statusHeadline(); as headline) {
-          <span class="badge b-blue">{{ headline }}</span>
+        @if (primaryStatusLine(); as line) {
+          <span class="badge b-blue">{{ line }}</span>
         }
       </div>
       @if (request()?.title; as t) {
@@ -34,9 +34,6 @@
         }
         @if (rejectReason(); as reason) {
           <p style="margin: 0 0 8px"><b>เหตุผลที่ปฏิเสธ:</b> {{ reason }}</p>
-        }
-        @if (appointmentStatusHint(appt.status); as hintText) {
-          <p class="muted" style="margin: 0">{{ hintText }}</p>
         }
         @if (!isTerminal()) {
           <button
@@ -135,7 +132,7 @@
         [disabled]="!canConfirm || saving()"
         (click)="confirm()"
       >
-        {{ saving() ? 'กำลังบันทึก…' : 'ยืนยันนัดหมาย' }}
+        {{ saving() ? GLOSSARY.savingAppointment : GLOSSARY.confirmAppointment }}
       </button>
     }
   }
@@ -158,8 +155,8 @@
     [open]="confirmCancelOpen()"
     title="ยกเลิกนัดหมาย?"
     message="ต้องการยกเลิกนัดหมายใช่หรือไม่"
-    confirmLabel="ยกเลิกนัดหมาย"
-    cancelLabel="ไม่ยกเลิก"
+    [confirmLabel]="GLOSSARY.cancelAppointment"
+    [cancelLabel]="GLOSSARY.dialogCancel"
     [danger]="true"
     [busy]="saving()"
     (confirm)="cancelAppointment()"
@@ -169,8 +166,8 @@
     [open]="confirmClearOpen()"
     title="ยกเลิกการเลือกข้อเสนอ?"
     message="ยกเลิกการเลือกข้อเสนอและกลับไปเลือกผู้ให้บริการรายอื่น"
-    confirmLabel="ยกเลิกการเลือก"
-    cancelLabel="ไม่ยกเลิก"
+    [confirmLabel]="GLOSSARY.clearBidSelection"
+    [cancelLabel]="GLOSSARY.dialogCancel"
     [danger]="true"
     [busy]="saving()"
     (confirm)="clearBidSelection()"
