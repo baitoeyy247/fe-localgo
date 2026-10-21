@@ -1,7 +1,7 @@
 import { Component, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
-export type RequesterNavTab = 'home' | 'search' | 'post' | 'bids';
+export type RequesterNavTab = 'home' | 'search' | 'post' | 'bids' | 'account';
 
 @Component({
   selector: 'app-requester-bottom-nav',
@@ -24,6 +24,9 @@ export type RequesterNavTab = 'home' | 'search' | 'post' | 'bids';
       </a>
       <a routerLink="/requester/bids" routerLinkActive="on">
         <i aria-hidden="true">💬</i>ข้อเสนอ
+      </a>
+      <a routerLink="/requester/profile" routerLinkActive="on">
+        <i aria-hidden="true">👤</i>บัญชี
       </a>
     </nav>
   `,

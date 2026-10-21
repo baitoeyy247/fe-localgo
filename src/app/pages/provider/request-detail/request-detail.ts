@@ -235,6 +235,16 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     return requestAllowsWithdraw && bidAllowsWithdraw;
   }
 
+  protected canEditActiveBid(): boolean {
+    const bid = this.myBid();
+    const request = this.request();
+    if (!bid || !request || this.isTerminal()) {
+      return false;
+    }
+    const requestOpen = request.status === 'Open' || request.status === 'HasOffers';
+    return requestOpen && (bid.status === 'Submitted' || bid.status === 'Pending');
+  }
+
   protected canResubmitBid(): boolean {
     const bid = this.myBid();
     const request = this.request();

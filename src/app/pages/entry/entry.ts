@@ -19,6 +19,7 @@ export class EntryPage implements OnInit, OnDestroy {
   protected readonly categories = signal<Category[]>([]);
   protected readonly lineHint = signal<string | null>(null);
   protected readonly personaBusy = signal(false);
+  protected readonly activePersonaKey = signal<string | null>(null);
   protected readonly personas = TEST_PERSONAS;
   protected readonly auth = inject(AuthService);
   protected readonly hint = new SlowLoadHint();
@@ -73,6 +74,7 @@ export class EntryPage implements OnInit, OnDestroy {
     if (this.personaBusy()) {
       return;
     }
+    this.activePersonaKey.set(persona.key);
     this.personaBusy.set(true);
     this.error.set(null);
     this.hint.begin();
@@ -89,6 +91,7 @@ export class EntryPage implements OnInit, OnDestroy {
     } finally {
       this.hint.end();
       this.personaBusy.set(false);
+      this.activePersonaKey.set(null);
     }
   }
 

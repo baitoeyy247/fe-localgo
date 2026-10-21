@@ -14,9 +14,15 @@ body {
   margin: 0;
 }
 
+.li.chev.is-pressed,
+.li.chev:active:not(:disabled) {
+  background: var(--bg-3, #eef0f2);
+  opacity: 0.92;
+}
+
 body {
   font-family: 'Noto Sans Thai', 'Noto Sans', system-ui, sans-serif;
-  background: #dadde0;
+  background: var(--bg-2, #f4f5f6);
   color: var(--text);
   font-size: 16px;
   line-height: 1.6;

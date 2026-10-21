@@ -107,6 +107,9 @@
       }
     }
 
+    @if (isOwnShop()) {
+      <div class="banner warn" role="status">นี่คือร้านของคุณ — ไม่สามารถจองบริการตัวเองได้</div>
+    }
     <div class="actionbar">
       <a class="btn btn-secondary" routerLink="/requester/post">ประกาศงาน</a>
       @if (p.contactUrl) {

@@ -61,12 +61,21 @@
       <div class="sec-title"><h3 style="margin: 0; font-size: 18px">บัญชีทดสอบ (10)</h3></div>
       <div class="list">
         @for (p of personas; track p.key) {
-          <button type="button" class="li chev" [disabled]="personaBusy()" (click)="loginAsPersona(p)">
+          <button
+            type="button"
+            class="li chev"
+            [class.is-pressed]="activePersonaKey() === p.key"
+            [disabled]="personaBusy()"
+            (click)="loginAsPersona(p)"
+          >
             <span class="ico">{{ p.asAdmin ? '🛡' : p.activeRole === 'Provider' ? '🧰' : '🙋' }}</span>
             <span class="grow">
               <span class="t">{{ p.displayName }}</span><br />
               <span class="muted role-card-blurb">{{ p.blurb }}</span>
             </span>
+            @if (activePersonaKey() === p.key) {
+              <span class="muted" aria-hidden="true">…</span>
+            }
           </button>
         }
       </div>

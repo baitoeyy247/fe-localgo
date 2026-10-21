@@ -44,6 +44,7 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
   protected readonly loadError = signal<string | null>(null);
   protected readonly selecting = signal(false);
   protected readonly confirmClearOpen = signal(false);
+  protected readonly confirmSelectOpen = signal(false);
   protected readonly hint = new SlowLoadHint();
   protected readonly formatPrice = formatPrice;
 
@@ -112,12 +113,25 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
     await this.router.navigate(['/requester/provider', bid.providerId]);
   }
 
+  protected selectedBid(): BidItem | null {
+    const id = this.selectedBidId();
+    return id ? (this.bids().find((b) => b.id === id) ?? null) : null;
+  }
+
+  protected openSelectConfirm(): void {
+    if (!this.selectedBidId()) {
+      return;
+    }
+    this.confirmSelectOpen.set(true);
+  }
+
   protected async confirmSelection(): Promise<void> {
     const requestId = this.request()?.id ?? this.session.requesterRequestId ?? null;
     const bidId = this.selectedBidId();
     if (!requestId || !bidId || this.selecting()) {
       return;
     }
+    this.confirmSelectOpen.set(false);
     this.selecting.set(true);
     this.error.set(null);
     try {

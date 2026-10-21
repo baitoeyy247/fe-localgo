@@ -1,0 +1,25 @@
+<app-page-shell title="บัญชี" backLink="/requester">
+  @if (auth.user(); as u) {
+    <div class="card" style="text-align: center">
+      <span class="avatar lg" style="margin: 0 auto">{{ (u.displayName[0] ?? '?') }}</span>
+      <h2 style="margin: 8px 0 0">{{ u.displayName }}</h2>
+      <p class="muted" style="margin: 0">ผู้รับบริการ</p>
+    </div>
+  }
+
+  <button type="button" class="card row" style="width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer" [disabled]="switching()" (click)="switchToProvider()">
+    <span class="ico">🧰</span>
+    <span class="grow"><b>สลับเป็นผู้ให้บริการ</b><br /><span class="muted">จัดการร้านและรับงาน</span></span>
+    @if (switching()) {
+      <span class="muted">กำลังเปลี่ยน…</span>
+    } @else {
+      <span class="chev"></span>
+    }
+  </button>
+
+  <button type="button" class="btn btn-danger-o btn-block" [disabled]="loggingOut()" (click)="logout()">
+    {{ loggingOut() ? 'กำลังออก…' : 'ออกจากระบบ' }}
+  </button>
+
+  <app-requester-bottom-nav />
+</app-page-shell>

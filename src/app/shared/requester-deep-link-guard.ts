@@ -11,7 +11,7 @@ export async function redirectProviderFromRequesterRoute(
   router: Router,
   requestId: string,
 ): Promise<boolean> {
-  if (auth.activeRole() === 'Requester') {
+  if (auth.activeRole() !== 'Provider') {
     return false;
   }
 

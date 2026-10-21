@@ -134,6 +134,11 @@
           <p class="muted">คุณถอนข้อเสนอไปแล้ว สามารถส่งข้อเสนอใหม่ได้หากงานยังเปิดรับ</p>
         }
         <p class="muted" style="font-size: 13px">สถานะข้อเสนอ: {{ bidStatusLabel(bid.status) }}</p>
+        @if (canEditActiveBid()) {
+          <button class="btn btn-secondary btn-block" type="button" style="margin-top: 8px" [disabled]="acting()" (click)="submitBid()">
+            แก้ไขข้อเสนอ
+          </button>
+        }
         @if (canWithdrawBid() && !isTerminal()) {
           <button type="button" class="btn btn-danger-o btn-block" style="margin-top: 8px" [disabled]="acting()" (click)="withdrawOpen.set(true)">
             ถอนข้อเสนอ
@@ -144,7 +149,7 @@
         }
       </article>
     } @else if (canOfferNewBid()) {
-      <button class="btn btn-primary btn-block" type="button" (click)="submitBid()">ส่งข้อเสนอราคา</button>
+      <button class="btn btn-primary btn-block" type="button" [disabled]="acting()" (click)="submitBid()">เสนอราคา</button>
     }
   }
 

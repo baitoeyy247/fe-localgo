@@ -59,6 +59,13 @@ export const routes: Routes = [
       import('./pages/requester/private-bids/private-bids').then((m) => m.PrivateBidsPage),
   },
   {
+    path: 'requester/profile',
+    title: 'บัญชี | LocalGo',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/requester/profile/requester-profile').then((m) => m.RequesterProfilePage),
+  },
+  {
     path: 'requester/book/:providerId',
     title: 'จองบริการ | LocalGo',
     canActivate: [authGuard],

@@ -1,11 +1,9 @@
 <app-page-shell title="ข้อเสนอที่ได้รับ" backLink="/requester">
   <app-requester-flow-bar active="bids" />
 
-  @if (justPosted()) {
+  @if (justPosted() && !loading()) {
     <div class="banner ok" role="status">
-      <span
-        ><b>โพสต์งานสำเร็จ</b><br />กำลังโหลดข้อเสนอที่ได้รับ — ระบบจะแจ้งเตือนทาง LINE เมื่อมีข้อเสนอใหม่</span
-      >
+      <span><b>โพสต์งานสำเร็จ</b><br />ระบบจะแจ้งเตือนทาง LINE เมื่อมีข้อเสนอใหม่</span>
     </div>
   }
 
@@ -69,13 +67,23 @@
   }
 
   @if (!isExpired() && bids().length > 0) {
-    <button class="btn btn-primary btn-block" type="button" [disabled]="!selectedBidId() || selecting()" (click)="confirmSelection()">
+    <button class="btn btn-primary btn-block" type="button" [disabled]="!selectedBidId() || selecting()" (click)="openSelectConfirm()">
       {{ selecting() ? 'กำลังบันทึก…' : 'เลือกข้อเสนอและนัดหมาย' }}
     </button>
   } @else if (isExpired()) {
     <a class="btn btn-primary btn-block" routerLink="/requester/post">ประกาศงานใหม่</a>
   }
 
+  <app-confirm-sheet
+    [open]="confirmSelectOpen()"
+    title="เลือกข้อเสนอนี้?"
+    [message]="selectedBid() ? 'ผู้ให้บริการ: ' + selectedBid()!.providerName + ' · ราคา ' + formatPrice(selectedBid()!.priceText) + ' — ขั้นถัดไปกำหนดวันและสถานที่นัดหมาย' : 'ยืนยันการเลือกข้อเสนอ'"
+    confirmLabel="เลือกข้อเสนอ"
+    cancelLabel="ยกเลิก"
+    [busy]="selecting()"
+    (confirm)="confirmSelection()"
+    (cancel)="confirmSelectOpen.set(false)"
+  />
   <app-confirm-sheet
     [open]="confirmClearOpen()"
     title="ยกเลิกการเลือกข้อเสนอ?"

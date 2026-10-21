@@ -216,7 +216,7 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
       this.pendingConfirmCount.set(
         items.filter((r) => this.isMine(r) && this.isPendingConfirm(r)).length,
       );
-      this.tab.set(this.pendingConfirmCount() > 0 ? 'pending' : 'active');
+      this.syncInitialTab();
 
       const missingBranches = mine.branches.filter((b) => b.isActive).length === 0;
       const missingServices = mine.services.filter((s) => s.isActive).length === 0;
@@ -278,6 +278,22 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
 
   protected formatDistance(meters?: number | null): string {
     return formatDistanceMeters(meters);
+  }
+
+  private syncInitialTab(): void {
+    if (this.pendingConfirmCount() > 0) {
+      this.tab.set('pending');
+      return;
+    }
+    const jobs = this.myJobs();
+    const order: JobTab[] = ['rejected', 'pending', 'active', 'completed', 'cancelled'];
+    for (const key of order) {
+      if (jobs.some((r) => this.matchesTab(r, key))) {
+        this.tab.set(key);
+        return;
+      }
+    }
+    this.tab.set('active');
   }
 
   protected formatWhen(iso: string): string {

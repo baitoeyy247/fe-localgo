@@ -1,11 +1,11 @@
 <app-page-shell title="แอดมิน · ภาพรวมระบบ" [showBack]="true" backLink="/" [hideNavPad]="true">
   @if (loading()) {
     <app-skeleton-card [count]="2" />
-    <p class="muted" style="text-align: center">กำลังโหลดจาก API…</p>
+    <p class="muted" style="text-align: center">กำลังโหลดข้อมูล…</p>
   } @else if (error()) {
     <app-error-state [message]="error()!" (retry)="load()" />
   } @else {
-    <p class="muted" style="margin: 0">ข้อมูลจาก API จริง — ต้องล็อกอินด้วยบัญชี Admin</p>
+    <p class="muted" style="margin: 0">ข้อมูลสรุประบบ — สำหรับผู้ดูแลเท่านั้น</p>
 
     @if (notice()) {
       <div class="banner ok">{{ notice() }}</div>
@@ -57,7 +57,7 @@
             }
           </span>
           @if (canToggleUserStatus(u)) {
-            <button type="button" class="btn btn-ghost btn-sm" [disabled]="acting()" (click)="toggleUser(u)">
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="acting()" (click)="requestToggleUser(u)">
               {{ userStatus(u) === 'Suspended' ? 'เปิดใช้งาน' : 'ระงับ' }}
             </button>
           } @else if (auth.user()?.id === u.id) {
@@ -173,4 +173,16 @@
       }
     </div>
   }
+
+  <app-confirm-sheet
+    [open]="suspendConfirmOpen()"
+    title="ระงับบัญชีผู้ใช้?"
+    message="ผู้ใช้จะไม่สามารถเข้าสู่ระบบหรือใช้งานได้จนกว่าจะเปิดใช้งานอีกครั้ง"
+    confirmLabel="ระงับบัญชี"
+    cancelLabel="ยกเลิก"
+    [danger]="true"
+    [busy]="acting()"
+    (confirm)="confirmSuspendUser()"
+    (cancel)="suspendConfirmOpen.set(false)"
+  />
 </app-page-shell>

@@ -23,6 +23,7 @@ export class ProviderProfilePage implements OnInit {
   protected readonly preferredServiceId = signal<string | null>(null);
   protected readonly selectedServiceId = signal<string | null>(null);
   protected readonly showAllServices = signal(false);
+  protected readonly isOwnShop = signal(false);
   protected readonly providerTypeLabel = providerTypeLabel;
   protected readonly formatPrice = formatPrice;
   protected readonly formatVerifiedRatingLine = formatVerifiedRatingLine;
@@ -52,6 +53,12 @@ export class ProviderProfilePage implements OnInit {
     this.provider.set(detail);
     this.reviews.set(reviewList);
     this.syncSelectedService(detail);
+    try {
+      const mine = await firstValueFrom(this.api.getMyProvider());
+      this.isOwnShop.set(mine.id === detail.id);
+    } catch {
+      this.isOwnShop.set(false);
+    }
     this.loading.set(false);
     queueMicrotask(() => this.scrollToFocusedService());
   }
@@ -69,6 +76,9 @@ export class ProviderProfilePage implements OnInit {
   }
 
   protected canBookAppointment(): boolean {
+    if (this.isOwnShop()) {
+      return false;
+    }
     const active = this.activeServices();
     if (active.length === 0) {
       return false;

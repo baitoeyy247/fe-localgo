@@ -19,10 +19,11 @@ import {
 } from '../../../shared/status-labels';
 import { displayInitial } from '../../../shared/display-initial';
 import { AuthService } from '../../../core/auth.service';
+import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 
 @Component({
   selector: 'app-admin-dashboard-page',
-  imports: [PageShell, ErrorState, SkeletonCard],
+  imports: [PageShell, ErrorState, SkeletonCard, ConfirmSheet],
   templateUrl: './admin-dashboard.html',
 })
 export class AdminDashboardPage implements OnInit {
@@ -44,6 +45,8 @@ export class AdminDashboardPage implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly actionError = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
+  protected readonly suspendConfirmOpen = signal(false);
+  protected readonly suspendTarget = signal<AdminUserRow | null>(null);
   protected readonly requestStatusLabel = requestStatusLabel;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
   protected readonly displayInitial = displayInitial;
@@ -134,6 +137,29 @@ export class AdminDashboardPage implements OnInit {
   protected canToggleUserStatus(u: AdminUserRow): boolean {
     const me = this.auth.user();
     return !!u.id && (!me?.id || me.id !== u.id);
+  }
+
+  protected requestToggleUser(u: AdminUserRow): void {
+    if (!this.canToggleUserStatus(u) || this.acting()) {
+      return;
+    }
+    const currentStatus = this.userStatus(u);
+    if (currentStatus !== 'Suspended') {
+      this.suspendTarget.set(u);
+      this.suspendConfirmOpen.set(true);
+      return;
+    }
+    void this.toggleUser(u);
+  }
+
+  protected async confirmSuspendUser(): Promise<void> {
+    const u = this.suspendTarget();
+    if (!u) {
+      return;
+    }
+    this.suspendConfirmOpen.set(false);
+    await this.toggleUser(u);
+    this.suspendTarget.set(null);
   }
 
   protected async toggleUser(u: AdminUserRow): Promise<void> {
