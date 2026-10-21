@@ -134,7 +134,11 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
             .getMyProvider()
             .pipe(catchError((err) => (isNotFoundError(err) ? of(null as ProviderDetail | null) : Promise.reject(err)))),
         ),
-        firstValueFrom(this.api.getBidFormAccess(id).pipe(catchError(() => of({ allowed: true })))),
+        firstValueFrom(
+          this.api
+            .getBidFormAccess(id)
+            .pipe(catchError(() => of({ allowed: true, reason: null, reasonCode: null }))),
+        ),
       ]);
       if (!bidAccess.allowed) {
         const msg = bidAccess.reason?.trim() || 'งานนี้ไม่ตรงกับบริการของคุณ';
