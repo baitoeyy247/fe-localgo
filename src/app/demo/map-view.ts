@@ -117,6 +117,9 @@ export class MapView implements AfterViewInit, OnChanges, OnDestroy {
     );
   }
 
+  private static readonly DEFAULT_LAT = 13.7563;
+  private static readonly DEFAULT_LNG = 100.5018;
+
   private initMap(): void {
     const center = L.latLng(this.lat(), this.lng());
 
@@ -145,6 +148,14 @@ export class MapView implements AfterViewInit, OnChanges, OnDestroy {
     }
 
     this.placeMarker(center);
+    if (
+      this.showOverlay() &&
+      Math.abs(this.lat() - MapView.DEFAULT_LAT) < 0.0001 &&
+      Math.abs(this.lng() - MapView.DEFAULT_LNG) < 0.0001 &&
+      this.selectable()
+    ) {
+      this.selectedLabel.set('ตำแหน่งเริ่มต้น — แตะแผนที่หรือค้นหาเพื่อปักหมุด');
+    }
 
     if (this.selectable() && this.size() !== 'hero') {
       this.map.on('click', (event: L.LeafletMouseEvent) => {

@@ -70,6 +70,7 @@ export class RequesterSearchPage implements OnInit {
     if (catId) {
       this.selectedCategoryId.set(catId);
       this.selectedCategoryName.set(catName);
+      this.scrollActiveChipIntoView();
     }
 
     if (!area.needsPick) {
@@ -120,6 +121,7 @@ export class RequesterSearchPage implements OnInit {
   protected selectCategory(id: string | null, name: string | null): void {
     this.selectedCategoryId.set(id);
     this.selectedCategoryName.set(name);
+    this.scrollActiveChipIntoView();
     void this.router.navigate([], {
       relativeTo: this.route,
       queryParams: id
@@ -140,6 +142,16 @@ export class RequesterSearchPage implements OnInit {
 
   protected formatDistance(meters: number): string {
     return formatDistanceMeters(meters);
+  }
+
+  private scrollActiveChipIntoView(): void {
+    queueMicrotask(() => {
+      document.querySelector('.chips--scroll .chip.on')?.scrollIntoView({
+        inline: 'center',
+        block: 'nearest',
+        behavior: 'smooth',
+      });
+    });
   }
 
   private async reload(): Promise<void> {

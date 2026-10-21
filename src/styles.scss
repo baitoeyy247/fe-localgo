@@ -811,18 +811,50 @@ app-offline-bar {
 .admin-card-list {
   display: none;
 }
-@media (max-width: 767px) {
-  .admin-table-wrap--desktop {
-    display: none;
-  }
-  .admin-card-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--s3);
-  }
-  .admin-card-list .card {
-    font-size: 14px;
-  }
+.admin-table-wrap {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+.admin-table {
+  width: 100%;
+  table-layout: fixed;
+  word-break: break-word;
+}
+.admin-table th,
+.admin-table td {
+  padding: 10px 8px;
+  font-size: 14px;
+  vertical-align: top;
+}
+.chips--scroll .chip.on {
+  scroll-margin-inline: 12px;
+}
+.chips--scroll {
+  scroll-padding-inline: 12px;
+}
+a.search,
+.banner a,
+.provider-home-link,
+.tap-target-inline {
+  min-height: var(--tap);
+  display: inline-flex;
+  align-items: center;
+}
+.tap-target-inline {
+  padding: 8px 12px;
+}
+.thai-datetime .input {
+  min-height: var(--tap);
+}
+.datetime-pair {
+  display: flex;
+  gap: var(--s2);
+  flex-wrap: wrap;
+}
+.datetime-pair .input {
+  flex: 1 1 140px;
+  min-height: var(--tap);
 }
 .field--error .input,
 .input.err {

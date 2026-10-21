@@ -17,8 +17,11 @@ export function haversineMeters(
 }
 
 export function formatDistanceMeters(meters?: number | null): string {
-  if (meters == null || Number.isNaN(meters) || meters <= 0) {
-    return '—';
+  if (meters == null || Number.isNaN(meters)) {
+    return 'ไม่ระบุระยะ';
+  }
+  if (meters <= 0) {
+    return 'ใกล้มาก';
   }
   if (meters >= 1000) {
     return `${(meters / 1000).toFixed(1)} กม.`;

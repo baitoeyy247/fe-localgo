@@ -1,7 +1,15 @@
 <div class="app-shell">
   <app-offline-bar />
-  <main class="app-main">
-    <router-outlet />
+  <main class="app-main" [class.is-route-loading]="routeLoading()">
+    @if (routeLoading()) {
+      <div class="route-skeleton" aria-busy="true" aria-live="polite">
+        <app-skeleton-card [count]="2" />
+        <p class="muted" style="text-align: center">กำลังโหลดหน้า…</p>
+      </div>
+    }
+    <div class="route-outlet">
+      <router-outlet />
+    </div>
   </main>
   <app-toast-host />
 </div>

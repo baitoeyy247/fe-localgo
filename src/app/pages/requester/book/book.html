@@ -5,6 +5,13 @@
 >
   @if (loading()) {
     <p class="muted" style="text-align: center">กำลังโหลด…</p>
+  } @else if (selfBookBlocked() || (error() && !provider())) {
+    <div class="state">
+      <div class="em">🚫</div>
+      <h3>จองบริการไม่ได้</h3>
+      <p>{{ error() }}</p>
+      <a class="btn btn-primary" routerLink="/requester/search">กลับไปค้นหาผู้ให้บริการ</a>
+    </div>
   } @else if (provider(); as p) {
     <div class="card">
       <h2 style="margin: 0; font-size: 18px">{{ p.name }}</h2>

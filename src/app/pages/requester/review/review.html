@@ -15,47 +15,49 @@
       }
     </div>
 
-    <div class="rating-picker stars big" role="group" aria-label="ให้คะแนน">
-      @for (star of [1, 2, 3, 4, 5]; track star) {
-        <button
-          type="button"
-          class="rating-picker__star tap-target"
-          [class.is-active]="rating() >= star"
-          [attr.aria-label]="'ให้ ' + star + ' ดาว'"
-          [attr.aria-pressed]="rating() >= star"
-          (click)="setRating(star)"
-        >
-          ★
-        </button>
+    @if (canSubmit()) {
+      <div class="rating-picker stars big" role="group" aria-label="ให้คะแนน">
+        @for (star of [1, 2, 3, 4, 5]; track star) {
+          <button
+            type="button"
+            class="rating-picker__star tap-target"
+            [class.is-active]="rating() >= star"
+            [attr.aria-label]="'ให้ ' + star + ' ดาว'"
+            [attr.aria-pressed]="rating() >= star"
+            (click)="setRating(star)"
+          >
+            ★
+          </button>
+        }
+      </div>
+
+      <label class="field">
+        <span>ความคิดเห็น (ไม่บังคับ)</span>
+        <textarea
+          class="input"
+          rows="3"
+          placeholder="บอกประสบการณ์สั้น ๆ"
+          [value]="comment()"
+          (input)="comment.set($any($event.target).value)"
+        ></textarea>
+      </label>
+
+      @if (error()) {
+        <p class="error-text">{{ error() }}</p>
       }
-    </div>
-
-    <label class="field">
-      <span>ความคิดเห็น (ไม่บังคับ)</span>
-      <textarea
-        class="input"
-        rows="3"
-        placeholder="บอกประสบการณ์สั้น ๆ"
-        [value]="comment()"
-        (input)="comment.set($any($event.target).value)"
-      ></textarea>
-    </label>
-
-    @if (error()) {
-      <p class="error-text">{{ error() }}</p>
+      @if (rating() < 1) {
+        <p class="muted" style="margin: 0">เลือกดาวอย่างน้อย 1 ดาว</p>
+      }
+      <button
+        class="btn btn-primary btn-block"
+        type="button"
+        [class.is-busy]="submitting()"
+        [disabled]="submitting() || rating() < 1"
+        (click)="submit()"
+      >
+        {{ submitting() ? 'กำลังส่ง…' : 'ส่งรีวิว' }}
+      </button>
     }
-    @if (!canSubmit() || rating() < 1) {
-      <p class="muted" style="margin: 0">เลือกดาวอย่างน้อย 1 ดาวเมื่องานเสร็จแล้ว</p>
-    }
-    <button
-      class="btn btn-primary btn-block"
-      type="button"
-      [class.is-busy]="submitting()"
-      [disabled]="submitting() || !canSubmit() || rating() < 1"
-      (click)="submit()"
-    >
-      {{ submitting() ? 'กำลังส่ง…' : 'ส่งรีวิว' }}
-    </button>
     <a class="btn btn-ghost btn-block" routerLink="/requester">กลับหน้าหลัก</a>
   }
 

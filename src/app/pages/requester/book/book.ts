@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, inject, signal, viewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
   LocationPickerModal,
@@ -18,10 +18,11 @@ import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { formatPrice } from '../../../shared/format-price';
 import { ToastService } from '../../../core/toast.service';
 import { SlowLoadHint } from '../../../shared/load-state';
+import { AuthService } from '../../../core/auth.service';
 
 @Component({
   selector: 'app-requester-book-page',
-  imports: [PageShell, LocationPickerModal, RequesterBottomNav, ThaiDatetimeField],
+  imports: [PageShell, LocationPickerModal, RequesterBottomNav, ThaiDatetimeField, RouterLink],
   templateUrl: './book.html',
 })
 export class RequesterBookPage implements OnInit, OnDestroy {
@@ -48,7 +49,9 @@ export class RequesterBookPage implements OnInit, OnDestroy {
   private readonly userLocation = inject(UserLocationService);
   private readonly geo = inject(GeoService);
   private readonly toast = inject(ToastService);
+  private readonly auth = inject(AuthService);
   private readonly datetimeField = viewChild(ThaiDatetimeField);
+  protected readonly selfBookBlocked = signal(false);
 
   async ngOnInit(): Promise<void> {
     const providerId = this.route.snapshot.paramMap.get('providerId');
@@ -62,6 +65,18 @@ export class RequesterBookPage implements OnInit, OnDestroy {
     this.session.currentProviderId = providerId;
 
     try {
+      try {
+        const mine = await firstValueFrom(this.api.getMyProvider());
+        if (mine.id === providerId) {
+          this.selfBookBlocked.set(true);
+          this.error.set('ไม่สามารถจองบริการร้านของตัวเองได้');
+          this.loading.set(false);
+          return;
+        }
+      } catch {
+        /* not a provider account */
+      }
+
       // Prefer last search area — never silent Bangkok default.
       const last = this.userLocation.getLastArea();
       if (last) {

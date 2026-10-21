@@ -48,7 +48,9 @@ export class ReviewPage implements OnInit {
     if (!requestId) {
       this.statusHint.set('ไม่พบงานที่จะรีวิว');
       this.providerName.set('ไม่พบผู้ให้บริการ');
+      this.canSubmit.set(false);
       this.loading.set(false);
+      void this.router.navigateByUrl('/requester');
       return;
     }
 
