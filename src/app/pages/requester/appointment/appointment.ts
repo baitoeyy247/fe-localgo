@@ -13,8 +13,13 @@ import { AppointmentDetail, BidItem, ServiceRequestDetail } from '../../../core/
 import { SessionStateService } from '../../../core/session-state.service';
 import { AuthService } from '../../../core/auth.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
-import { appointmentStatusLabel, displayRequestStatusLabel } from '../../../shared/status-labels';
+import {
+  appointmentStatusLabel,
+  displayRequestStatusLabel,
+  isTerminalAppointment,
+} from '../../../shared/status-labels';
 import { SlowLoadHint } from '../../../shared/load-state';
+import { UserLocationService } from '../../../core/user-location.service';
 import { ErrorState } from '../../../shared/ui/error-state';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
@@ -69,6 +74,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly datetimeField = viewChild(ThaiDatetimeField);
+  private readonly userLocation = inject(UserLocationService);
 
   ngOnDestroy(): void {
     this.hint.end();
@@ -147,12 +153,14 @@ export class AppointmentPage implements OnInit, OnDestroy {
     }
     this.saving.set(true);
     this.error.set(null);
-    this.success.set(null);
+    // Optimistic UI — immediate feedback within 1s AC.
+    this.success.set('กำลังบันทึกนัดหมาย…');
     try {
       const detail = this.request();
       const bid = this.selectedBid();
       if (!detail) {
         this.error.set('โหลดข้อมูลงานไม่สำเร็จ');
+        this.success.set(null);
         scrollToFirstError();
         return;
       }
@@ -160,11 +168,13 @@ export class AppointmentPage implements OnInit, OnDestroy {
       if (!this.canCreateAppointment(detail)) {
         if (!bid) {
           this.error.set('ยังไม่ได้เลือกผู้ให้บริการ กรุณาไปที่หน้าข้อเสนอ');
+          this.success.set(null);
           scrollToFirstError();
           return;
         }
         if (bid.status === 'Rejected' || bid.status === 'Withdrawn') {
           this.error.set('ข้อเสนอนี้ใช้ไม่ได้แล้ว กรุณาเลือกข้อเสนออื่น');
+          this.success.set(null);
           scrollToFirstError();
           return;
         }
@@ -172,12 +182,13 @@ export class AppointmentPage implements OnInit, OnDestroy {
           await firstValueFrom(this.api.selectBid(requestId, bid.id));
         } else {
           this.error.set('ยังไม่ได้เลือกผู้ให้บริการ กรุณาไปที่หน้าข้อเสนอ');
+          this.success.set(null);
           scrollToFirstError();
           return;
         }
       }
 
-      await firstValueFrom(
+      const created = await firstValueFrom(
         this.api.createAppointment(requestId, {
           scheduledAt: this.scheduledAt() ? new Date(this.scheduledAt()).toISOString() : undefined,
           addressText: this.addressText().trim() || undefined,
@@ -186,9 +197,11 @@ export class AppointmentPage implements OnInit, OnDestroy {
           note: this.note().trim() || undefined,
         }),
       );
+      this.appointment.set(created);
       this.success.set('บันทึกนัดหมายแล้ว ระบบจะแจ้งผู้ให้บริการให้ทราบ');
-      await this.loadRequestState(requestId);
+      void this.loadRequestState(requestId);
     } catch (e) {
+      this.success.set(null);
       this.error.set(apiErrorMessage(e, 'ยืนยันนัดหมายไม่สำเร็จ'));
       scrollToFirstError();
     } finally {
@@ -203,17 +216,23 @@ export class AppointmentPage implements OnInit, OnDestroy {
     }
     this.saving.set(true);
     this.error.set(null);
-    this.success.set(null);
+    // Optimistic: reflect cancelled immediately so all labels update on refresh path.
+    this.appointment.set({ ...existing, status: 'Cancelled' });
+    const req = this.request();
+    if (req) {
+      this.request.set({ ...req, status: 'Cancelled' });
+    }
     try {
       await firstValueFrom(this.api.updateAppointmentStatus(existing.id, 'Cancelled'));
-      this.success.set(null);
-      this.error.set(null);
-      // Clear sticky cancel banner — show a short toast-style notice only once via notice field if needed.
       const requestId = this.request()?.id ?? this.session.requesterRequestId;
       if (requestId) {
         await this.loadRequestState(requestId);
       }
     } catch (e) {
+      this.appointment.set(existing);
+      if (req) {
+        this.request.set(req);
+      }
       this.error.set(apiErrorMessage(e, 'ยกเลิกนัดหมายไม่สำเร็จ'));
       scrollToFirstError();
     } finally {
@@ -379,7 +398,34 @@ export class AppointmentPage implements OnInit, OnDestroy {
     if (status === 'Completed') {
       return 'งานเสร็จแล้ว — ให้คะแนนและรีวิวได้';
     }
+    if (status === 'Cancelled') {
+      return 'ยกเลิกแล้ว';
+    }
+    if (status === 'Rejected') {
+      return 'ผู้ให้บริการปฏิเสธ — เลือกผู้ให้บริการรายอื่นหรือจองใหม่ได้';
+    }
     return null;
+  }
+
+  protected isTerminal(): boolean {
+    return isTerminalAppointment(this.appointment()?.status) || this.request()?.status === 'Cancelled';
+  }
+
+  protected showRejectedActions(): boolean {
+    return this.appointment()?.status === 'Rejected';
+  }
+
+  protected async goRebook(): Promise<void> {
+    if (this.isDirectBooking()) {
+      const providerId = this.request()?.selectedProviderId ?? this.session.currentProviderId;
+      if (providerId) {
+        await this.router.navigate(['/requester/book', providerId]);
+        return;
+      }
+      await this.router.navigateByUrl('/requester/search');
+      return;
+    }
+    await this.router.navigateByUrl('/requester/bids');
   }
 
   protected statusHeadline(): string | null {
@@ -490,6 +536,23 @@ export class AppointmentPage implements OnInit, OnDestroy {
     if (typeof detail.latitude === 'number' && typeof detail.longitude === 'number') {
       this.mapLat.set(detail.latitude);
       this.mapLng.set(detail.longitude);
+      return;
     }
+    const last = this.userLocation.getLastArea();
+    if (last) {
+      this.mapLat.set(last.lat);
+      this.mapLng.set(last.lng);
+      if (!fromPost) {
+        this.addressText.set(last.title);
+      }
+    }
+  }
+
+  protected pickerLat(): number {
+    return this.mapLat() ?? this.userLocation.getLastArea()?.lat ?? 0;
+  }
+
+  protected pickerLng(): number {
+    return this.mapLng() ?? this.userLocation.getLastArea()?.lng ?? 0;
   }
 }

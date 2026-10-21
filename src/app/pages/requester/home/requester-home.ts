@@ -134,6 +134,12 @@ export class RequesterHomePage implements OnInit, OnDestroy {
   }
 
   protected continueLabel(request: ServiceRequestSummary): string {
+    if (request.status === 'Cancelled' || request.appointmentStatus === 'Cancelled') {
+      return 'ยกเลิกแล้ว';
+    }
+    if (request.appointmentStatus === 'Rejected') {
+      return 'ผู้ให้บริการปฏิเสธ';
+    }
     if (request.status === 'Completed') {
       return request.hasReviewed ? 'ดูรายละเอียด' : 'ให้คะแนนและรีวิว';
     }

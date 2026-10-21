@@ -54,7 +54,8 @@ describe('ProviderRequestDetailPage job completion', () => {
       serviceRequestId: 'req-1',
       providerId: provider.id,
       requesterUserId: 'user-1',
-      scheduledAt: '2026-10-21T18:00:00Z',
+      // Past + within start window so Confirmed → Start is enabled in unit tests.
+      scheduledAt: new Date(Date.now() - 60_000).toISOString(),
       addressText: 'บ้านลูกค้า',
       status: phase,
       createdAt: '2026-10-21T00:00:00Z',
@@ -115,6 +116,8 @@ describe('ProviderRequestDetailPage job completion', () => {
     expect(root.textContent).not.toContain('ส่งข้อเสนอราคา');
 
     buttonByText(root, 'เริ่มงาน').click();
+    fixture.detectChanges();
+    buttonByText(root, 'ยืนยัน').click();
     await vi.waitFor(() => {
       fixture.detectChanges();
       expect(api.updateAppointmentStatus).toHaveBeenCalledWith('appt-1', 'InProgress');
@@ -123,6 +126,8 @@ describe('ProviderRequestDetailPage job completion', () => {
     });
 
     buttonByText(root, 'งานเสร็จสิ้น').click();
+    fixture.detectChanges();
+    buttonByText(root, 'ยืนยัน').click();
     await vi.waitFor(() => {
       fixture.detectChanges();
       expect(api.updateAppointmentStatus).toHaveBeenCalledWith('appt-1', 'Completed');

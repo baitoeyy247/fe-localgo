@@ -52,7 +52,7 @@
           @if (!isReviewed(request) && request.status !== 'Completed') {
             <button type="button" class="btn btn-ghost btn-sm" (click)="openDetail(request)">ดูรายละเอียด</button>
           }
-          @if (canCancel(request.status)) {
+          @if (request.status !== 'Cancelled' && request.appointmentStatus !== 'Cancelled' && request.appointmentStatus !== 'Rejected' && canCancel(request.status)) {
             <button type="button" class="btn btn-danger-o btn-sm" (click)="askCancel(request, $event)">ยกเลิก</button>
           }
         </div>

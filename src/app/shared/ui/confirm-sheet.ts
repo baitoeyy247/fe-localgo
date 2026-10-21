@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 
 @Component({
   selector: 'app-confirm-sheet',
@@ -11,6 +11,18 @@ import { Component, input, output } from '@angular/core';
         @if (message()) {
           <p class="muted">{{ message() }}</p>
         }
+        @if (reasonEnabled()) {
+          <label class="field" style="margin-top: 12px">
+            <span>{{ reasonLabel() }}</span>
+            <textarea
+              class="input"
+              rows="3"
+              [value]="reasonDraft()"
+              [placeholder]="reasonPlaceholder()"
+              (input)="reasonDraft.set($any($event.target).value)"
+            ></textarea>
+          </label>
+        }
         <div class="btns">
           <button
             type="button"
@@ -18,7 +30,7 @@ import { Component, input, output } from '@angular/core';
             [class.btn-danger]="danger()"
             [class.btn-primary]="!danger()"
             [disabled]="busy()"
-            (click)="confirm.emit()"
+            (click)="onConfirm()"
           >
             {{ busy() ? 'กำลังดำเนินการ…' : confirmLabel() }}
           </button>
@@ -38,6 +50,26 @@ export class ConfirmSheet {
   readonly cancelLabel = input('ยกเลิก');
   readonly danger = input(false);
   readonly busy = input(false);
+  /** Optional free-text reason (e.g. reject appointment). */
+  readonly reasonEnabled = input(false);
+  readonly reasonLabel = input('เหตุผล (ไม่บังคับ)');
+  readonly reasonPlaceholder = input('ระบุเหตุผลสั้น ๆ');
   readonly confirm = output<void>();
+  /** Emits trimmed reason when reasonEnabled; otherwise unused. */
+  readonly confirmWithReason = output<string>();
   readonly cancel = output<void>();
+
+  protected readonly reasonDraft = signal('');
+
+  protected onConfirm(): void {
+    if (this.reasonEnabled()) {
+      this.confirmWithReason.emit(this.reasonDraft().trim());
+    }
+    this.confirm.emit();
+  }
+
+  /** Reset draft when parent closes/opens — call from parent if needed. */
+  resetReason(): void {
+    this.reasonDraft.set('');
+  }
 }

@@ -56,10 +56,13 @@ export class RequesterBookPage implements OnInit {
     this.session.currentProviderId = providerId;
 
     try {
-      const area = await this.userLocation.resolveSearchArea();
-      this.mapLat.set(area.lat);
-      this.mapLng.set(area.lng);
-      this.addressText.set(area.title);
+      // Prefer last search area — never silent Bangkok default (AC5).
+      const last = this.userLocation.getLastArea();
+      if (last) {
+        this.mapLat.set(last.lat);
+        this.mapLng.set(last.lng);
+        this.addressText.set(last.title);
+      }
 
       const detail = await firstValueFrom(this.api.getProvider(providerId));
       this.provider.set(detail);
@@ -142,7 +145,8 @@ export class RequesterBookPage implements OnInit {
     }
 
     this.saving.set(true);
-    this.success.set(null);
+    this.error.set(null);
+    this.success.set('กำลังบันทึกนัดหมาย…');
     try {
       const result = await firstValueFrom(
         this.api.bookProviderService(providerId, serviceId, {
@@ -157,12 +161,21 @@ export class RequesterBookPage implements OnInit {
       this.success.set('จองนัดหมายแล้ว ระบบจะแจ้งผู้ให้บริการให้ทราบ');
       setTimeout(() => {
         void this.router.navigate(['/requester/appointments', result.appointmentId]);
-      }, 800);
+      }, 400);
     } catch (e) {
+      this.success.set(null);
       this.error.set(apiErrorMessage(e, 'จองนัดหมายไม่สำเร็จ'));
       scrollToFirstError();
     } finally {
       this.saving.set(false);
     }
+  }
+
+  protected pickerLat(): number {
+    return this.mapLat() ?? this.userLocation.getLastArea()?.lat ?? 0;
+  }
+
+  protected pickerLng(): number {
+    return this.mapLng() ?? this.userLocation.getLastArea()?.lng ?? 0;
   }
 }

@@ -7,6 +7,7 @@ export interface UserLocationArea {
   subtitle: string;
   lat: number;
   lng: number;
+  radiusKm?: number;
 }
 
 const STORAGE_KEY = 'localgo.lastLocation';
@@ -19,12 +20,32 @@ export class UserLocationService {
     this.cached = this.readStored();
   }
 
+  /** Last area the user searched/picked — preferred for booking defaults. */
+  getLastArea(): (UserLocationArea & { radiusKm: number }) | null {
+    if (!this.cached) {
+      return null;
+    }
+    return {
+      ...this.cached,
+      radiusKm: this.cached.radiusKm ?? 5,
+    };
+  }
+
   /**
-   * 1) Ask geolocation first
-   * 2) Fall back to last remembered location
-   * 3) Fall back to map default — never label defaults as "ตำแหน่งปัจจุบันของคุณ"
+   * Prefer last remembered search area (so Mahasarakham stays Mahasarakham).
+   * Then GPS. Never silently treat Bangkok map defaults as "current location".
    */
   async resolveSearchArea(): Promise<UserLocationArea & { radiusKm: number }> {
+    if (this.cached) {
+      return {
+        ...this.cached,
+        subtitle: this.cached.subtitle.includes('ปัจจุบัน')
+          ? 'ตำแหน่งที่บันทึกไว้ล่าสุด'
+          : this.cached.subtitle,
+        radiusKm: this.cached.radiusKm ?? 5,
+      };
+    }
+
     if (this.geo.isGeolocationAvailable()) {
       try {
         const pos = await this.geo.getCurrentPosition();
@@ -35,6 +56,7 @@ export class UserLocationService {
           subtitle: 'ตำแหน่งปัจจุบันของคุณ',
           lat: pos.lat,
           lng: pos.lng,
+          radiusKm: 5,
         };
         this.remember(area);
         return { ...area, radiusKm: 5 };
@@ -43,23 +65,19 @@ export class UserLocationService {
       }
     }
 
-    if (this.cached) {
-      return {
-        ...this.cached,
-        subtitle: this.cached.subtitle.includes('ปัจจุบัน')
-          ? 'ตำแหน่งที่บันทึกไว้ล่าสุด'
-          : this.cached.subtitle,
-        radiusKm: 5,
-      };
-    }
-
     return this.defaultArea();
   }
 
-  remember(area: UserLocationArea): void {
-    this.cached = area;
+  remember(area: UserLocationArea & { radiusKm?: number }): void {
+    this.cached = {
+      title: area.title,
+      subtitle: area.subtitle,
+      lat: area.lat,
+      lng: area.lng,
+      radiusKm: area.radiusKm ?? this.cached?.radiusKm ?? 5,
+    };
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(area));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.cached));
     } catch {
       // ignore quota / private mode
     }

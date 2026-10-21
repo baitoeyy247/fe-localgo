@@ -1,6 +1,6 @@
 <app-page-shell title="รายละเอียดงาน" [backLink]="'/provider/requests'">
   @if (loading()) {
-    <app-skeleton-card [slow]="hint.slow()" [count]="2" />
+    <app-skeleton-card [slow]="hint.slow()" [timedOut]="hint.timedOut()" [count]="2" (retry)="load()" />
   } @else if (notFound()) {
     <app-not-found-state
       title="ไม่พบงานนี้"
@@ -68,10 +68,16 @@
             <p><b>หมายเหตุ:</b> {{ appt.note }}</p>
           }
           <p><b>สถานะ:</b> {{ appointmentStatusLabel(appt.status) }}</p>
-          @if (canConfirmAppointment()) {
+
+          @if (isTerminal()) {
+            <p class="muted">นัดนี้สิ้นสุดแล้ว — ไม่มีปุ่มดำเนินการ</p>
+          } @else if (canConfirmAppointment()) {
             <p class="muted">รอคุณยืนยันนัด</p>
             <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" [disabled]="acting()" (click)="openConfirmAppointment()">
               {{ acting() ? actingLabel() : 'ยืนยันรับนัดหมาย' }}
+            </button>
+            <button class="btn btn-danger-o btn-block" type="button" style="margin-top: 8px" [disabled]="acting()" (click)="rejectOpen.set(true)">
+              ปฏิเสธนัด
             </button>
           } @else if (appt.status === 'Confirmed') {
             @if (startWindowHint(); as hint) {
@@ -114,16 +120,16 @@
           <p class="muted">คุณถอนข้อเสนอไปแล้ว สามารถส่งข้อเสนอใหม่ได้หากงานยังเปิดรับ</p>
         }
         <p class="muted" style="font-size: 13px">สถานะข้อเสนอ: {{ bidStatusLabel(bid.status) }}</p>
-        @if (canWithdrawBid()) {
+        @if (canWithdrawBid() && !isTerminal()) {
           <button type="button" class="btn btn-danger-o btn-block" style="margin-top: 8px" [disabled]="acting()" (click)="withdrawOpen.set(true)">
             ถอนข้อเสนอ
           </button>
         }
-        @if (canResubmitBid()) {
+        @if (canResubmitBid() && !isTerminal()) {
           <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" (click)="submitBid()">เสนอราคาใหม่</button>
         }
       </article>
-    } @else if (!showAppointmentSection()) {
+    } @else if (!showAppointmentSection() && !isTerminal()) {
       <button class="btn btn-primary btn-block" type="button" (click)="submitBid()">ส่งข้อเสนอราคา</button>
     }
   }
@@ -138,6 +144,19 @@
     [busy]="acting()"
     (confirm)="runAdvanceConfirm()"
     (cancel)="cancelAdvanceConfirm()"
+  />
+  <app-confirm-sheet
+    [open]="rejectOpen()"
+    title="ปฏิเสธนัดนี้?"
+    message="ลูกค้าจะเห็นสถานะผู้ให้บริการปฏิเสธ และเลือกผู้ให้บริการรายอื่นหรือจองใหม่ได้"
+    confirmLabel="ปฏิเสธนัด"
+    cancelLabel="ไม่ปฏิเสธ"
+    [danger]="true"
+    [busy]="acting()"
+    [reasonEnabled]="true"
+    reasonLabel="เหตุผล (ไม่บังคับ)"
+    (confirmWithReason)="rejectAppointment($event)"
+    (cancel)="rejectOpen.set(false)"
   />
   <app-confirm-sheet
     [open]="withdrawOpen()"

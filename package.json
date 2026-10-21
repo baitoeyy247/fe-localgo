@@ -4,9 +4,10 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
-    "build:sit": "ng build --configuration sit",
-    "build:cloudflare": "node scripts/generate-fe-environment.mjs && ng build --configuration sit",
+    "build": "ng build && node scripts/absolutize-assets.mjs",
+    "build:sit": "ng build --configuration sit && node scripts/absolutize-assets.mjs",
+    "build:cloudflare": "node scripts/generate-fe-environment.mjs && ng build --configuration sit && node scripts/absolutize-assets.mjs",
+    "postbuild:assets": "node scripts/absolutize-assets.mjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "deploy:sit": "./scripts/deploy-pages.sh"

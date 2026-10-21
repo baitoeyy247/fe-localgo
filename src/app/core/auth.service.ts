@@ -10,6 +10,7 @@ import { LocalGoApiService } from './localgo-api.service';
 const TOKEN_KEY = 'localgo_access_token';
 const USER_KEY = 'localgo_user';
 const AUTH_MODE_KEY = 'localgo_auth_mode';
+const PERSONA_KEY = 'localgo_persona_key';
 const LINE_RELOGIN_GUARD_KEY = 'localgo_line_relogin_guard';
 const LINE_RELOGIN_GUARD_WINDOW_MS = 60_000;
 
@@ -165,7 +166,20 @@ export class AuthService {
         personaKey: options?.personaKey,
       }),
     );
+    if (options?.personaKey) {
+      sessionStorage.setItem(PERSONA_KEY, options.personaKey);
+    } else {
+      sessionStorage.removeItem(PERSONA_KEY);
+    }
     this.setSession(response.accessToken, response.user, 'dev');
+  }
+
+  /** Dev/SIT personas — may skip appointment start-window UX for playtesting. */
+  isTestPersona(): boolean {
+    if (this.authMode() !== 'dev') {
+      return false;
+    }
+    return !!sessionStorage.getItem(PERSONA_KEY);
   }
 
   /** Localhost / LAN, or temporary SIT playtest hosts (Pages). */
@@ -237,6 +251,7 @@ export class AuthService {
     this.authMode.set('none');
     sessionStorage.removeItem(TOKEN_KEY);
     sessionStorage.removeItem(USER_KEY);
+    sessionStorage.removeItem(PERSONA_KEY);
     sessionStorage.removeItem(AUTH_MODE_KEY);
   }
 

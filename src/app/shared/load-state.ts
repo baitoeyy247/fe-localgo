@@ -2,26 +2,37 @@ import { signal } from '@angular/core';
 
 /** Delay before showing the "slow connection" hint. */
 export const SLOW_LOAD_HINT_MS = 4000;
+/** After this, show timeout + retry affordance. */
+export const LOAD_TIMEOUT_MS = 10_000;
 
 /**
  * Tracks slow loading: after 4s of `begin()` without `end()`, `slow()` becomes true.
- * Use together with `<app-skeleton-card [slow]="hint.slow()" />`.
+ * After 10s, `timedOut()` becomes true for retry UI.
+ * Use together with `<app-skeleton-card [slow]="hint.slow()" [timedOut]="hint.timedOut()" (retry)="..." />`.
  */
 export class SlowLoadHint {
   readonly slow = signal(false);
-  private timer: ReturnType<typeof setTimeout> | null = null;
+  readonly timedOut = signal(false);
+  private slowTimer: ReturnType<typeof setTimeout> | null = null;
+  private timeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
   begin(): void {
     this.end();
-    this.timer = setTimeout(() => this.slow.set(true), SLOW_LOAD_HINT_MS);
+    this.slowTimer = setTimeout(() => this.slow.set(true), SLOW_LOAD_HINT_MS);
+    this.timeoutTimer = setTimeout(() => this.timedOut.set(true), LOAD_TIMEOUT_MS);
   }
 
   end(): void {
-    if (this.timer) {
-      clearTimeout(this.timer);
-      this.timer = null;
+    if (this.slowTimer) {
+      clearTimeout(this.slowTimer);
+      this.slowTimer = null;
+    }
+    if (this.timeoutTimer) {
+      clearTimeout(this.timeoutTimer);
+      this.timeoutTimer = null;
     }
     this.slow.set(false);
+    this.timedOut.set(false);
   }
 }
 

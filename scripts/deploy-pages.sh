@@ -38,6 +38,9 @@ if [[ ! -d "$DIST_DIR" ]]; then
 fi
 : "${DIST_DIR:?Could not find Angular browser output under dist/}"
 
+echo "==> Absolutizing asset paths (deep-link MIME fix)"
+node scripts/absolutize-assets.mjs "$DIST_DIR"
+
 echo "==> Deploying $DIST_DIR to Cloudflare Pages project localgo-sit (production)"
 # wrangler/workerd must match the CPU arch of the node that runs it (avoid Rosetta mismatch).
 WRANGLER_BIN="$(command -v wrangler)"

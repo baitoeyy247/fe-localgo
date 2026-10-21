@@ -11,10 +11,11 @@ import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { Category, ProviderSummary } from '../../../core/models';
 import { UserLocationService } from '../../../core/user-location.service';
 import { formatDistanceMeters } from '../../../shared/geo-distance';
+import { MapView } from '../../../demo/map-view';
 
 @Component({
   selector: 'app-requester-search-page',
-  imports: [PageShell, RouterLink, LocationPickerModal, RequesterBottomNav],
+  imports: [PageShell, RouterLink, LocationPickerModal, RequesterBottomNav, MapView],
   templateUrl: './requester-search.html',
 })
 export class RequesterSearchPage implements OnInit {
@@ -41,6 +42,9 @@ export class RequesterSearchPage implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
+    // AC12: clear stale keyword when opening search fresh.
+    this.keyword.set('');
+
     const area = await this.userLocation.resolveSearchArea();
     this.selectedArea.set({
       title: area.title,
@@ -84,6 +88,11 @@ export class RequesterSearchPage implements OnInit {
     this.userLocation.remember(area);
     this.pickerOpen.set(false);
     await this.reload();
+  }
+
+  /** Single source of truth for radius display (AC7). */
+  protected radiusKmLabel(): string {
+    return `${this.selectedArea().radiusKm} กม.`;
   }
 
   protected updateKeyword(value: string): void {

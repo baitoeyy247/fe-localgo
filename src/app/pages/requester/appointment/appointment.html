@@ -4,7 +4,7 @@
   }
 
   @if (loading()) {
-    <app-skeleton-card [slow]="hint.slow()" [count]="2" />
+    <app-skeleton-card [slow]="hint.slow()" [timedOut]="hint.timedOut()" [count]="2" (retry)="retryLoad()" />
   } @else if (loadError()) {
     <app-error-state [message]="loadError()!" (retry)="retryLoad()" />
   } @else {
@@ -21,27 +21,42 @@
       }
     </div>
 
-    @if (hasActiveAppointment()) {
+    @if (appointment(); as appt) {
       <div class="card">
-        <span class="badge b-green">{{ appointmentStatusLabel(appointment()!.status) }}</span>
-        <p style="margin: 8px 0 0"><b>วันและเวลา:</b> {{ formatScheduledAt(appointment()?.scheduledAt) }}</p>
+        <span class="badge" [class.badge--green]="!isTerminal()" [class.badge--muted]="isTerminal()">{{
+          appointmentStatusLabel(appt.status)
+        }}</span>
+        <p style="margin: 8px 0 0"><b>วันและเวลา:</b> {{ formatScheduledAt(appt.scheduledAt) }}</p>
         <p><b>สถานที่:</b> {{ addressText() || 'ยังไม่ระบุสถานที่' }}</p>
-        @if (appointment()?.note) {
-          <p><b>หมายเหตุ:</b> {{ appointment()!.note }}</p>
+        @if (appt.note) {
+          <p><b>หมายเหตุ:</b> {{ appt.note }}</p>
         }
         @if (request()?.status; as jobStatus) {
           <p><b>สถานะงาน:</b> {{ statusLabel(jobStatus) }}</p>
         }
-        @if (appointmentStatusHint(appointment()?.status); as hint) {
+        @if (appointmentStatusHint(appt.status); as hint) {
           <p class="muted">{{ hint }}</p>
         }
-        <button type="button" class="btn btn-secondary btn-block" style="margin-top: 8px" [disabled]="loading() || saving()" (click)="reload()">
-          รีเฟรชสถานะ
+        @if (!isTerminal()) {
+          <button type="button" class="btn btn-secondary btn-block" style="margin-top: 8px" [disabled]="loading() || saving()" (click)="reload()">
+            รีเฟรชสถานะ
+          </button>
+        }
+      </div>
+    }
+
+    @if (showRejectedActions()) {
+      <div class="state">
+        <div class="em">🚫</div>
+        <h3>ผู้ให้บริการปฏิเสธ</h3>
+        <p>เลือกผู้ให้บริการรายอื่น หรือจองใหม่อีกครั้ง</p>
+        <button class="btn btn-primary" type="button" (click)="goRebook()">
+          {{ isDirectBooking() ? 'จองใหม่' : 'ไปเลือกข้อเสนออื่น' }}
         </button>
       </div>
     }
 
-    @if (!hasActiveAppointment() && !isReadOnly()) {
+    @if (!hasActiveAppointment() && !isReadOnly() && !isTerminal()) {
       <app-thai-datetime-field
         label="วันและเวลา"
         [value]="scheduledAt()"
@@ -69,7 +84,7 @@
       </label>
     }
 
-    @if (needsBidSelection && !selectedBid()) {
+    @if (needsBidSelection && !selectedBid() && !isTerminal()) {
       <div class="state">
         <div class="em">💬</div>
         <h3>ยังไม่ได้เลือกผู้ให้บริการ</h3>
@@ -109,7 +124,7 @@
       </button>
     }
 
-    @if (!hasActiveAppointment() && !isReadOnly()) {
+    @if (!hasActiveAppointment() && !isReadOnly() && !isTerminal()) {
       <button class="btn btn-primary btn-block" type="button" [disabled]="!canConfirm" (click)="confirm()">
         {{ saving() ? 'กำลังบันทึก…' : 'ยืนยันนัดหมาย' }}
       </button>
@@ -122,8 +137,9 @@
     description="เลือกจุดนัดหมายบนแผนที่"
     [locationTitle]="addressText()"
     [searchText]="addressText()"
-    [lat]="mapLat() ?? 13.7563"
-    [lng]="mapLng() ?? 100.5018"
+    [lat]="pickerLat()"
+    [lng]="pickerLng()"
+    [autoLocateOnOpen]="false"
     (confirm)="applyPickedLocation($event)"
     (cancel)="closePicker()"
   />

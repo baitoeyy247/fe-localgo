@@ -321,9 +321,15 @@ export class LocalGoApiService {
     );
   }
 
-  updateAppointmentStatus(appointmentId: string, status: string): Observable<AppointmentDetail> {
+  updateAppointmentStatus(
+    appointmentId: string,
+    status: string,
+    reason?: string | null,
+  ): Observable<AppointmentDetail> {
     const params = new HttpParams().set('status', status);
-    return this.patch<AppointmentDetail>(`/appointments/${appointmentId}`, {}, { params });
+    const body =
+      reason != null && reason.trim() !== '' ? { reason: reason.trim() } : {};
+    return this.patch<AppointmentDetail>(`/appointments/${appointmentId}`, body, { params });
   }
 
   // --- Reviews ---

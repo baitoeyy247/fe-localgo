@@ -68,7 +68,7 @@
             <span class="t">{{ svc.title }}</span><br />
             <span class="s">{{ svc.categoryName ?? 'บริการ' }}</span>
           </span>
-          <span class="price" style="font-size: 16px">{{ svc.basePriceText ?? 'ติดต่อสอบถาม' }}</span>
+          <span class="price" style="font-size: 16px">{{ svc.basePriceText ? formatPrice(svc.basePriceText) : 'ติดต่อสอบถาม' }}</span>
         </div>
       } @empty {
         <div class="state">

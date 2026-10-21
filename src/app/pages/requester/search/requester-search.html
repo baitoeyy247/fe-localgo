@@ -14,11 +14,11 @@
     <span class="ico">📍</span>
     <span class="grow">
       <b>{{ selectedArea().title }}</b><br />
-      <span class="muted">{{ selectedArea().subtitle }}</span>
+      <span class="muted">{{ selectedArea().subtitle }} · รัศมี {{ radiusKmLabel() }}</span>
     </span>
     <button type="button" class="btn btn-secondary btn-sm" (click)="openPicker()">เลือกบนแผนที่</button>
   </div>
-  <p class="muted" style="margin: 0">รัศมีค้นหา {{ selectedArea().radiusKm }} กม.</p>
+  <p class="muted" style="margin: 0">รัศมีค้นหา {{ radiusKmLabel() }}</p>
 
   @if (categories().length) {
     <div class="chips" aria-label="กรองหมวดบริการ">
@@ -53,44 +53,61 @@
 
   <div class="sec-title">
     ผู้ให้บริการที่ตอบโจทย์ตอนนี้
-    <span class="muted">{{ providers().length }} ราย</span>
+    <span class="muted">{{ providers().length }} ราย · รัศมี {{ radiusKmLabel() }}</span>
   </div>
 
-  @if (loading()) {
-    <p class="muted" style="text-align: center">กำลังค้นหา…</p>
-  } @else if (providers().length === 0) {
-    <div class="state">
-      <div class="em">🔎</div>
-      <h3>ไม่พบผู้ให้บริการในพื้นที่นี้</h3>
-      <p>ลองขยายรัศมีหรือเปลี่ยนคำค้น</p>
-      <a class="btn btn-primary" routerLink="/requester/post">ประกาศงานแทน</a>
-    </div>
-  }
-  <div class="results-grid">
-  @for (provider of providers(); track provider.providerId) {
-    <a
-      class="card row"
-      [routerLink]="['/requester/provider', provider.providerId]"
-      [queryParams]="provider.matchedServiceId ? { serviceId: provider.matchedServiceId } : null"
-      style="text-decoration: none; color: inherit"
-    >
-      <span class="avatar">{{ (provider.categoryName ?? '?')[0] }}</span>
-      <span class="grow">
-        <b>{{ provider.providerName }}</b><br />
-        <span class="muted">{{ provider.categoryName ?? 'บริการทั่วไป' }} · {{ formatDistance(provider.distanceMeters) }}</span
-        ><br />
-        @if (provider.verifiedReviewCount > 0) {
-          <span class="stars">★</span>
-          <span class="muted">{{ provider.averageVerifiedRating }} ({{ provider.verifiedReviewCount }} รีวิว)</span>
-        } @else {
-          <span class="muted">ยังไม่มีรีวิว</span>
+  <div class="search-layout">
+    <div class="search-layout__list">
+      @if (loading()) {
+        <p class="muted" style="text-align: center">กำลังค้นหา…</p>
+      } @else if (providers().length === 0) {
+        <div class="state">
+          <div class="em">🔎</div>
+          <h3>ไม่พบผู้ให้บริการในพื้นที่นี้</h3>
+          <p>ลองขยายรัศมีหรือเปลี่ยนคำค้น</p>
+          <a class="btn btn-primary" routerLink="/requester/post">ประกาศงานแทน</a>
+        </div>
+      }
+      <div class="results-grid">
+        @for (provider of providers(); track provider.providerId) {
+          <a
+            class="card row"
+            [routerLink]="['/requester/provider', provider.providerId]"
+            [queryParams]="provider.matchedServiceId ? { serviceId: provider.matchedServiceId } : null"
+            style="text-decoration: none; color: inherit"
+          >
+            <span class="avatar">{{ (provider.categoryName ?? '?')[0] }}</span>
+            <span class="grow">
+              <b>{{ provider.providerName }}</b><br />
+              <span class="muted"
+                >{{ provider.categoryName ?? 'บริการทั่วไป' }} · {{ formatDistance(provider.distanceMeters) }}</span
+              ><br />
+              @if (provider.verifiedReviewCount > 0) {
+                <span class="stars">★</span>
+                <span class="muted">{{ provider.averageVerifiedRating }} ({{ provider.verifiedReviewCount }} รีวิว)</span>
+              } @else {
+                <span class="muted">ยังไม่มีรีวิว</span>
+              }
+            </span>
+            <span style="text-align: right">
+              <span class="badge b-green">เปิดรับงาน</span>
+            </span>
+          </a>
         }
-      </span>
-      <span style="text-align: right">
-        <span class="badge b-green">เปิดรับงาน</span>
-      </span>
-    </a>
-  }
+      </div>
+    </div>
+    <aside class="search-layout__map" aria-label="แผนที่พื้นที่ค้นหา">
+      <app-map-view
+        size="compact"
+        label="พื้นที่ค้นหา"
+        [radiusLabel]="'รัศมี ' + radiusKmLabel()"
+        [radiusKm]="selectedArea().radiusKm"
+        [lat]="selectedArea().lat"
+        [lng]="selectedArea().lng"
+        [selectable]="false"
+        [dragging]="true"
+      />
+    </aside>
   </div>
 
   <div class="banner info">
@@ -112,6 +129,7 @@
     [lat]="selectedArea().lat"
     [lng]="selectedArea().lng"
     [radiusOptions]="[1, 3, 5, 8, 10, 15]"
+    [autoLocateOnOpen]="false"
     (cancel)="closePicker()"
     (confirm)="applyLocation($event)"
   />

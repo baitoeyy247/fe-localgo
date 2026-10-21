@@ -60,7 +60,7 @@ export const TEST_PERSONAS: TestPersona[] = [
     key: 'both-02',
     displayName: 'ทดสอบ สองบทบาท 02',
     activeRole: 'Provider',
-    blurb: 'เริ่มผู้ให้ (มีโปรไฟล์) — สลับไม่ลบข้อมูล',
+    blurb: 'เริ่มผู้ให้ (มีโปรไฟล์+บริการ+จุดบริการ) — สลับไม่ลบข้อมูล',
   },
   {
     key: 'admin-01',

@@ -10,6 +10,7 @@ import {
   appointmentStatusLabel,
   bidStatusLabel,
   displayRequestStatusLabel,
+  isTerminalAppointment,
 } from '../../../shared/status-labels';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { formatScheduledAt } from '../../../shared/datetime.util';
@@ -20,6 +21,9 @@ import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 import { formatPrice } from '../../../shared/format-price';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
+import { AuthService } from '../../../core/auth.service';
+import { formatDistanceMeters, haversineMeters } from '../../../shared/geo-distance';
+import { UserLocationService } from '../../../core/user-location.service';
 
 @Component({
   selector: 'app-provider-request-detail-page',
@@ -48,6 +52,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   protected readonly notFound = signal(false);
   protected readonly withdrawOpen = signal(false);
   protected readonly advanceConfirmOpen = signal(false);
+  protected readonly rejectOpen = signal(false);
   protected readonly distanceMeters = signal<number | null>(null);
   protected readonly hint = new SlowLoadHint();
 
@@ -72,6 +77,8 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
   private readonly router = inject(Router);
+  private readonly auth = inject(AuthService);
+  private readonly userLocation = inject(UserLocationService);
 
   async ngOnInit(): Promise<void> {
     const navState = this.router.getCurrentNavigation()?.extras.state as { notice?: string } | undefined;
@@ -114,7 +121,17 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       try {
         const matching = await firstValueFrom(this.api.listMatchingRequests());
         const hit = matching.find((item) => item.id === id);
-        this.distanceMeters.set(hit?.distanceMeters ?? null);
+        let meters = hit?.distanceMeters ?? null;
+        if ((meters == null || meters === 0) && detail.latitude != null && detail.longitude != null) {
+          const area = this.userLocation.getLastArea();
+          if (area) {
+            const computed = haversineMeters(area.lat, area.lng, detail.latitude, detail.longitude);
+            if (computed > 0.5 || meters == null) {
+              meters = computed;
+            }
+          }
+        }
+        this.distanceMeters.set(meters);
       } catch {
         this.distanceMeters.set(null);
       }
@@ -225,23 +242,42 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     return this.hasActiveEngagement();
   }
 
+  protected isTerminal(): boolean {
+    return isTerminalAppointment(this.appointment()?.status);
+  }
+
   protected canConfirmAppointment(): boolean {
     const appt = this.appointment();
-    return this.hasActiveEngagement() && appt?.status === 'Pending';
+    return this.hasActiveEngagement() && appt?.status === 'Pending' && !this.isTerminal();
+  }
+
+  protected canRejectAppointment(): boolean {
+    return this.canConfirmAppointment();
   }
 
   protected canStartJob(): boolean {
     const appt = this.appointment();
-    return this.hasActiveEngagement() && appt?.status === 'Confirmed' && this.isWithinAppointmentWindow();
+    return (
+      this.hasActiveEngagement() &&
+      appt?.status === 'Confirmed' &&
+      this.isWithinAppointmentWindow()
+    );
   }
 
   protected canCompleteJob(): boolean {
     const appt = this.appointment();
-    return this.hasActiveEngagement() && appt?.status === 'InProgress' && this.isWithinAppointmentWindow();
+    return (
+      this.hasActiveEngagement() &&
+      appt?.status === 'InProgress' &&
+      this.isWithinAppointmentWindow()
+    );
   }
 
-  /** Matches backend: start/complete allowed from 1 hour before scheduledAt. */
+  /** Matches backend: start/complete allowed from 1 hour before scheduledAt (skipped for test personas). */
   protected isWithinAppointmentWindow(): boolean {
+    if (this.auth.isTestPersona()) {
+      return true;
+    }
     const at = this.appointment()?.scheduledAt;
     if (!at) {
       return false;
@@ -277,14 +313,42 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     if (meters == null) {
       return null;
     }
-    if (meters >= 1000) {
-      return `${(meters / 1000).toFixed(1)} กม.`;
-    }
-    return `${Math.round(meters)} ม.`;
+    return formatDistanceMeters(meters);
   }
 
   protected searchRadiusKm(r: ServiceRequestDetail): string {
     return (r.searchRadiusMeters / 1000).toFixed(0);
+  }
+
+  protected async rejectAppointment(reason: string): Promise<void> {
+    const appt = this.appointment();
+    if (!appt || !this.canRejectAppointment() || this.acting()) {
+      return;
+    }
+    this.acting.set(true);
+    this.actingLabel.set('กำลังปฏิเสธนัด…');
+    this.error.set(null);
+    try {
+      const updated = await firstValueFrom(
+        this.api.updateAppointmentStatus(appt.id, 'Rejected', reason || undefined),
+      );
+      this.appointment.set(updated);
+      this.notice.set('ปฏิเสธนัดแล้ว — ลูกค้าจะเห็นสถานะผู้ให้บริการปฏิเสธ');
+      const requestId = this.request()?.id;
+      if (requestId) {
+        try {
+          this.request.set(await firstValueFrom(this.api.getRequest(requestId)));
+        } catch {
+          /* keep appointment status */
+        }
+      }
+    } catch (e) {
+      this.error.set(apiErrorMessage(e, 'ปฏิเสธนัดไม่สำเร็จ'));
+      scrollToFirstError();
+    } finally {
+      this.rejectOpen.set(false);
+      this.acting.set(false);
+    }
   }
 
   protected openConfirmAppointment(): void {

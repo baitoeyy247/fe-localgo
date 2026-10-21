@@ -7,7 +7,7 @@ const REQUEST_STATUS: Record<string, string> = {
   Scheduled: 'นัดหมายแล้ว',
   InProgress: 'กำลังดำเนินงาน',
   Completed: 'เสร็จสิ้น',
-  Cancelled: 'ยกเลิก',
+  Cancelled: 'ยกเลิกแล้ว',
   Expired: 'หมดอายุ',
 };
 
@@ -52,6 +52,12 @@ export function displayRequestStatusLabel(
   status: string,
   appointmentStatus?: string | null,
 ): string {
+  if (appointmentStatus === 'Cancelled' || status === 'Cancelled') {
+    return 'ยกเลิกแล้ว';
+  }
+  if (appointmentStatus === 'Rejected') {
+    return 'ผู้ให้บริการปฏิเสธ';
+  }
   if (status === 'Scheduled' || status === 'ProviderSelected' || status === 'Selected') {
     if (appointmentStatus === 'Confirmed') {
       return 'นัดหมายแล้ว (ยืนยันแล้ว)';
@@ -59,8 +65,11 @@ export function displayRequestStatusLabel(
     if (!appointmentStatus || appointmentStatus === 'Pending') {
       return 'รอผู้ให้บริการยืนยันนัด';
     }
-    if (appointmentStatus === 'Cancelled') {
-      return 'ยกเลิกนัดหมายแล้ว';
+    if (appointmentStatus === 'InProgress') {
+      return 'กำลังดำเนินงาน';
+    }
+    if (appointmentStatus === 'Completed') {
+      return 'เสร็จสิ้น';
     }
   }
   return requestStatusLabel(status);
@@ -70,6 +79,12 @@ export function displayRequestStatusBadgeClass(
   status: string,
   appointmentStatus?: string | null,
 ): string {
+  if (appointmentStatus === 'Cancelled' || status === 'Cancelled') {
+    return 'badge--muted';
+  }
+  if (appointmentStatus === 'Rejected') {
+    return 'badge--warn';
+  }
   if (status === 'Scheduled' || status === 'ProviderSelected' || status === 'Selected') {
     if (appointmentStatus === 'Confirmed') {
       return 'badge--green';
@@ -94,7 +109,8 @@ export type ProviderBidFilterKey =
   | 'confirm'
   | 'inprogress'
   | 'done'
-  | 'withdrawn';
+  | 'withdrawn'
+  | 'rejected';
 
 export interface ProviderBidRowView {
   key: ProviderBidFilterKey;
@@ -108,13 +124,19 @@ export function providerBidRowStatus(item: {
   requestStatus?: string | null;
   appointmentStatus?: string | null;
 }): ProviderBidRowView {
+  if (item.appointmentStatus === 'Cancelled' || item.requestStatus === 'Cancelled') {
+    return { key: 'withdrawn', label: 'ยกเลิกแล้ว', badgeClass: 'badge--muted' };
+  }
+  if (item.appointmentStatus === 'Rejected') {
+    return { key: 'rejected', label: 'ผู้ให้บริการปฏิเสธ', badgeClass: 'badge--warn' };
+  }
   if (item.status === 'Withdrawn') {
     return { key: 'withdrawn', label: 'ถอนแล้ว', badgeClass: 'badge--muted' };
   }
   if (item.requestStatus === 'Completed') {
     return { key: 'done', label: 'เสร็จ', badgeClass: 'badge--success' };
   }
-  if (item.requestStatus === 'InProgress') {
+  if (item.requestStatus === 'InProgress' || item.appointmentStatus === 'InProgress') {
     return { key: 'inprogress', label: 'กำลังทำ', badgeClass: 'badge--blue' };
   }
   if (item.status === 'Selected') {
@@ -138,6 +160,7 @@ const APPOINTMENT_STATUS: Record<string, string> = {
   InProgress: 'กำลังดำเนินงาน',
   Completed: 'เสร็จสิ้น',
   Cancelled: 'ยกเลิกแล้ว',
+  Rejected: 'ผู้ให้บริการปฏิเสธ',
 };
 
 export function appointmentStatusLabel(status: string): string {
@@ -155,3 +178,8 @@ export const PROVIDER_TYPE_OPTIONS = [
   { value: 'Freelancer', label: 'ฟรีแลนซ์' },
   { value: 'Other', label: 'อื่น ๆ' },
 ] as const;
+
+/** Terminal appointment — hide all action buttons. */
+export function isTerminalAppointment(status?: string | null): boolean {
+  return status === 'Cancelled' || status === 'Rejected';
+}

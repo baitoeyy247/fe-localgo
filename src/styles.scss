@@ -991,34 +991,54 @@ app-offline-bar {
 @media (min-width: 1024px) {
   .app {
     max-width: 1200px;
+    width: min(1200px, 92vw);
+    margin-left: auto;
+    margin-right: auto;
     padding-bottom: var(--s6);
   }
   .app.no-nav {
     padding-bottom: var(--s6);
   }
+  /* Fixed top nav (replaces bottom bar on desktop) */
   .bnav {
-    position: sticky;
+    position: fixed;
     top: 0;
     bottom: auto;
-    left: auto;
-    transform: none;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
     max-width: 1200px;
-    width: 100%;
-    margin: 0 auto;
+    width: min(1200px, 92vw);
+    margin: 0;
     border-top: 0;
     border-bottom: 1px solid var(--divider);
+    border-radius: 0 0 var(--r-lg) var(--r-lg);
     padding-bottom: 0;
-    z-index: 25;
+    padding-top: 4px;
+    z-index: 40;
   }
   .content {
-    padding: var(--s6) var(--s8);
+    padding: calc(var(--nav-h) + var(--s6)) var(--s8) var(--s6);
     gap: var(--s6);
+    min-width: 70%;
+  }
+  .app.no-nav .content {
+    padding-top: var(--s6);
   }
   .search-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 1fr);
     gap: var(--s6);
     align-items: start;
+  }
+  .search-layout__map {
+    position: sticky;
+    top: 72px;
+  }
+  .search-layout__map .real-map {
+    min-height: 320px;
+    border-radius: var(--r-lg);
+    overflow: hidden;
   }
   .results-grid {
     display: grid;
@@ -1026,14 +1046,25 @@ app-offline-bar {
     gap: var(--s4);
   }
   @media (min-width: 1280px) {
+    .app,
+    .bnav {
+      width: min(1200px, 94vw);
+    }
     .results-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
   .admin-wide {
     max-width: none;
+    width: 100%;
   }
-  .admin-form {
+  .admin-form,
+  .field,
+  form.card {
+    max-width: 640px;
+  }
+  app-page-shell .field,
+  app-admin-dashboard-page .admin-form {
     max-width: 640px;
   }
   .btn:hover:not([disabled]),
@@ -1073,6 +1104,9 @@ app-offline-bar {
   }
   .app.no-nav .content {
     padding-bottom: var(--s4);
+  }
+  .search-layout__map {
+    display: none;
   }
 }
 

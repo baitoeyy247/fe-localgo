@@ -232,13 +232,20 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   }
 
   protected actionLabel(request: ServiceRequestSummary): string {
-    if (request.needsAppointmentConfirm) {
+    if (request.appointmentStatus === 'Cancelled' || request.status === 'Cancelled') {
+      return 'ยกเลิกแล้ว';
+    }
+    if (request.appointmentStatus === 'Rejected') {
+      return 'ผู้ให้บริการปฏิเสธ';
+    }
+    if (request.needsAppointmentConfirm || request.appointmentStatus === 'Pending') {
       return 'ยืนยันรับนัด';
     }
-    if (request.status === 'InProgress') {
+    if (request.appointmentStatus === 'InProgress' || request.status === 'InProgress') {
       return 'งานเสร็จสิ้น';
     }
-    if (request.status === 'Scheduled') {
+    // Hide "เริ่มงาน" until Confirmed (AC8).
+    if (request.appointmentStatus === 'Confirmed') {
       return 'เริ่มงาน';
     }
     if (this.isMyActiveJob(request)) {

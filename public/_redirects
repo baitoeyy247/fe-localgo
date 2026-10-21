@@ -1,3 +1,4 @@
-# SPA fallback. Cloudflare Pages serves real static files first; this only
-# applies when no matching asset exists (prevents deep-link 404s).
+# Real static assets must not fall through to index.html (MIME / blank page on deep links).
+/*.*  /:splat  200
+# SPA fallback for client routes without a file extension.
 /*    /index.html   200
