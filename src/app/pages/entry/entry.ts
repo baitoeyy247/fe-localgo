@@ -1,7 +1,6 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { MapView } from '../../demo/map-view';
 import { PageShell } from '../../demo/page-shell';
 import { AuthService } from '../../core/auth.service';
 import { LocalGoApiService } from '../../core/localgo-api.service';
@@ -10,7 +9,7 @@ import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-entry-page',
-  imports: [PageShell, MapView],
+  imports: [PageShell],
   templateUrl: './entry.html',
 })
 export class EntryPage implements OnInit {

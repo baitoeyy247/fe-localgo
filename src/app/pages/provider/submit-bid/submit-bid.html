@@ -1,50 +1,76 @@
 <app-page-shell title="เสนอราคา" [backLink]="backLink()">
-  <section class="screen">
-    @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
-    } @else if (request(); as r) {
-      <div class="stack">
-        @if (error()) {
-          <p class="error-text">{{ error() }}</p>
-        }
-        <div class="summary-panel">
-          <span class="badge badge--blue">ข้อเสนอส่วนตัว</span>
-          <h3>{{ r.title }}</h3>
-          <p>
-            ผู้ประกาศเห็นราคาของคุณเท่านั้น
-            @if (existingBidId()) {
-              · คุณเคยส่งข้อเสนอแล้ว แก้ไขได้ทันที
-            }
-          </p>
-        </div>
-        <label class="form-field">
-          <span>ราคาเสนอ</span>
-          <input
-            placeholder="เช่น 120 บาท"
-            [value]="priceText()"
-            (input)="priceText.set($any($event.target).value)"
-          />
-        </label>
-        <label class="form-area">
-          <span>รายละเอียดข้อเสนอ</span>
-          <textarea
-            rows="3"
-            placeholder="ระบุเงื่อนไข เวลา และสิ่งที่รวมในราคา"
-            [value]="description()"
-            (input)="description.set($any($event.target).value)"
-          ></textarea>
-        </label>
-        <button class="primary" type="button" [disabled]="submitting() || !priceText().trim()" (click)="submit()">
-          {{
-            submitting()
-              ? (existingBidId() ? 'กำลังอัปเดต…' : 'กำลังส่ง…')
-              : (existingBidId() ? 'อัปเดตข้อเสนอราคา' : 'ส่งข้อเสนอราคา')
-          }}
-        </button>
-      </div>
-    } @else {
-      <p class="state-message">เลือกงานจากรายการก่อน</p>
-      <a routerLink="/provider/requests">ไปรายการงาน</a>
+  @if (loading()) {
+    <app-skeleton-card [slow]="hint.slow()" [count]="1" />
+  } @else if (loadError()) {
+    <app-error-state [message]="loadError()!" (retry)="ngOnInit()" />
+  } @else if (request(); as r) {
+    @if (error()) {
+      <p class="error-text">{{ error() }}</p>
     }
-  </section>
+
+    <div class="card">
+      <span class="badge b-blue">ข้อเสนอส่วนตัว</span>
+      <h3 style="margin: 8px 0 4px">{{ r.title }}</h3>
+      <p class="muted" style="margin: 0">
+        ผู้ประกาศเห็นราคาของคุณเท่านั้น
+        @if (existingBidId()) {
+          · คุณเคยส่งข้อเสนอแล้ว แก้ไขได้ทันที
+        }
+      </p>
+    </div>
+
+    <label class="field">
+      <span>ราคาเสนอ</span>
+      <div class="input-with-unit">
+        <input
+          placeholder="120"
+          inputmode="numeric"
+          [value]="priceText()"
+          (input)="priceText.set($any($event.target).value)"
+        />
+        <span class="input-with-unit__suffix">บาท</span>
+      </div>
+    </label>
+
+    <label class="field">
+      <span>รายละเอียดข้อเสนอ</span>
+      <textarea
+        class="input"
+        rows="4"
+        placeholder="ระบุเงื่อนไข เวลา และสิ่งที่รวมในราคา"
+        [attr.maxlength]="maxLength"
+        [value]="description()"
+        (input)="onDescriptionInput($event)"
+        (paste)="onDescriptionPaste($event)"
+      ></textarea>
+      <small class="muted" [class.error-text]="description().length >= maxLength">
+        {{ description().length }}/{{ maxLength }}
+      </small>
+      @if (truncated()) {
+        <small class="error-text" role="status">ข้อความยาวเกิน {{ maxLength }} ตัวอักษร ระบบตัดส่วนที่เกินออกให้แล้ว</small>
+      }
+    </label>
+
+    <button class="btn btn-primary btn-block" type="button" [disabled]="submitting() || !priceText().trim()" (click)="submit()">
+      {{
+        submitting()
+          ? existingBidId()
+            ? 'กำลังอัปเดต…'
+            : 'กำลังส่ง…'
+          : existingBidId()
+            ? 'อัปเดตข้อเสนอราคา'
+            : 'ส่งข้อเสนอราคา'
+      }}
+    </button>
+  } @else {
+    @if (error()) {
+      <p class="error-text">{{ error() }}</p>
+    } @else {
+      <div class="state">
+        <div class="em">📋</div>
+        <h3>เลือกงานจากรายการก่อน</h3>
+        <a class="btn btn-primary" routerLink="/provider/requests">ไปรายการงาน</a>
+      </div>
+    }
+  }
 </app-page-shell>

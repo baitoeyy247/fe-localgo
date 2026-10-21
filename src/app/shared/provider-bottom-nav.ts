@@ -5,18 +5,18 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
   selector: 'app-provider-bottom-nav',
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <nav class="bottom-nav" aria-label="เมนูผู้ให้บริการ">
-      <a routerLink="/provider" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">
-        <span aria-hidden="true">🏠</span>หน้าหลัก
+    <nav class="bnav" aria-label="เมนูผู้ให้บริการ">
+      <a routerLink="/provider" routerLinkActive="on" [routerLinkActiveOptions]="{ exact: true }">
+        <i aria-hidden="true">🏠</i>หน้าหลัก
       </a>
-      <a routerLink="/provider/manage" routerLinkActive="is-active">
-        <span aria-hidden="true">🛠</span>บริการ
+      <a routerLink="/provider/manage" routerLinkActive="on">
+        <i aria-hidden="true">🛠</i>บริการ
       </a>
-      <a routerLink="/provider/requests" routerLinkActive="is-active">
-        <span aria-hidden="true">📋</span>งาน
+      <a routerLink="/provider/requests" routerLinkActive="on">
+        <i aria-hidden="true">📋</i>งาน
       </a>
-      <a routerLink="/provider/profile" routerLinkActive="is-active">
-        <span aria-hidden="true">👤</span>โปรไฟล์
+      <a routerLink="/provider/profile" routerLinkActive="on">
+        <i aria-hidden="true">👤</i>โปรไฟล์
       </a>
     </nav>
   `,

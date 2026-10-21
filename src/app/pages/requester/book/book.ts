@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -13,10 +13,12 @@ import { SessionStateService } from '../../../core/session-state.service';
 import { UserLocationService } from '../../../core/user-location.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { defaultAppointmentDatetimeLocal } from '../../../shared/datetime.util';
+import { ThaiDatetimeField } from '../../../shared/ui/thai-datetime-field';
+import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 
 @Component({
   selector: 'app-requester-book-page',
-  imports: [PageShell, LocationPickerModal, RequesterBottomNav],
+  imports: [PageShell, LocationPickerModal, RequesterBottomNav, ThaiDatetimeField],
   templateUrl: './book.html',
 })
 export class RequesterBookPage implements OnInit {
@@ -38,6 +40,7 @@ export class RequesterBookPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly userLocation = inject(UserLocationService);
+  private readonly datetimeField = viewChild(ThaiDatetimeField);
 
   async ngOnInit(): Promise<void> {
     const providerId = this.route.snapshot.paramMap.get('providerId');
@@ -117,8 +120,16 @@ export class RequesterBookPage implements OnInit {
     const serviceId = this.serviceId();
     const lat = this.mapLat();
     const lng = this.mapLng();
+    const dt = this.datetimeField();
+    dt?.markTouched();
+    if (dt && !dt.isValid()) {
+      this.error.set('กรุณาเลือกวันและเวลาในอนาคต');
+      scrollToFirstError();
+      return;
+    }
     if (!providerId || !serviceId || lat === null || lng === null || this.saving()) {
       this.error.set('กรุณาเลือกสถานที่นัดหมายบนแผนที่หรือพิมพ์ที่อยู่');
+      scrollToFirstError();
       return;
     }
 
@@ -142,6 +153,7 @@ export class RequesterBookPage implements OnInit {
       }, 1200);
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'จองนัดหมายไม่สำเร็จ'));
+      scrollToFirstError();
     } finally {
       this.saving.set(false);
     }

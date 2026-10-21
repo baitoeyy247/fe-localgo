@@ -1,65 +1,77 @@
-<app-page-shell title="ผู้ให้บริการ" [showBack]="true" backLink="/" backLabel="สลับบทบาท">
-  <section class="screen">
-    @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
-    } @else if (!hasProfile()) {
-      <div class="hero-panel">
-        <span class="badge badge--blue">เริ่มต้น</span>
-        <h3>สร้างโปรไฟล์ผู้ให้บริการ</h3>
-        <p>ตั้งโปรไฟล์ พื้นที่ให้บริการ และรายการบริการก่อนรับงานจากผู้ประกาศ</p>
-        <a class="primary" routerLink="/provider/profile">เริ่มตั้งค่า (3 ขั้นตอน)</a>
+<app-page-shell title="ผู้ให้บริการ" [showBack]="true" backLink="/" backLabel="กลับ" [hero]="true">
+  @if (loading()) {
+    <app-skeleton-card [slow]="hint.slow()" [count]="2" />
+  } @else if (error()) {
+    <app-error-state [message]="error()!" (retry)="load()" />
+  } @else if (!hasProfile()) {
+    <div class="card">
+      <span class="badge b-blue">เริ่มต้น</span>
+      <h2 style="margin: 8px 0 4px">สร้างโปรไฟล์ผู้ให้บริการ</h2>
+      <p class="muted">ตั้งโปรไฟล์ พื้นที่ให้บริการ และรายการบริการก่อนรับงานจากผู้ประกาศ</p>
+      <a class="btn btn-primary btn-block" routerLink="/provider/profile">เริ่มตั้งค่า (3 ขั้นตอน)</a>
+    </div>
+  } @else {
+    <div class="card">
+      <div class="row between">
+        <h2 style="margin: 0; font-size: 18px">{{ provider()!.name }}</h2>
+        <span class="badge b-green">พร้อมรับงาน</span>
       </div>
-    } @else {
-      <div class="summary-panel">
-        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
-          <h3 style="margin: 0;">{{ provider()!.name }}</h3>
-          <span class="badge">พร้อมรับงาน</span>
-        </div>
-        <p style="margin-top: 0.35rem;">
-          {{ provider()!.services.length }} บริการ · {{ provider()!.branches.length }} จุด ·
-          ★ {{ provider()!.averageVerifiedRating }} ({{ provider()!.verifiedReviewCount }} รีวิว)
-        </p>
-      </div>
+      <p class="muted" style="margin: 6px 0 0">
+        {{ provider()!.services.length }} บริการ · {{ provider()!.branches.length }} จุด · ★
+        {{ provider()!.averageVerifiedRating }} ({{ provider()!.verifiedReviewCount }} รีวิว)
+      </p>
+    </div>
 
-      @if (!setupDone()) {
-        <div class="checklist-card">
-          <h3>ตั้งค่าให้ครบก่อนรับงาน</h3>
-          <ul class="checklist">
-            <li [class.is-done]="true">
-              <a routerLink="/provider/profile">โปรไฟล์</a>
-            </li>
-            <li [class.is-done]="provider()!.branches.length > 0">
-              <a routerLink="/provider/coverage">พื้นที่ให้บริการ</a>
-            </li>
-            <li [class.is-done]="provider()!.services.length > 0">
-              <a routerLink="/provider/service">เพิ่มบริการ</a>
-            </li>
-          </ul>
-        </div>
-      }
+    @if (pendingConfirmCount() > 0) {
+      <a class="banner warn" routerLink="/provider/requests" style="text-decoration: none">
+        <span
+          ><b>มีงานรอยืนยันนัด {{ pendingConfirmCount() }} รายการ</b><br />แตะเพื่อไปยืนยันนัดหมายกับผู้ประกาศ</span
+        >
+      </a>
+    }
 
-      <div class="stack">
-        <a class="action-card" routerLink="/provider/requests">
-          <span>
-            <strong>งานที่ตรงกับบริการ</strong>
-            <small>ดูประกาศในพื้นที่และส่งข้อเสนอราคา</small>
-          </span>
-          <b>→</b>
-        </a>
-        <a class="action-card" routerLink="/provider/manage">
-          <span>
-            <strong>จัดการบริการ</strong>
-            <small>เปิด/ปิดบริการและดูรายการทั้งหมด</small>
-          </span>
-          <b>→</b>
-        </a>
+    @if (!setupDone()) {
+      <div class="card">
+        <h2 style="margin: 0 0 8px; font-size: 18px">ตั้งค่าให้ครบก่อนรับงาน</h2>
+        <div class="list" style="box-shadow: none">
+          <a class="li chev" routerLink="/provider/profile"><span class="ico">✅</span><span class="grow t">โปรไฟล์</span></a>
+          <a class="li chev" routerLink="/provider/coverage"
+            ><span class="ico">{{ provider()!.branches.length > 0 ? '✅' : '📍' }}</span
+            ><span class="grow t">พื้นที่ให้บริการ</span></a
+          >
+          <a class="li chev" routerLink="/provider/service"
+            ><span class="ico">{{ provider()!.services.length > 0 ? '✅' : '🛠' }}</span
+            ><span class="grow t">เพิ่มบริการ</span></a
+          >
+        </div>
       </div>
     }
 
-    <button type="button" class="ghost-link role-switch" (click)="switchToRequester()">
-      สลับไปโหมดผู้รับบริการ
+    <a class="card row" routerLink="/provider/requests" style="text-decoration: none; color: inherit">
+      <span class="ico">📋</span>
+      <span class="grow"
+        ><b>งานที่ตรงกับบริการ</b><br /><span class="muted">ดูประกาศในพื้นที่และส่งข้อเสนอราคา</span></span
+      >
+      <span class="chev"></span>
+    </a>
+    <a class="card row" routerLink="/provider/my-bids" style="text-decoration: none; color: inherit">
+      <span class="ico">💬</span>
+      <span class="grow"><b>ข้อเสนอของฉัน</b><br /><span class="muted">ดูราคาและสถานะที่ส่งไปแล้ว</span></span>
+      <span class="chev"></span>
+    </a>
+    <a class="card row" routerLink="/provider/manage" style="text-decoration: none; color: inherit">
+      <span class="ico">🛠</span>
+      <span class="grow"><b>จัดการบริการ</b><br /><span class="muted">เปิด/ปิดบริการและดูรายการทั้งหมด</span></span>
+      <span class="chev"></span>
+    </a>
+  }
+
+  <div class="list">
+    <button type="button" class="li chev" (click)="switchToRequester()">
+      <span class="ico">🔄</span>
+      <span class="grow t">สลับไปโหมดผู้รับบริการ</span>
     </button>
-  </section>
+  </div>
 
   <app-provider-bottom-nav />
 </app-page-shell>

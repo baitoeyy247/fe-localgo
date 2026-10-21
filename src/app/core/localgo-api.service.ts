@@ -9,6 +9,7 @@ import {
   AppointmentDetail,
   AuthResponse,
   BidItem,
+  ProviderBidListItem,
   BookProviderResult,
   Category,
   CreatedResource,
@@ -157,6 +158,10 @@ export class LocalGoApiService {
     );
   }
 
+  deleteBranch(providerId: string, branchId: string): Observable<void> {
+    return this.delete<void>(`/providers/${providerId}/branches/${branchId}`);
+  }
+
   addService(
     providerId: string,
     body: {
@@ -274,6 +279,10 @@ export class LocalGoApiService {
     return this.post<BidItem>(`/service-requests/${requestId}/bids`, body);
   }
 
+  listMyProviderBids(): Observable<ProviderBidListItem[]> {
+    return this.get<ProviderBidListItem[]>('/provider/bids');
+  }
+
   withdrawBid(bidId: string): Observable<void> {
     return this.post<void>(`/bids/${bidId}/withdraw`, {});
   }
@@ -370,5 +379,9 @@ export class LocalGoApiService {
 
   private put<T>(path: string, body: unknown): Observable<T> {
     return this.http.put<T>(`${this.base}${path}`, body);
+  }
+
+  private delete<T>(path: string): Observable<T> {
+    return this.http.delete<T>(`${this.base}${path}`);
   }
 }

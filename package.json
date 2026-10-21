@@ -8,7 +8,8 @@
     "build:sit": "ng build --configuration sit",
     "build:cloudflare": "node scripts/generate-fe-environment.mjs && ng build --configuration sit",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "deploy:sit": "./scripts/deploy-pages.sh"
   },
   "private": true,
   "packageManager": "npm@11.12.1",

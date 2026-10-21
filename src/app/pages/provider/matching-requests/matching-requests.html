@@ -1,69 +1,83 @@
 <app-page-shell title="งานที่ตรงกับบริการ" backLink="/provider">
-  <section class="screen">
-    <div class="stack">
-      <div class="section-title">
-        <h3>รายการงาน ({{ matchingRequests().length }})</h3>
-        <button type="button" (click)="reload()" [disabled]="loading()">รีเฟรช</button>
-      </div>
+  <div class="sec-title">
+    รายการงาน ({{ matchingRequests().length }})
+    <button type="button" class="btn btn-ghost btn-sm" (click)="reload()" [disabled]="loading()">รีเฟรช</button>
+  </div>
 
-      @if (loading()) {
-        <p class="state-message">กำลังโหลดจาก API…</p>
-      } @else if (error()) {
-        <div class="empty-state">
-          <h3>โหลดไม่สำเร็จ</h3>
-          <p class="error-text">{{ error() }}</p>
-          <button type="button" class="primary" (click)="reload()">ลองใหม่</button>
-        </div>
-      } @else if (setupIssue()) {
-        <div class="empty-state">
-          <h3>ยังจับคู่งานไม่ได้</h3>
-          <p>{{ setupMessage() }}</p>
-          <a class="primary" [routerLink]="setupLink()">{{ setupActionLabel() }}</a>
-        </div>
-      } @else if (matchingRequests().length === 0) {
-        <div class="empty-state">
-          <h3>ยังไม่มีงานที่ตรงเงื่อนไข</h3>
-          <p>รอประกาศใหม่ในพื้นที่ หรือลองขยายพื้นที่และเปิดบริการเพิ่ม</p>
-        </div>
-      } @else {
-        @if (pendingConfirmCount() > 0) {
-          <p class="state-message pending-notice">มีนัดรอยืนยัน</p>
-        }
-        @for (request of matchingRequests(); track request.id) {
-          <article class="match-card match-card--api">
-            <div>
-              <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.15rem; flex-wrap: wrap;">
-                <strong style="margin: 0;">{{ request.title }}</strong>
-                <div style="display: flex; gap: 0.25rem;">
-                  <span class="badge" [ngClass]="statusBadgeClass(request.status)">{{ statusLabel(request.status) }}</span>
-                  @if (request.needsAppointmentConfirm) {
-                    <em class="badge badge--orange">รอยืนยันนัด</em>
-                  } @else if (isMyActiveJob(request)) {
-                    <em class="badge badge--green">งานของคุณ</em>
-                  } @else if (request.alreadyBidByMe) {
-                    <em class="badge badge--blue">คุณส่งราคาแล้ว</em>
-                  }
-                </div>
-              </div>
-              <span>
-                {{ request.categoryName ?? 'ทั่วไป' }}
-                · {{ formatDistance(request.distanceMeters) }}
-              </span>
-              <small>
-                โพสต์ {{ formatWhen(request.createdAt) }}
-                · {{ request.bidCount }} ข้อเสนอ
-                @if (request.budgetText) {
-                  · {{ request.budgetText }}
-                }
-              </small>
-            </div>
-            <button type="button" (click)="openRequest(request)">
-              {{ actionLabel(request) }}
-            </button>
-          </article>
-        }
-      }
+  @if (loading()) {
+    <app-skeleton-card [slow]="hint.slow()" [count]="3" />
+  } @else if (error()) {
+    <app-error-state [message]="error()!" (retry)="reload()" />
+  } @else if (setupIssue()) {
+    <div class="state">
+      <div class="em">⚙️</div>
+      <h3>ยังจับคู่งานไม่ได้</h3>
+      <p>{{ setupMessage() }}</p>
+      <a class="btn btn-primary" [routerLink]="setupLink()">{{ setupActionLabel() }}</a>
     </div>
-  </section>
+  } @else if (matchingRequests().length === 0) {
+    <div class="state">
+      <div class="em">📋</div>
+      <h3>ยังไม่มีงานที่ตรงเงื่อนไข</h3>
+      <p>รอประกาศใหม่ในพื้นที่ หรือลองขยายพื้นที่และเปิดบริการเพิ่ม</p>
+    </div>
+  } @else {
+    @if (pendingConfirmCount() > 0) {
+      <div class="banner warn" role="status">
+        <span
+          ><b>มีงานรอยืนยันนัด {{ pendingConfirmCount() }} รายการ</b><br />เลื่อนไปที่ “งานของฉัน” แล้วกดยืนยันรับนัด</span
+        >
+      </div>
+    }
+
+    <div class="sec-title">งานของฉัน ({{ myJobs().length }})</div>
+    @for (request of myJobs(); track request.id) {
+      <article class="card">
+        <div class="row between" style="align-items: flex-start">
+          <b>{{ request.title }}</b>
+          <span class="badge" [ngClass]="chipClass(request)">{{ chipLabel(request) }}</span>
+        </div>
+        <p class="muted" style="margin: 4px 0 0">
+          {{ request.categoryName ?? 'ทั่วไป' }} · {{ formatDistance(request.distanceMeters) }}
+        </p>
+        <p class="muted" style="margin: 4px 0 12px; font-size: 13px">
+          โพสต์ {{ formatWhen(request.createdAt) }} · {{ request.bidCount }} ข้อเสนอ
+          @if (request.budgetText) {
+            · {{ request.budgetText }}
+          }
+        </p>
+        <button type="button" class="btn btn-primary btn-sm btn-block" (click)="openRequest(request)">
+          {{ actionLabel(request) }}
+        </button>
+      </article>
+    } @empty {
+      <p class="muted">ยังไม่มีงานของคุณ</p>
+    }
+
+    <div class="sec-title">งานที่เปิดรับราคา ({{ openJobs().length }})</div>
+    @for (request of openJobs(); track request.id) {
+      <article class="card">
+        <div class="row between" style="align-items: flex-start">
+          <b>{{ request.title }}</b>
+          <span class="badge" [ngClass]="chipClass(request)">{{ chipLabel(request) }}</span>
+        </div>
+        <p class="muted" style="margin: 4px 0 0">
+          {{ request.categoryName ?? 'ทั่วไป' }} · {{ formatDistance(request.distanceMeters) }}
+        </p>
+        <p class="muted" style="margin: 4px 0 12px; font-size: 13px">
+          โพสต์ {{ formatWhen(request.createdAt) }} · {{ request.bidCount }} ข้อเสนอ
+          @if (request.budgetText) {
+            · {{ request.budgetText }}
+          }
+        </p>
+        <button type="button" class="btn btn-primary btn-sm btn-block" (click)="openRequest(request)">
+          {{ actionLabel(request) }}
+        </button>
+      </article>
+    } @empty {
+      <p class="muted">ยังไม่มีงานที่เปิดรับราคาในตอนนี้</p>
+    }
+  }
+
   <app-provider-bottom-nav />
 </app-page-shell>

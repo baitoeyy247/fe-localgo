@@ -1,121 +1,154 @@
-<app-page-shell title="รายละเอียดงาน" subtitle="ข้อมูลจาก API" [backLink]="'/provider/requests'">
-  <section class="screen">
-    @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
-    } @else if (error()) {
+<app-page-shell title="รายละเอียดงาน" [backLink]="'/provider/requests'">
+  @if (loading()) {
+    <app-skeleton-card [slow]="hint.slow()" [count]="2" />
+  } @else if (notFound()) {
+    <app-not-found-state
+      title="ไม่พบงานนี้"
+      message="งานนี้อาจถูกลบหรือลิงก์ไม่ถูกต้อง"
+      backLink="/provider/requests"
+      backLabel="กลับไปรายการงาน"
+    />
+  } @else if (error() && !request()) {
+    <app-error-state [message]="error()!" (retry)="load()" />
+  } @else if (request(); as r) {
+    @if (notice()) {
+      <div class="banner info">{{ notice() }}</div>
+    }
+    @if (error()) {
       <p class="error-text">{{ error() }}</p>
-      <a routerLink="/provider/requests">กลับ</a>
-    } @else if (request(); as r) {
-      <div class="stack">
-        @if (notice()) {
-          <p class="state-message">{{ notice() }}</p>
-        }
-        <div class="summary-panel">
-          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
-            <h3 style="margin: 0;">{{ r.title }}</h3>
-            <span class="badge">{{ statusLabel(r.status) }}</span>
-          </div>
-          <p style="margin-top: 0.35rem;">{{ r.categoryName ?? 'ทั่วไป' }}</p>
-        </div>
-        @if (r.description) {
-          <div class="form-area">
-            <span>รายละเอียด</span>
-            <p>{{ r.description }}</p>
-          </div>
-        }
-        <div class="chips">
-          <span>รัศมี {{ (r.searchRadiusMeters / 1000).toFixed(0) }} กม.</span>
-          @if (r.budgetText) {
-            <span>{{ r.budgetText }}</span>
-          }
-        </div>
+    }
 
-        @if (showAppointmentSection()) {
-          <article class="summary-panel summary-panel--interactive" style="flex-direction: column; align-items: stretch; gap: 0.5rem;">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
-              <strong style="font-size: 1.1rem; color: #10181f; margin: 0;">รายละเอียดนัดหมาย</strong>
-              <span class="badge badge--green">นัดหมายจากลูกค้า</span>
-            </div>
-            <div>
-            @if (appointmentLoading()) {
-              <p class="state-hint">กำลังโหลดรายละเอียดนัด…</p>
-            } @else if (appointment(); as appt) {
-              <p><strong>วันและเวลา:</strong> {{ formatScheduledAt(appt.scheduledAt) }}</p>
-              <p><strong>สถานที่:</strong> {{ appt.addressText?.trim() || 'ยังไม่ระบุสถานที่' }}</p>
-              @if (appt.note) {
-                <p><strong>หมายเหตุ:</strong> {{ appt.note }}</p>
-              }
-              <p><strong>สถานะ:</strong> {{ appointmentStatusLabel(appt.status) }}</p>
-              @if (canConfirmAppointment()) {
-                <p class="state-hint">รอคุณยืนยันนัด</p>
-                <button
-                  class="primary"
-                  type="button"
-                  style="margin-top: 0.5rem; width: 100%;"
-                  [disabled]="acting()"
-                  (click)="confirmAppointment()"
-                >
-                  {{ acting() ? actingLabel() : 'ยืนยันรับนัดหมาย' }}
-                </button>
-              } @else if (canStartJob()) {
-                <p class="state-hint">ยืนยันรับนัดแล้ว — กดเริ่มงานเมื่อถึงเวลานัด</p>
-                <button
-                  class="primary"
-                  type="button"
-                  style="margin-top: 0.5rem; width: 100%;"
-                  [disabled]="acting()"
-                  (click)="startJob()"
-                >
-                  {{ acting() ? actingLabel() : 'เริ่มงาน' }}
-                </button>
-              } @else if (canCompleteJob()) {
-                <p class="state-hint">กำลังดำเนินงาน — กดเมื่องานเสร็จ</p>
-                <button
-                  class="primary"
-                  type="button"
-                  style="margin-top: 0.5rem; width: 100%;"
-                  [disabled]="acting()"
-                  (click)="completeJob()"
-                >
-                  {{ acting() ? actingLabel() : 'งานเสร็จสิ้น' }}
-                </button>
-              } @else if (appt.status === 'Completed') {
-                <p class="state-hint">งานเสร็จแล้ว — ลูกค้าสามารถให้คะแนนและรีวิวได้</p>
-              }
-            } @else {
-              @if (appointmentError()) {
-                <p class="error-text">{{ appointmentError() }}</p>
-              } @else {
-                <p class="state-hint">ยังไม่มีรายละเอียดนัด</p>
-              }
-              <button type="button" class="secondary" style="margin-top: 0.5rem; width: 100%;" (click)="reloadAppointment()">โหลดนัดหมายอีกครั้ง</button>
-            }
-            </div>
-          </article>
-        }
+    <div class="card">
+      <div class="row between" style="align-items: flex-start">
+        <b>{{ r.title }}</b>
+        <span class="badge b-blue">{{ statusLabel(r.status) }}</span>
+      </div>
+      <p class="muted" style="margin: 4px 0 0">{{ r.categoryName ?? 'ทั่วไป' }}</p>
+    </div>
 
-        @if (myBid(); as bid) {
-          <article class="summary-panel">
-            <span class="badge badge--blue">ข้อเสนอของคุณ</span>
-            @if (bid.status !== 'Withdrawn') {
-              <strong>{{ bid.priceText }}</strong>
-              <p>{{ bid.description ?? '—' }}</p>
-            } @else {
-              <p>คุณถอนข้อเสนอไปแล้ว สามารถส่งข้อเสนอใหม่ได้หากงานยังเปิดรับ</p>
-            }
-            <small>สถานะข้อเสนอ: {{ bidStatusLabel(bid.status) }}</small>
-            @if (canWithdrawBid()) {
-              <button type="button" class="danger" (click)="withdrawMyBid()">ถอนข้อเสนอ</button>
-            }
-            @if (canResubmitBid()) {
-              <button class="primary" type="button" (click)="submitBid()">เสนอราคาใหม่</button>
-            }
-          </article>
-        } @else if (!showAppointmentSection()) {
-          <button class="primary" type="button" (click)="submitBid()">ส่งข้อเสนอราคา</button>
-        }
+    @if (r.description) {
+      <div class="card">
+        <span class="muted">รายละเอียด</span>
+        <p style="margin: 8px 0 0">{{ r.description }}</p>
       </div>
     }
-  </section>
+
+    <div class="card">
+      <dl class="detail-lines">
+        <div>
+          <dt>สถานที่</dt>
+          <dd>{{ locationLine(r) }}</dd>
+        </div>
+        <div>
+          <dt>งบประมาณ</dt>
+          <dd>{{ formatPrice(r.budgetText) }}</dd>
+        </div>
+        @if (distanceLine(); as dist) {
+          <div>
+            <dt>ระยะทาง</dt>
+            <dd>{{ dist }}</dd>
+          </div>
+        }
+      </dl>
+      <p class="muted" style="margin: 8px 0 0">รัศมีค้นหาจากจุดประกาศ {{ searchRadiusKm(r) }} กม.</p>
+    </div>
+
+    @if (showAppointmentSection()) {
+      <article class="card">
+        <div class="row between">
+          <b>รายละเอียดนัดหมาย</b>
+          <span class="badge b-green">นัดหมายจากลูกค้า</span>
+        </div>
+        @if (appointmentLoading()) {
+          <p class="muted" style="margin-top: 8px">กำลังโหลดรายละเอียดนัด…</p>
+        } @else if (appointment(); as appt) {
+          <p style="margin-top: 8px"><b>วันและเวลา:</b> {{ formatScheduledAt(appt.scheduledAt) }}</p>
+          <p><b>สถานที่:</b> {{ appt.addressText?.trim() || 'ยังไม่ระบุสถานที่' }}</p>
+          @if (appt.note) {
+            <p><b>หมายเหตุ:</b> {{ appt.note }}</p>
+          }
+          <p><b>สถานะ:</b> {{ appointmentStatusLabel(appt.status) }}</p>
+          @if (canConfirmAppointment()) {
+            <p class="muted">รอคุณยืนยันนัด</p>
+            <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" [disabled]="acting()" (click)="openConfirmAppointment()">
+              {{ acting() ? actingLabel() : 'ยืนยันรับนัดหมาย' }}
+            </button>
+          } @else if (appt.status === 'Confirmed') {
+            @if (startWindowHint(); as hint) {
+              <p class="muted">{{ hint }}</p>
+              <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" disabled>เริ่มงาน</button>
+            } @else {
+              <p class="muted">ยืนยันรับนัดแล้ว — กดเริ่มงานเมื่อถึงเวลานัด</p>
+              <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" [disabled]="acting()" (click)="openStartJob()">
+                {{ acting() ? actingLabel() : 'เริ่มงาน' }}
+              </button>
+            }
+          } @else if (canCompleteJob()) {
+            <p class="muted">กำลังดำเนินงาน — กดเมื่องานเสร็จ</p>
+            <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" [disabled]="acting()" (click)="openCompleteJob()">
+              {{ acting() ? actingLabel() : 'งานเสร็จสิ้น' }}
+            </button>
+          } @else if (appt.status === 'Completed') {
+            <p class="muted">งานเสร็จแล้ว — ลูกค้าสามารถให้คะแนนและรีวิวได้</p>
+          }
+        } @else {
+          @if (appointmentError()) {
+            <p class="error-text">{{ appointmentError() }}</p>
+          } @else {
+            <p class="muted">ยังไม่มีรายละเอียดนัด</p>
+          }
+          <button type="button" class="btn btn-secondary btn-block" style="margin-top: 8px" (click)="reloadAppointment()">
+            โหลดนัดหมายอีกครั้ง
+          </button>
+        }
+      </article>
+    }
+
+    @if (myBid(); as bid) {
+      <article class="card">
+        <span class="badge b-blue">ข้อเสนอของคุณ</span>
+        @if (bid.status !== 'Withdrawn') {
+          <p class="price" style="margin: 8px 0">{{ formatPrice(bid.priceText) }}</p>
+          <p class="muted">{{ bid.description ?? '—' }}</p>
+        } @else {
+          <p class="muted">คุณถอนข้อเสนอไปแล้ว สามารถส่งข้อเสนอใหม่ได้หากงานยังเปิดรับ</p>
+        }
+        <p class="muted" style="font-size: 13px">สถานะข้อเสนอ: {{ bidStatusLabel(bid.status) }}</p>
+        @if (canWithdrawBid()) {
+          <button type="button" class="btn btn-danger-o btn-block" style="margin-top: 8px" [disabled]="acting()" (click)="withdrawOpen.set(true)">
+            ถอนข้อเสนอ
+          </button>
+        }
+        @if (canResubmitBid()) {
+          <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" (click)="submitBid()">เสนอราคาใหม่</button>
+        }
+      </article>
+    } @else if (!showAppointmentSection()) {
+      <button class="btn btn-primary btn-block" type="button" (click)="submitBid()">ส่งข้อเสนอราคา</button>
+    }
+  }
+
+  <app-confirm-sheet
+    [open]="advanceConfirmOpen()"
+    [title]="advanceConfirmTitle()"
+    [message]="advanceConfirmMessage()"
+    confirmLabel="ยืนยัน"
+    cancelLabel="ยกเลิก"
+    [danger]="false"
+    [busy]="acting()"
+    (confirm)="runAdvanceConfirm()"
+    (cancel)="cancelAdvanceConfirm()"
+  />
+  <app-confirm-sheet
+    [open]="withdrawOpen()"
+    title="ถอนข้อเสนอราคา?"
+    message="ลูกค้าจะไม่เห็นข้อเสนอนี้อีก คุณสามารถส่งข้อเสนอใหม่ได้หากงานยังเปิดรับ"
+    confirmLabel="ถอนข้อเสนอ"
+    cancelLabel="ไม่ถอน"
+    [danger]="true"
+    [busy]="acting()"
+    (confirm)="withdrawMyBid()"
+    (cancel)="withdrawOpen.set(false)"
+  />
   <app-provider-bottom-nav />
 </app-page-shell>

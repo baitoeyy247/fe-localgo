@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -8,14 +8,20 @@ import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderDetail, ServiceRequestSummary } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
-import { requestStatusLabel, requestStatusBadgeClass } from '../../../shared/status-labels';
+import {
+  displayRequestStatusBadgeClass,
+  displayRequestStatusLabel,
+} from '../../../shared/status-labels';
+import { SlowLoadHint } from '../../../shared/load-state';
+import { ErrorState } from '../../../shared/ui/error-state';
+import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { AuthService } from '../../../core/auth.service';
 
 type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
 
 @Component({
   selector: 'app-matching-requests-page',
-  imports: [PageShell, RouterLink, ProviderBottomNav, NgClass],
+  imports: [PageShell, RouterLink, ProviderBottomNav, NgClass, ErrorState, SkeletonCard],
   templateUrl: './matching-requests.html',
   styles: [
     `
@@ -54,15 +60,23 @@ type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
     `,
   ],
 })
-export class MatchingRequestsPage implements OnInit {
+export class MatchingRequestsPage implements OnInit, OnDestroy {
   protected readonly matchingRequests = signal<ServiceRequestSummary[]>([]);
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly setupIssue = signal<SetupIssue | null>(null);
   protected readonly pendingConfirmCount = signal(0);
-  protected readonly statusLabel = requestStatusLabel;
-  protected readonly statusBadgeClass = requestStatusBadgeClass;
+  protected readonly statusLabel = displayRequestStatusLabel;
+  protected readonly statusBadgeClass = displayRequestStatusBadgeClass;
+  protected readonly hint = new SlowLoadHint();
+
+  /** M6: jobs open for bidding (not yet mine). */
+  protected readonly openJobs = computed(() =>
+    this.matchingRequests().filter((r) => !this.isMine(r) && this.isBiddable(r)),
+  );
+  /** M6: jobs I already bid on / need confirm / are in progress. */
+  protected readonly myJobs = computed(() => this.matchingRequests().filter((r) => this.isMine(r)));
 
   constructor(
     private readonly api: LocalGoApiService,
@@ -74,11 +88,47 @@ export class MatchingRequestsPage implements OnInit {
     await this.reload();
   }
 
+  ngOnDestroy(): void {
+    this.hint.end();
+  }
+
+  protected isBiddable(request: ServiceRequestSummary): boolean {
+    return request.status === 'Open' || request.status === 'HasOffers';
+  }
+
+  protected isMine(request: ServiceRequestSummary): boolean {
+    return (
+      !!request.alreadyBidByMe || !!request.needsAppointmentConfirm || this.isMyActiveJob(request)
+    );
+  }
+
+  /** Single chip per card, from the shared status mapping. */
+  protected chipLabel(request: ServiceRequestSummary): string {
+    if (request.needsAppointmentConfirm) {
+      return 'รอผู้ให้บริการยืนยันนัด';
+    }
+    if (request.alreadyBidByMe && this.isBiddable(request)) {
+      return 'ส่งราคาแล้ว';
+    }
+    return this.statusLabel(request.status, request.appointmentStatus);
+  }
+
+  protected chipClass(request: ServiceRequestSummary): string {
+    if (request.needsAppointmentConfirm) {
+      return 'badge--orange';
+    }
+    if (request.alreadyBidByMe && this.isBiddable(request)) {
+      return 'badge--blue';
+    }
+    return this.statusBadgeClass(request.status, request.appointmentStatus);
+  }
+
   protected async reload(): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
     this.setupIssue.set(null);
     this.pendingConfirmCount.set(0);
+    this.hint.begin();
     try {
       const mine = await firstValueFrom(this.api.getMyProvider());
       this.provider.set(mine);
@@ -105,6 +155,7 @@ export class MatchingRequestsPage implements OnInit {
         this.error.set(apiErrorMessage(e, 'โหลดรายการงานไม่สำเร็จ'));
       }
     } finally {
+      this.hint.end();
       this.loading.set(false);
     }
   }

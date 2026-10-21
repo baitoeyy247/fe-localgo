@@ -1,72 +1,91 @@
 <app-page-shell title="ข้อเสนอที่ได้รับ" backLink="/requester">
   <app-requester-flow-bar active="bids" />
-  <section class="screen">
-    <div class="stack">
-      @if (request(); as r) {
-        <div class="summary-panel" [class.summary-panel--success]="justPosted()">
-          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
-            <h3 style="margin: 0;">{{ r.title }}</h3>
-            <span class="badge" [class.badge--warn]="isExpired()">{{ statusLabel(r.status) }}</span>
-          </div>
-          @if (!justPosted()) {
-            <p style="margin-top: 0.35rem;">หมดอายุอัตโนมัติหากไม่มีความคืบหน้า 14 วัน</p>
-          }
-        </div>
-      }
 
-      @if (!request() && !loading()) {
-        <div class="empty-state">
-          <h3>ยังไม่มีงานที่เปิดรับข้อเสนอ</h3>
-          <p>เริ่มจากประกาศงานใหม่ แล้วกลับมาดูข้อเสนอที่ได้รับ</p>
-          <a class="primary" routerLink="/requester/post">ประกาศงาน</a>
-        </div>
-      } @else if (loading()) {
-        <p class="state-message">กำลังโหลดข้อเสนอ…</p>
-      } @else if (bids().length === 0) {
-        <div class="empty-state">
-          <h3>ยังไม่มีผู้เสนอราคา</h3>
-          <p>ระบบจะแจ้งเตือนทาง LINE เมื่อมีข้อเสนอใหม่</p>
-        </div>
-      } @else {
-        @for (bid of bids(); track bid.id) {
-          <button
-            class="bid-card"
-            [class.bid-card--selected]="selectedBidId() === bid.id"
-            type="button"
-            (click)="selectBid(bid)"
-          >
-            <span>
-              <strong>{{ bid.providerName }}</strong>
-              <small>{{ bid.description ?? 'ไม่มีรายละเอียดเพิ่ม' }}</small>
-            </span>
-            <b>{{ bid.priceText }}</b>
-          </button>
-        }
-      }
+  @if (justPosted()) {
+    <div class="banner ok" role="status">
+      <span
+        ><b>โพสต์งานสำเร็จ</b><br />กำลังโหลดข้อเสนอที่ได้รับ — ระบบจะแจ้งเตือนทาง LINE เมื่อมีข้อเสนอใหม่</span
+      >
+    </div>
+  }
 
-      @if (error()) {
-        <p class="error-text">{{ error() }}</p>
-      }
-
-      @if (canClearBidSelection()) {
-        <button
-          class="danger"
-          type="button"
-          [disabled]="clearing()"
-          (click)="clearBidSelection()"
-        >
-          {{ clearing() ? 'กำลังยกเลิก…' : 'ยกเลิกการเลือกข้อเสนอ' }}
-        </button>
-      }
-
-      @if (!isExpired()) {
-        <button class="primary" type="button" [disabled]="!selectedBidId()" (click)="confirmSelection()">
-          เลือกข้อเสนอและนัดหมาย
-        </button>
-      } @else {
-        <a class="primary" routerLink="/requester/post">ประกาศงานใหม่</a>
+  @if (request(); as r) {
+    <div class="card">
+      <div class="row between">
+        <b>{{ r.title }}</b>
+        <span class="badge" [class.b-yellow]="isExpired()" [class.b-blue]="!isExpired()">{{ statusLabel(r.status) }}</span>
+      </div>
+      @if (!justPosted()) {
+        <p class="muted" style="margin: 4px 0 0; font-size: 13px">⏱ หมดอายุอัตโนมัติหากไม่มีความคืบหน้า 14 วัน</p>
       }
     </div>
-  </section>
+  }
+
+  @if (loadError() && !loading()) {
+    <app-error-state [message]="loadError()!" (retry)="retry()" />
+  } @else if (!request() && !loading() && !justPosted()) {
+    <div class="state">
+      <div class="em">💬</div>
+      <h3>ยังไม่มีงานที่เปิดรับข้อเสนอ</h3>
+      <p>เริ่มจากประกาศงานใหม่ แล้วกลับมาดูข้อเสนอที่ได้รับ</p>
+      <a class="btn btn-primary" routerLink="/requester/post">ประกาศงาน</a>
+    </div>
+  } @else if (loading()) {
+    <app-skeleton-card [slow]="hint.slow()" [count]="2" />
+  } @else if (bids().length === 0) {
+    <div class="state">
+      <div class="em">⏳</div>
+      <h3>ยังไม่มีผู้เสนอราคา</h3>
+      <p>ระบบจะแจ้งเตือนทาง LINE เมื่อมีข้อเสนอใหม่</p>
+    </div>
+  } @else {
+    <div class="sec-title">ข้อเสนอ {{ bids().length }} รายการ</div>
+    @for (bid of bids(); track bid.id) {
+      <article class="card" [class.card--selected]="selectedBidId() === bid.id">
+        <button type="button" class="row" style="width: 100%; background: none; border: 0; padding: 0; font: inherit; text-align: left; cursor: pointer" (click)="selectBid(bid)">
+          <span class="avatar">{{ bid.providerName[0] ?? '?' }}</span>
+          <span class="grow">
+            <b>{{ bid.providerName }}</b><br />
+            <span class="muted">{{ providerRatingLine(bid) }}</span>
+          </span>
+          <span class="price">{{ formatPrice(bid.priceText) }}</span>
+        </button>
+        @if (bid.description) {
+          <p class="muted" style="margin: 12px 0">ข้อความ: {{ bid.description }}</p>
+        }
+        <button type="button" class="btn btn-ghost btn-sm" (click)="openProvider(bid, $event)">ดูโปรไฟล์ผู้ให้บริการ</button>
+      </article>
+    }
+  }
+
+  @if (error()) {
+    <p class="error-text">{{ error() }}</p>
+  }
+
+  @if (canClearBidSelection()) {
+    <button class="btn btn-danger-o btn-block" type="button" [disabled]="clearing()" (click)="askClearBidSelection()">
+      {{ clearing() ? 'กำลังยกเลิก…' : 'ยกเลิกการเลือกข้อเสนอ' }}
+    </button>
+  }
+
+  @if (!isExpired() && bids().length > 0) {
+    <button class="btn btn-primary btn-block" type="button" [disabled]="!selectedBidId() || selecting()" (click)="confirmSelection()">
+      {{ selecting() ? 'กำลังบันทึก…' : 'เลือกข้อเสนอและนัดหมาย' }}
+    </button>
+  } @else if (isExpired()) {
+    <a class="btn btn-primary btn-block" routerLink="/requester/post">ประกาศงานใหม่</a>
+  }
+
+  <app-confirm-sheet
+    [open]="confirmClearOpen()"
+    title="ยกเลิกการเลือกข้อเสนอ?"
+    message="ยกเลิกการเลือกข้อเสนอและกลับไปเลือกใหม่"
+    confirmLabel="ยกเลิกการเลือก"
+    cancelLabel="ไม่ยกเลิก"
+    [danger]="true"
+    [busy]="clearing()"
+    (confirm)="clearBidSelection()"
+    (cancel)="confirmClearOpen.set(false)"
+  />
   <app-requester-bottom-nav />
 </app-page-shell>

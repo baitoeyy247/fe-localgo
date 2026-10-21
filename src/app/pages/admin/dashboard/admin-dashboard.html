@@ -1,68 +1,56 @@
-<app-page-shell title="แอดมิน" [showBack]="true" backLink="/">
-  <section class="screen">
-    @if (loading()) {
-      <p class="state-message">กำลังโหลดจาก API…</p>
-    } @else if (error()) {
-      <p class="error-text">{{ error() }}</p>
-    } @else {
-      <div class="stack">
-        <div class="summary-panel">
-          <span class="badge">Back office</span>
-          <h3>ภาพรวมระบบ</h3>
-          <p>ข้อมูลจาก API จริง — ต้องล็อกอินด้วยบัญชี Admin</p>
-        </div>
+<app-page-shell title="แอดมิน · ภาพรวมระบบ" [showBack]="true" backLink="/" [hideNavPad]="true">
+  @if (loading()) {
+    <app-skeleton-card [count]="2" />
+    <p class="muted" style="text-align: center">กำลังโหลดจาก API…</p>
+  } @else if (error()) {
+    <app-error-state [message]="error()!" (retry)="load()" />
+  } @else {
+    <p class="muted" style="margin: 0">ข้อมูลจาก API จริง — ต้องล็อกอินด้วยบัญชี Admin</p>
 
-        @if (dashboard(); as d) {
-          <div class="admin-grid">
-            <article>
-              <span>👥 ผู้ใช้ทั้งหมด</span>
-              <strong>{{ d.users }}</strong>
-            </article>
-            <article>
-              <span>🛠 ผู้ให้บริการ</span>
-              <strong>{{ d.providers }}</strong>
-            </article>
-            <article>
-              <span>📢 ประกาศเปิด</span>
-              <strong>{{ d.publishedRequests }}</strong>
-            </article>
-            <article>
-              <span>✅ เสร็จสิ้น</span>
-              <strong>{{ d.completedRequests }}</strong>
-            </article>
-            <article>
-              <span>⏰ หมดอายุ</span>
-              <strong>{{ d.expiredRequests }}</strong>
-            </article>
-            <article>
-              <span>🔔 แจ้งเตือนค้าง</span>
-              <strong>{{ d.pendingNotifications }}</strong>
-            </article>
-          </div>
-        }
-
-        <div class="section-title">
-          <h3>ผู้ใช้ล่าสุด ({{ users().length }})</h3>
+    @if (dashboard(); as d) {
+      <div class="kpi">
+        <div>
+          <b>{{ d.users }}</b><span>ผู้ใช้ทั้งหมด</span>
         </div>
-        @for (u of users().slice(0, 8); track $index) {
-          <article class="request-card">
-            <code>{{ userLine($any(u)) }}</code>
-          </article>
-        } @empty {
-          <p class="muted-label">ยังไม่มีผู้ใช้</p>
-        }
-
-        <div class="section-title">
-          <h3>บันทึกแจ้งเตือนล่าสุด</h3>
+        <div>
+          <b>{{ d.providers }}</b><span>ผู้ให้บริการ</span>
         </div>
-        @for (n of notifications().slice(0, 8); track $index) {
-          <article class="request-card">
-            <span>{{ notificationLabel(n) }}</span>
-          </article>
-        } @empty {
-          <p class="muted-label">ยังไม่มีบันทึกแจ้งเตือน</p>
-        }
+        <div>
+          <b>{{ d.publishedRequests }}</b><span>ประกาศเปิด</span>
+        </div>
+        <div>
+          <b>{{ d.completedRequests }}</b><span>เสร็จสิ้น</span>
+        </div>
+        <div>
+          <b>{{ d.expiredRequests }}</b><span>หมดอายุ</span>
+        </div>
+        <div>
+          <b style="color: #d9001b">{{ d.pendingNotifications }}</b><span>แจ้งเตือนค้าง</span>
+        </div>
       </div>
     }
-  </section>
+
+    <div class="sec-title">ผู้ใช้ล่าสุด ({{ users().length }})</div>
+    <div class="list">
+      @for (u of users().slice(0, 8); track $index) {
+        <div class="li">
+          <span class="avatar">{{ userLine($any(u))[0] ?? '?' }}</span>
+          <span class="grow"><span class="t">{{ userLine($any(u)) }}</span></span>
+        </div>
+      } @empty {
+        <p class="muted">ยังไม่มีผู้ใช้</p>
+      }
+    </div>
+
+    <div class="sec-title">บันทึกแจ้งเตือนล่าสุด</div>
+    <div class="list">
+      @for (n of notifications().slice(0, 8); track $index) {
+        <div class="li">
+          <span class="grow"><span class="t">{{ notificationLabel(n) }}</span></span>
+        </div>
+      } @empty {
+        <p class="muted">ยังไม่มีบันทึกแจ้งเตือน</p>
+      }
+    </div>
+  }
 </app-page-shell>

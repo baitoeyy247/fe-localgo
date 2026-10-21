@@ -6,32 +6,44 @@ import { Router, RouterLink } from '@angular/router';
   selector: 'app-page-shell',
   imports: [RouterLink],
   template: `
-    <section class="app-screen">
-      <header class="page-header">
-        <div class="page-header__titles">
-          <span class="app-mark">LocalGo</span>
+    <div class="app" [class.no-nav]="hideNavPad()">
+      @if (hero()) {
+        <div class="hero">
+          <div class="hero__top">
+            @if (showBack()) {
+              @if (backLink()) {
+                <a class="icon-btn hero__back" [routerLink]="backLink()!" [attr.aria-label]="backLabel()">←</a>
+              } @else {
+                <button type="button" class="icon-btn hero__back" [attr.aria-label]="backLabel()" (click)="goBack()">
+                  ←
+                </button>
+              }
+            }
+            <span class="app-mark app-mark--on-hero">LocalGo</span>
+          </div>
+          <h1>{{ title() }}</h1>
           @if (subtitle()) {
-            <p class="page-header__subtitle">{{ subtitle() }}</p>
+            <p>{{ subtitle() }}</p>
+          }
+        </div>
+      } @else {
+        <header class="hdr" [class.green]="greenHeader()">
+          @if (showBack()) {
+            @if (backLink()) {
+              <a class="icon-btn" [routerLink]="backLink()!" [attr.aria-label]="backLabel()">←</a>
+            } @else {
+              <button type="button" class="icon-btn" [attr.aria-label]="backLabel()" (click)="goBack()">←</button>
+            }
           }
           <h1>{{ title() }}</h1>
-        </div>
-        @if (showBack()) {
-          @if (backLink()) {
-            <a class="icon-button" [routerLink]="backLink()!" [attr.aria-label]="backLabel()">
-              <span aria-hidden="true">←</span>
-            </a>
-          } @else {
-            <button type="button" class="icon-button" [attr.aria-label]="backLabel()" (click)="goBack()">
-              <span aria-hidden="true">←</span>
-            </button>
-          }
-        }
-      </header>
+          <span class="app-mark" [class.app-mark--on-hero]="greenHeader()">LocalGo</span>
+        </header>
+      }
 
-      <main class="page-content">
+      <main class="content page-content">
         <ng-content />
       </main>
-    </section>
+    </div>
   `,
 })
 export class PageShell {
@@ -40,6 +52,11 @@ export class PageShell {
   readonly showBack = input(true);
   readonly backLink = input<string | null>(null);
   readonly backLabel = input('กลับ');
+  /** Green hero band (mockup). */
+  readonly hero = input(false);
+  readonly greenHeader = input(false);
+  /** Skip bottom-nav padding (entry / sheets). */
+  readonly hideNavPad = input(false);
 
   private readonly location = inject(Location);
   private readonly router = inject(Router);

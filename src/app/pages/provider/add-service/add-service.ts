@@ -7,6 +7,8 @@ import { ProviderSetupBar } from '../../../shared/provider-setup-bar';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { Category, ProviderDetail } from '../../../core/models';
+import { apiErrorMessage } from '../../../core/api-error.util';
+import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 
 @Component({
   selector: 'app-add-service-page',
@@ -23,6 +25,7 @@ export class AddServicePage implements OnInit {
   protected readonly selectedBranchIds = signal<Set<string>>(new Set());
   protected readonly saving = signal(false);
   protected readonly loading = signal(true);
+  protected readonly error = signal<string | null>(null);
 
   constructor(
     private readonly api: LocalGoApiService,
@@ -83,9 +86,14 @@ export class AddServicePage implements OnInit {
     const p = this.provider();
     const categoryId = this.selectedCategoryId();
     if (!p || !categoryId || !this.title().trim() || this.saving()) {
+      if (!this.title().trim()) {
+        this.error.set('กรุณาระบุชื่อบริการ');
+        scrollToFirstError();
+      }
       return;
     }
     this.saving.set(true);
+    this.error.set(null);
     try {
       const branchIds = [...this.selectedBranchIds()];
       const service = await firstValueFrom(
@@ -101,6 +109,9 @@ export class AddServicePage implements OnInit {
         await firstValueFrom(this.api.setServiceBranches(p.id, service.id, branchIds));
       }
       await this.router.navigateByUrl('/provider/manage');
+    } catch (e) {
+      this.error.set(apiErrorMessage(e, 'บันทึกไม่สำเร็จ'));
+      scrollToFirstError();
     } finally {
       this.saving.set(false);
     }

@@ -2,152 +2,119 @@
   @if (!isDirectBooking()) {
     <app-requester-flow-bar active="appointment" [unlockedThrough]="flowUnlockedThrough()" />
   }
-  <section class="screen">
-    @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
-    } @else {
-      <div class="stack">
-        <div class="summary-panel">
-          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
-            <h3 style="margin: 0;">{{ selectedBid()?.providerName ?? 'ผู้ให้บริการ' }}</h3>
-            @if (request()?.status; as st) {
-              <span class="badge">{{ statusLabel(st) }}</span>
-            }
-          </div>
-          <p style="margin-top: 0.35rem;">{{ request()?.title }}</p>
-          @if (selectedBid()) {
-            <small>ราคาที่เลือก: {{ selectedBid()!.priceText }}</small>
-          }
-        </div>
 
-        @if (hasActiveAppointment()) {
-          <div class="summary-panel">
-            <span class="badge badge--green">{{ appointmentStatusLabel(appointment()!.status) }}</span>
-            <p><strong>วันและเวลา:</strong> {{ formatScheduledAt(appointment()?.scheduledAt) }}</p>
-            <p><strong>สถานที่:</strong> {{ addressText() || 'ยังไม่ระบุสถานที่' }}</p>
-            @if (appointment()?.note) {
-              <p><strong>หมายเหตุ:</strong> {{ appointment()!.note }}</p>
-            }
-            @if (request()?.status; as jobStatus) {
-              <p><strong>สถานะงาน:</strong> {{ statusLabel(jobStatus) }}</p>
-            }
-            @if (appointmentStatusHint(appointment()?.status); as hint) {
-              <p class="state-hint">{{ hint }}</p>
-            }
-            <button
-              type="button"
-              class="secondary"
-              style="margin-top: 0.5rem; width: 100%;"
-              [disabled]="loading() || saving()"
-              (click)="reload()"
-            >
-              รีเฟรชสถานะ
-            </button>
-          </div>
+  @if (loading()) {
+    <app-skeleton-card [slow]="hint.slow()" [count]="2" />
+  } @else if (loadError()) {
+    <app-error-state [message]="loadError()!" (retry)="retryLoad()" />
+  } @else {
+    <div class="card">
+      <div class="row between">
+        <b>{{ selectedBid()?.providerName ?? 'ผู้ให้บริการ' }}</b>
+        @if (request()?.status; as st) {
+          <span class="badge b-blue">{{ statusLabel(st) }}</span>
         }
+      </div>
+      <p class="muted" style="margin: 4px 0 0">{{ request()?.title }}</p>
+      @if (selectedBid()) {
+        <p class="muted" style="margin: 4px 0 0">ราคาที่เลือก: {{ selectedBid()!.priceText }}</p>
+      }
+    </div>
 
-        @if (!hasActiveAppointment() && !isReadOnly()) {
-          <label class="form-field">
-            <span>วันและเวลา</span>
-            <input
-              class="form-field__input"
-              type="datetime-local"
-              [value]="scheduledAt()"
-              (input)="scheduledAt.set($any($event.target).value)"
-            />
-          </label>
-          <div class="form-field">
-            <span>สถานที่นัดหมาย</span>
-            <input
-              class="form-field__input"
-              placeholder="ที่อยู่นัดหมาย"
-              [value]="addressText()"
-              (input)="addressText.set($any($event.target).value)"
-            />
-            <div class="form-field__actions">
-              <button type="button" class="secondary secondary--pill" (click)="openPicker()">
-                เปลี่ยนจุดบนแผนที่
-              </button>
-              @if (mapLat() !== null && mapLng() !== null) {
-                <small class="form-field__hint">
-                  พิกัด: {{ mapLat()!.toFixed(5) }}, {{ mapLng()!.toFixed(5) }}
-                </small>
-              }
-            </div>
-          </div>
-          <label class="form-area">
-            <span>หมายเหตุ</span>
-            <textarea
-              rows="3"
-              [value]="note()"
-              (input)="note.set($any($event.target).value)"
-            ></textarea>
-          </label>
+    @if (hasActiveAppointment()) {
+      <div class="card">
+        <span class="badge b-green">{{ appointmentStatusLabel(appointment()!.status) }}</span>
+        <p style="margin: 8px 0 0"><b>วันและเวลา:</b> {{ formatScheduledAt(appointment()?.scheduledAt) }}</p>
+        <p><b>สถานที่:</b> {{ addressText() || 'ยังไม่ระบุสถานที่' }}</p>
+        @if (appointment()?.note) {
+          <p><b>หมายเหตุ:</b> {{ appointment()!.note }}</p>
         }
-
-        @if (needsBidSelection && !selectedBid()) {
-          <div class="empty-state">
-            <h3>ยังไม่ได้เลือกผู้ให้บริการ</h3>
-            <p>ไปที่หน้าข้อเสนอเพื่อเลือกผู้ให้บริการก่อนนัดหมาย</p>
-            <button class="primary" type="button" (click)="goToBids()">ไปเลือกข้อเสนอ</button>
-          </div>
+        @if (request()?.status; as jobStatus) {
+          <p><b>สถานะงาน:</b> {{ statusLabel(jobStatus) }}</p>
         }
-
-        @if (error()) {
-          <p class="error-text">{{ error() }}</p>
+        @if (appointmentStatusHint(appointment()?.status); as hint) {
+          <p class="muted">{{ hint }}</p>
         }
-        @if (success()) {
-          <p class="success-text">{{ success() }}</p>
-        }
-
-        <div class="action-stack">
-          @if (canClearBidSelection()) {
-            <button
-              class="danger"
-              type="button"
-              [disabled]="saving()"
-              (click)="clearBidSelection()"
-            >
-              {{ saving() ? 'กำลังยกเลิก…' : 'ยกเลิกการเลือกข้อเสนอ' }}
-            </button>
-          }
-
-          @if (canCancelAppointment()) {
-            <button
-              class="danger"
-              type="button"
-              [disabled]="saving()"
-              (click)="cancelAppointment()"
-            >
-              {{ saving() ? 'กำลังยกเลิก…' : 'ยกเลิกนัดหมาย' }}
-            </button>
-          }
-
-          @if (showReviewAction()) {
-            <button
-              class="primary"
-              type="button"
-              [class.secondary]="!canSubmitReview()"
-              (click)="goToReview()"
-            >
-              {{ canSubmitReview() ? 'ให้คะแนนและรีวิว' : 'ไปหน้ารีวิว' }}
-            </button>
-          }
-
-          @if (!hasActiveAppointment() && !isReadOnly()) {
-            <button
-              class="primary"
-              type="button"
-              [disabled]="!canConfirm"
-              (click)="confirm()"
-            >
-              {{ saving() ? 'กำลังบันทึก…' : 'ยืนยันนัดหมาย' }}
-            </button>
-          }
-        </div>
+        <button type="button" class="btn btn-secondary btn-block" style="margin-top: 8px" [disabled]="loading() || saving()" (click)="reload()">
+          รีเฟรชสถานะ
+        </button>
       </div>
     }
-  </section>
+
+    @if (!hasActiveAppointment() && !isReadOnly()) {
+      <app-thai-datetime-field
+        label="วันและเวลา"
+        [value]="scheduledAt()"
+        [requireFuture]="true"
+        (valueChange)="scheduledAt.set($event)"
+      />
+      <label class="field">
+        <span>สถานที่นัดหมาย</span>
+        <input
+          class="input"
+          placeholder="ที่อยู่นัดหมาย"
+          [value]="addressText()"
+          (input)="addressText.set($any($event.target).value)"
+        />
+        <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 8px; width: fit-content" (click)="openPicker()">
+          เปลี่ยนจุดบนแผนที่
+        </button>
+        @if (mapLat() !== null && mapLng() !== null) {
+          <small class="muted">พิกัด: {{ mapLat()!.toFixed(5) }}, {{ mapLng()!.toFixed(5) }}</small>
+        }
+      </label>
+      <label class="field">
+        <span>หมายเหตุ</span>
+        <textarea class="input" rows="3" [value]="note()" (input)="note.set($any($event.target).value)"></textarea>
+      </label>
+    }
+
+    @if (needsBidSelection && !selectedBid()) {
+      <div class="state">
+        <div class="em">💬</div>
+        <h3>ยังไม่ได้เลือกผู้ให้บริการ</h3>
+        <p>ไปที่หน้าข้อเสนอเพื่อเลือกผู้ให้บริการก่อนนัดหมาย</p>
+        <button class="btn btn-primary" type="button" (click)="goToBids()">ไปเลือกข้อเสนอ</button>
+      </div>
+    }
+
+    @if (error()) {
+      <p class="error-text">{{ error() }}</p>
+    }
+    @if (success()) {
+      <div class="banner ok">{{ success() }}</div>
+    }
+
+    @if (canClearBidSelection()) {
+      <button class="btn btn-danger-o btn-block" type="button" [disabled]="saving()" (click)="confirmClearOpen.set(true)">
+        {{ saving() ? 'กำลังยกเลิก…' : 'ยกเลิกการเลือกข้อเสนอ' }}
+      </button>
+    }
+
+    @if (canCancelAppointment()) {
+      <button class="btn btn-danger btn-block" type="button" [disabled]="saving()" (click)="confirmCancelOpen.set(true)">
+        {{ saving() ? 'กำลังยกเลิก…' : 'ยกเลิกนัดหมาย' }}
+      </button>
+    }
+
+    @if (showReviewAction()) {
+      <button
+        class="btn btn-block"
+        [class.btn-primary]="canSubmitReview()"
+        [class.btn-secondary]="!canSubmitReview()"
+        type="button"
+        (click)="goToReview()"
+      >
+        {{ canSubmitReview() ? 'ให้คะแนนและรีวิว' : 'ไปหน้ารีวิว' }}
+      </button>
+    }
+
+    @if (!hasActiveAppointment() && !isReadOnly()) {
+      <button class="btn btn-primary btn-block" type="button" [disabled]="!canConfirm" (click)="confirm()">
+        {{ saving() ? 'กำลังบันทึก…' : 'ยืนยันนัดหมาย' }}
+      </button>
+    }
+  }
 
   <app-location-picker-modal
     [open]="pickerOpen()"
@@ -159,6 +126,29 @@
     [lng]="mapLng() ?? 100.5018"
     (confirm)="applyPickedLocation($event)"
     (cancel)="closePicker()"
+  />
+
+  <app-confirm-sheet
+    [open]="confirmCancelOpen()"
+    title="ยกเลิกนัดหมาย?"
+    message="ต้องการยกเลิกนัดหมายใช่หรือไม่"
+    confirmLabel="ยกเลิกนัดหมาย"
+    cancelLabel="ไม่ยกเลิก"
+    [danger]="true"
+    [busy]="saving()"
+    (confirm)="cancelAppointment()"
+    (cancel)="confirmCancelOpen.set(false)"
+  />
+  <app-confirm-sheet
+    [open]="confirmClearOpen()"
+    title="ยกเลิกการเลือกข้อเสนอ?"
+    message="ยกเลิกการเลือกข้อเสนอและกลับไปเลือกใหม่"
+    confirmLabel="ยกเลิกการเลือก"
+    cancelLabel="ไม่ยกเลิก"
+    [danger]="true"
+    [busy]="saving()"
+    (confirm)="clearBidSelection()"
+    (cancel)="confirmClearOpen.set(false)"
   />
 
   <app-requester-bottom-nav />

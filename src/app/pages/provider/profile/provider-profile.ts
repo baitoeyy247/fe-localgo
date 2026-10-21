@@ -8,6 +8,8 @@ import { ProviderDetail } from '../../../core/models';
 import { PROVIDER_TYPE_OPTIONS } from '../../../shared/status-labels';
 import { ProviderSetupBar } from '../../../shared/provider-setup-bar';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
+import { apiErrorMessage } from '../../../core/api-error.util';
+import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 
 @Component({
   selector: 'app-provider-profile-setup-page',
@@ -24,6 +26,7 @@ export class ProviderProfileSetupPage implements OnInit {
   protected readonly contactLineId = signal('');
   protected readonly contactPhone = signal('');
   protected readonly typeOptions = PROVIDER_TYPE_OPTIONS;
+  protected readonly error = signal<string | null>(null);
   private readonly api = inject(LocalGoApiService);
   private readonly router = inject(Router);
 
@@ -67,9 +70,14 @@ export class ProviderProfileSetupPage implements OnInit {
 
   protected async saveAndContinue(): Promise<void> {
     if (this.saving() || !this.name().trim()) {
+      if (!this.name().trim()) {
+        this.error.set('กรุณาระบุชื่อที่แสดง');
+        scrollToFirstError();
+      }
       return;
     }
     this.saving.set(true);
+    this.error.set(null);
     try {
       const existing = this.provider();
       if (existing) {
@@ -95,6 +103,9 @@ export class ProviderProfileSetupPage implements OnInit {
         this.provider.set(created);
       }
       await this.router.navigateByUrl('/provider/coverage');
+    } catch (e) {
+      this.error.set(apiErrorMessage(e, 'บันทึกโปรไฟล์ไม่สำเร็จ'));
+      scrollToFirstError();
     } finally {
       this.saving.set(false);
     }

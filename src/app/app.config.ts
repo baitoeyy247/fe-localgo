@@ -5,13 +5,14 @@ import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { authInterceptor } from './core/auth.interceptor';
 import { authErrorInterceptor } from './core/auth-error.interceptor';
+import { httpTimeoutInterceptor } from './core/http-timeout.interceptor';
 import { ngrokInterceptor } from './core/ngrok.interceptor';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideHttpClient(
-      withInterceptors([ngrokInterceptor, authInterceptor, authErrorInterceptor]),
+      withInterceptors([httpTimeoutInterceptor, ngrokInterceptor, authInterceptor, authErrorInterceptor]),
     ),
     provideRouter(routes),
   ],

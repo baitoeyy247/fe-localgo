@@ -1,59 +1,67 @@
 <app-page-shell title="พื้นที่ให้บริการ" subtitle="ขั้นตอนที่ 2 จาก 3" backLink="/provider">
   <app-provider-setup-bar active="coverage" />
-  <section class="screen">
-    @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
-    } @else if (!provider()) {
-      <div class="empty-state">
-        <h3>ยังไม่มีโปรไฟล์</h3>
-        <a class="primary" routerLink="/provider/profile">สร้างโปรไฟล์ก่อน</a>
-      </div>
-    } @else {
-      <div class="stack">
-        @if (message()) {
-          <p class="badge badge--blue">{{ message() }}</p>
-        }
-        @if (error()) {
-          <p class="error-text">{{ error() }}</p>
-        }
 
-        <div class="section-title">
-          <h3>จุดให้บริการ ({{ branches().length }})</h3>
-          <button type="button" (click)="startNewBranch()">+ จุดใหม่</button>
+  @if (loading()) {
+    <p class="muted" style="text-align: center">กำลังโหลด…</p>
+  } @else if (!provider()) {
+    <div class="state">
+      <div class="em">👤</div>
+      <h3>ยังไม่มีโปรไฟล์</h3>
+      <a class="btn btn-primary" routerLink="/provider/profile">สร้างโปรไฟล์ก่อน</a>
+    </div>
+  } @else {
+    @if (toast()) {
+      <div class="banner ok" role="status">{{ toast() }}</div>
+    }
+    @if (error()) {
+      <p class="error-text">{{ error() }}</p>
+    }
+
+    <div class="sec-title">
+      จุดให้บริการ ({{ branches().length }})
+      <button type="button" class="btn btn-ghost btn-sm" (click)="startNewBranch()">+ จุดใหม่</button>
+    </div>
+
+    @for (branch of branches(); track branch.id) {
+      <article class="card" [class.card--selected]="editingBranchId() === branch.id" [style.opacity]="branch.isActive ? '1' : '0.7'">
+        <div class="row between">
+          <b>{{ branch.name }}</b>
+          <span class="badge" [class.b-green]="branch.isActive" [class.b-gray]="!branch.isActive">{{
+            branch.isActive ? 'เปิด' : 'ปิด'
+          }}</span>
         </div>
+        <p class="muted" style="margin: 4px 0 12px">รัศมี {{ branch.serviceRadiusMeters / 1000 }} กม.</p>
+        <div class="row">
+          <button type="button" class="btn btn-ghost btn-sm" (click)="editBranch(branch)">แก้ไข</button>
+          @if (branch.isActive) {
+            <button type="button" class="btn btn-danger-o btn-sm" (click)="askDeactivateBranch(branch)">ปิดจุด</button>
+          } @else {
+            <button type="button" class="btn btn-secondary btn-sm" [disabled]="disabling()" (click)="activateBranch(branch)">
+              เปิดใช้งาน
+            </button>
+          }
+          <button type="button" class="btn btn-danger-o btn-sm" (click)="askDeleteBranch(branch)">ลบ</button>
+        </div>
+      </article>
+    } @empty {
+      <p class="muted">ยังไม่มีจุด — กด + จุดใหม่</p>
+    }
 
-        @for (branch of branches(); track branch.id) {
-          <article
-            class="coverage-card coverage-card--modern"
-            [class.coverage-card--active]="editingBranchId() === branch.id"
-          >
-            <div>
-              <strong>{{ branch.name }}</strong>
-              <span>
-                รัศมี {{ branch.serviceRadiusMeters / 1000 }} กม.
-                · {{ branch.isActive ? 'เปิด' : 'ปิด' }}
-              </span>
-            </div>
-            <div class="coverage-card__actions">
-              <button type="button" (click)="editBranch(branch)">แก้ไข</button>
-              @if (branch.isActive) {
-                <button type="button" class="danger danger--pill" style="min-height: auto; padding: 0.45rem 0.75rem; border-radius: 0.65rem;" (click)="deactivateBranch(branch)">ปิด</button>
-              }
-            </div>
-          </article>
-        } @empty {
-          <p class="muted-label">ยังไม่มีจุด — กด + จุดใหม่</p>
-        }
-
-        <div class="form-panel">
-          <h3>{{ isEditingExisting() ? 'แก้ไขจุด' : 'จุดใหม่' }}</h3>
-          <label class="form-field">
+    <div class="card">
+      <button type="button" class="row between" style="width: 100%; background: none; border: 0; padding: 0; font: inherit; cursor: pointer" (click)="toggleFormOpen()">
+        <b>{{ isEditingExisting() ? 'แก้ไขจุด' : 'เพิ่มจุดใหม่' }}</b>
+        <span aria-hidden="true">{{ formOpen() ? '▾' : '▸' }}</span>
+      </button>
+      @if (formOpen()) {
+        <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px">
+          <label class="field">
             <span>ชื่อจุด</span>
-            <input [value]="editingName()" (input)="editingName.set($any($event.target).value)" />
+            <input class="input" [value]="editingName()" (input)="editingName.set($any($event.target).value)" />
           </label>
-          <label class="form-field">
+          <label class="field">
             <span>รัศมี (กม.) — {{ editingRadiusKm() }}</span>
             <input
+              class="input"
               type="range"
               min="1"
               max="15"
@@ -62,25 +70,21 @@
               (input)="editingRadiusKm.set(+$any($event.target).value)"
             />
           </label>
-          <label class="form-field form-field--inline">
+          <label class="row" style="justify-content: space-between">
             <span>เปิดใช้งานจุดนี้</span>
-            <input
-              type="checkbox"
-              [checked]="editingActive()"
-              (change)="editingActive.set($any($event.target).checked)"
-            />
+            <input type="checkbox" [checked]="editingActive()" (change)="editingActive.set($any($event.target).checked)" />
           </label>
-          <p class="muted-label">พิกัด {{ editingLat().toFixed(5) }}, {{ editingLng().toFixed(5) }}</p>
-          <button type="button" class="secondary secondary--pill" (click)="openPicker()">เลือกบนแผนที่</button>
-          <button type="button" class="primary" [disabled]="saving()" (click)="saveBranch()">
+          <p class="muted">{{ pickerTitle() }}</p>
+          <button type="button" class="btn btn-secondary btn-sm" style="width: fit-content" (click)="openPicker()">เลือกบนแผนที่</button>
+          <button type="button" class="btn btn-primary btn-block" [disabled]="saving()" (click)="saveBranch()">
             {{ saving() ? 'กำลังบันทึก…' : isEditingExisting() ? 'บันทึกการแก้ไข' : 'เพิ่มจุดนี้' }}
           </button>
         </div>
+      }
+    </div>
 
-        <a class="secondary" routerLink="/provider/service">ต่อไป เพิ่มบริการ</a>
-      </div>
-    }
-  </section>
+    <a class="btn btn-secondary btn-block" routerLink="/provider/service">ต่อไป เพิ่มบริการ</a>
+  }
 
   <app-location-picker-modal
     [open]="pickerOpen()"
@@ -92,6 +96,28 @@
     [lng]="editingLng()"
     (cancel)="closePicker()"
     (confirm)="applyLocation($event)"
+  />
+  <app-confirm-sheet
+    [open]="!!disableTarget()"
+    title="ปิดใช้งานจุดนี้?"
+    [message]="disableTarget() ? 'ปิดจุด &quot;' + disableTarget()!.name + '&quot; ชั่วคราว — กดเปิดใช้งานบนการ์ดได้ทุกเมื่อ' : ''"
+    confirmLabel="ปิดจุด"
+    cancelLabel="ไม่ปิด"
+    [danger]="true"
+    [busy]="disabling()"
+    (confirm)="confirmDeactivateBranch()"
+    (cancel)="disableTarget.set(null)"
+  />
+  <app-confirm-sheet
+    [open]="!!deleteTarget()"
+    title="ลบจุดให้บริการ?"
+    [message]="deleteTarget() ? 'ลบจุด &quot;' + deleteTarget()!.name + '&quot; ถาวร — กู้คืนไม่ได้' : ''"
+    confirmLabel="ลบจุด"
+    cancelLabel="ไม่ลบ"
+    [danger]="true"
+    [busy]="deleting()"
+    (confirm)="confirmDeleteBranch()"
+    (cancel)="deleteTarget.set(null)"
   />
   <app-provider-bottom-nav />
 </app-page-shell>

@@ -6,15 +6,15 @@ export type ProviderSetupStep = 'profile' | 'coverage' | 'service';
 @Component({
   selector: 'app-provider-setup-bar',
   template: `
-    <nav class="setup-bar" aria-label="ตั้งค่าผู้ให้บริการ">
-      <a class="setup-bar__step" [class.is-active]="active() === 'profile'" routerLink="/provider/profile">
-        <span>1</span> โปรไฟล์
+    <nav class="flow" aria-label="ตั้งค่าผู้ให้บริการ">
+      <a class="flow__link" [class.on]="active() === 'profile'" routerLink="/provider/profile">
+        <b>1</b>โปรไฟล์
       </a>
-      <a class="setup-bar__step" [class.is-active]="active() === 'coverage'" routerLink="/provider/coverage">
-        <span>2</span> พื้นที่
+      <a class="flow__link" [class.on]="active() === 'coverage'" routerLink="/provider/coverage">
+        <b>2</b>พื้นที่
       </a>
-      <a class="setup-bar__step" [class.is-active]="active() === 'service'" routerLink="/provider/service">
-        <span>3</span> บริการ
+      <a class="flow__link" [class.on]="active() === 'service'" routerLink="/provider/service">
+        <b>3</b>บริการ
       </a>
     </nav>
   `,

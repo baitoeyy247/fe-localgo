@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
@@ -13,7 +13,11 @@ import { AppointmentDetail, BidItem, ServiceRequestDetail } from '../../../core/
 import { SessionStateService } from '../../../core/session-state.service';
 import { AuthService } from '../../../core/auth.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
-import { appointmentStatusLabel, requestStatusLabel } from '../../../shared/status-labels';
+import { appointmentStatusLabel, displayRequestStatusLabel } from '../../../shared/status-labels';
+import { SlowLoadHint } from '../../../shared/load-state';
+import { ErrorState } from '../../../shared/ui/error-state';
+import { SkeletonCard } from '../../../shared/ui/skeleton-card';
+import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 import {
   defaultAppointmentDatetimeLocal,
   formatScheduledAt,
@@ -21,13 +25,24 @@ import {
 } from '../../../shared/datetime.util';
 import { resolveRequesterRequestId } from '../../../shared/requester-request-flow';
 import { redirectProviderFromRequesterRoute } from '../../../shared/requester-deep-link-guard';
+import { ThaiDatetimeField } from '../../../shared/ui/thai-datetime-field';
+import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 
 @Component({
   selector: 'app-appointment-page',
-  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, LocationPickerModal],
+  imports: [
+    PageShell,
+    RequesterBottomNav,
+    RequesterFlowBar,
+    LocationPickerModal,
+    ErrorState,
+    SkeletonCard,
+    ConfirmSheet,
+    ThaiDatetimeField,
+  ],
   templateUrl: './appointment.html',
 })
-export class AppointmentPage implements OnInit {
+export class AppointmentPage implements OnInit, OnDestroy {
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly appointment = signal<AppointmentDetail | null>(null);
   protected readonly selectedBid = signal<BidItem | null>(null);
@@ -43,13 +58,35 @@ export class AppointmentPage implements OnInit {
   protected readonly mapLng = signal<number | null>(null);
   protected readonly formatScheduledAt = formatScheduledAt;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
-  protected readonly statusLabel = requestStatusLabel;
+  protected readonly loadError = signal<string | null>(null);
+  protected readonly confirmCancelOpen = signal(false);
+  protected readonly confirmClearOpen = signal(false);
+  protected readonly hint = new SlowLoadHint();
+
+  protected statusLabel(status: string): string {
+    return displayRequestStatusLabel(status, this.appointment()?.status);
+  }
 
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly datetimeField = viewChild(ThaiDatetimeField);
+
+  ngOnDestroy(): void {
+    this.hint.end();
+  }
+
+  protected async retryLoad(): Promise<void> {
+    const requestId = this.request()?.id ?? this.session.requesterRequestId;
+    if (requestId) {
+      await this.loadRequestState(requestId);
+    } else {
+      this.loading.set(true);
+      await this.ngOnInit();
+    }
+  }
 
   async ngOnInit(): Promise<void> {
     const queryRequestId = this.route.snapshot.queryParamMap.get('requestId');
@@ -99,9 +136,17 @@ export class AppointmentPage implements OnInit {
     if (this.saving() || this.hasActiveAppointment() || this.isReadOnly()) {
       return;
     }
+    const dt = this.datetimeField();
+    dt?.markTouched();
+    if (dt && !dt.isValid()) {
+      this.error.set('กรุณาเลือกวันและเวลาในอนาคต');
+      scrollToFirstError();
+      return;
+    }
     const requestId = this.request()?.id ?? this.session.requesterRequestId ?? null;
     if (!requestId) {
       this.error.set('ไม่พบงานที่จะนัดหมาย');
+      scrollToFirstError();
       return;
     }
     this.saving.set(true);
@@ -112,22 +157,26 @@ export class AppointmentPage implements OnInit {
       const bid = this.selectedBid();
       if (!detail) {
         this.error.set('โหลดข้อมูลงานไม่สำเร็จ');
+        scrollToFirstError();
         return;
       }
 
       if (!this.canCreateAppointment(detail)) {
         if (!bid) {
           this.error.set('ยังไม่ได้เลือกผู้ให้บริการ กรุณาไปที่หน้าข้อเสนอ');
+          scrollToFirstError();
           return;
         }
         if (bid.status === 'Rejected' || bid.status === 'Withdrawn') {
           this.error.set('ข้อเสนอนี้ใช้ไม่ได้แล้ว กรุณาเลือกข้อเสนออื่น');
+          scrollToFirstError();
           return;
         }
         if (bid.status === 'Submitted' || bid.status === 'Selected') {
           await firstValueFrom(this.api.selectBid(requestId, bid.id));
         } else {
           this.error.set('ยังไม่ได้เลือกผู้ให้บริการ กรุณาไปที่หน้าข้อเสนอ');
+          scrollToFirstError();
           return;
         }
       }
@@ -145,6 +194,7 @@ export class AppointmentPage implements OnInit {
       await this.loadRequestState(requestId);
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'ยืนยันนัดหมายไม่สำเร็จ'));
+      scrollToFirstError();
     } finally {
       this.saving.set(false);
     }
@@ -153,9 +203,6 @@ export class AppointmentPage implements OnInit {
   protected async cancelAppointment(): Promise<void> {
     const existing = this.appointment();
     if (!existing || this.saving() || !this.canCancelAppointment()) {
-      return;
-    }
-    if (!confirm('ต้องการยกเลิกนัดหมายใช่หรือไม่?')) {
       return;
     }
     this.saving.set(true);
@@ -170,7 +217,9 @@ export class AppointmentPage implements OnInit {
       }
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'ยกเลิกนัดหมายไม่สำเร็จ'));
+      scrollToFirstError();
     } finally {
+      this.confirmCancelOpen.set(false);
       this.saving.set(false);
     }
   }
@@ -202,9 +251,6 @@ export class AppointmentPage implements OnInit {
     if (!requestId || !this.canClearBidSelection() || this.saving()) {
       return;
     }
-    if (!confirm('ยกเลิกการเลือกข้อเสนอและกลับไปเลือกใหม่?')) {
-      return;
-    }
     this.saving.set(true);
     this.error.set(null);
     this.success.set(null);
@@ -214,7 +260,9 @@ export class AppointmentPage implements OnInit {
       await this.router.navigateByUrl('/requester/bids');
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'ยกเลิกการเลือกไม่สำเร็จ'));
+      scrollToFirstError();
     } finally {
+      this.confirmClearOpen.set(false);
       this.saving.set(false);
     }
   }
@@ -336,6 +384,11 @@ export class AppointmentPage implements OnInit {
     return null;
   }
 
+  protected statusHeadline(): string | null {
+    const st = this.request()?.status;
+    return st ? displayRequestStatusLabel(st, this.appointment()?.status) : null;
+  }
+
   protected get locationFromPost(): boolean {
     const detail = this.request();
     if (!detail) {
@@ -350,6 +403,8 @@ export class AppointmentPage implements OnInit {
   private async loadRequestState(requestId: string): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
+    this.loadError.set(null);
+    this.hint.begin();
     try {
       const detail = await firstValueFrom(this.api.getRequest(requestId));
       this.request.set(detail);
@@ -371,8 +426,9 @@ export class AppointmentPage implements OnInit {
         this.applyRequestLocation(detail);
       }
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'โหลดข้อมูลนัดหมายไม่สำเร็จ'));
+      this.loadError.set(apiErrorMessage(e, 'โหลดข้อมูลนัดหมายไม่สำเร็จ'));
     } finally {
+      this.hint.end();
       this.loading.set(false);
     }
   }

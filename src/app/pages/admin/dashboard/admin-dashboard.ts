@@ -1,13 +1,15 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
+import { ErrorState } from '../../../shared/ui/error-state';
+import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { AdminDashboard, AdminNotificationRow, AdminUserRow } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
 
 @Component({
   selector: 'app-admin-dashboard-page',
-  imports: [PageShell],
+  imports: [PageShell, ErrorState, SkeletonCard],
   templateUrl: './admin-dashboard.html',
 })
 export class AdminDashboardPage implements OnInit {
@@ -19,7 +21,13 @@ export class AdminDashboardPage implements OnInit {
 
   private readonly api = inject(LocalGoApiService);
 
-  async ngOnInit(): Promise<void> {
+  ngOnInit(): void {
+    void this.load();
+  }
+
+  protected async load(): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
     try {
       const [dashboard, users, notifications] = await Promise.all([
         firstValueFrom(this.api.getAdminDashboard()),

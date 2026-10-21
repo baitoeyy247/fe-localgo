@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { RequesterBottomNav } from '../../../shared/requester-bottom-nav';
@@ -9,16 +9,30 @@ import { BidItem, ServiceRequestDetail } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import { AuthService } from '../../../core/auth.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
+import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { requestStatusLabel } from '../../../shared/status-labels';
 import { resolveRequesterRequestId } from '../../../shared/requester-request-flow';
 import { redirectProviderFromRequesterRoute } from '../../../shared/requester-deep-link-guard';
+import { SlowLoadHint } from '../../../shared/load-state';
+import { ErrorState } from '../../../shared/ui/error-state';
+import { SkeletonCard } from '../../../shared/ui/skeleton-card';
+import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
+import { formatPrice } from '../../../shared/format-price';
 
 @Component({
   selector: 'app-private-bids-page',
-  imports: [PageShell, RequesterBottomNav, RequesterFlowBar],
+  imports: [
+    PageShell,
+    RequesterBottomNav,
+    RequesterFlowBar,
+    RouterLink,
+    ErrorState,
+    SkeletonCard,
+    ConfirmSheet,
+  ],
   templateUrl: './private-bids.html',
 })
-export class PrivateBidsPage implements OnInit {
+export class PrivateBidsPage implements OnInit, OnDestroy {
   protected readonly bids = signal<BidItem[]>([]);
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly selectedBidId = signal<string | null>(null);
@@ -27,6 +41,11 @@ export class PrivateBidsPage implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly statusLabel = requestStatusLabel;
   protected readonly justPosted = signal(false);
+  protected readonly loadError = signal<string | null>(null);
+  protected readonly selecting = signal(false);
+  protected readonly confirmClearOpen = signal(false);
+  protected readonly hint = new SlowLoadHint();
+  protected readonly formatPrice = formatPrice;
 
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
@@ -61,19 +80,55 @@ export class PrivateBidsPage implements OnInit {
     await this.load(requestId);
   }
 
+  ngOnDestroy(): void {
+    this.hint.end();
+  }
+
+  protected async retry(): Promise<void> {
+    const requestId = this.request()?.id ?? this.session.requesterRequestId ?? null;
+    if (requestId) {
+      await this.load(requestId);
+    } else {
+      await this.ngOnInit();
+    }
+  }
+
   protected selectBid(bid: BidItem): void {
     this.selectedBidId.set(bid.id);
     this.session.currentProviderId = bid.providerId;
   }
 
+  protected providerRatingLine(bid: BidItem): string {
+    const count = bid.verifiedReviewCount ?? 0;
+    if (count <= 0) {
+      return 'ยังไม่มีรีวิว';
+    }
+    const avg = bid.averageVerifiedRating ?? 0;
+    return `★ ${avg.toFixed(1)} (${count} รีวิว)`;
+  }
+
+  protected async openProvider(bid: BidItem, event: Event): Promise<void> {
+    event.stopPropagation();
+    await this.router.navigate(['/requester/provider', bid.providerId]);
+  }
+
   protected async confirmSelection(): Promise<void> {
     const requestId = this.request()?.id ?? this.session.requesterRequestId ?? null;
     const bidId = this.selectedBidId();
-    if (!requestId || !bidId) {
+    if (!requestId || !bidId || this.selecting()) {
       return;
     }
-    await firstValueFrom(this.api.selectBid(requestId, bidId));
-    await this.router.navigateByUrl('/requester/appointment');
+    this.selecting.set(true);
+    this.error.set(null);
+    try {
+      await firstValueFrom(this.api.selectBid(requestId, bidId));
+      await this.router.navigateByUrl('/requester/appointment');
+    } catch (e) {
+      this.error.set(apiErrorMessage(e, 'เลือกข้อเสนอไม่สำเร็จ'));
+      scrollToFirstError();
+    } finally {
+      this.selecting.set(false);
+    }
   }
 
   protected canClearBidSelection(): boolean {
@@ -87,12 +142,13 @@ export class PrivateBidsPage implements OnInit {
     return detail.status === 'ProviderSelected' || detail.status === 'Scheduled';
   }
 
+  protected askClearBidSelection(): void {
+    this.confirmClearOpen.set(true);
+  }
+
   protected async clearBidSelection(): Promise<void> {
     const requestId = this.request()?.id ?? this.session.requesterRequestId ?? null;
     if (!requestId || !this.canClearBidSelection() || this.clearing()) {
-      return;
-    }
-    if (!confirm('ยกเลิกการเลือกข้อเสนอและกลับไปเลือกใหม่?')) {
       return;
     }
     this.clearing.set(true);
@@ -102,7 +158,9 @@ export class PrivateBidsPage implements OnInit {
       await this.load(requestId);
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'ยกเลิกการเลือกไม่สำเร็จ'));
+      scrollToFirstError();
     } finally {
+      this.confirmClearOpen.set(false);
       this.clearing.set(false);
     }
   }
@@ -114,6 +172,8 @@ export class PrivateBidsPage implements OnInit {
   private async load(requestId: string): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
+    this.loadError.set(null);
+    this.hint.begin();
     try {
       const [detail, bidList] = await Promise.all([
         firstValueFrom(this.api.getRequest(requestId)),
@@ -131,8 +191,9 @@ export class PrivateBidsPage implements OnInit {
         this.session.currentProviderId = pick.providerId;
       }
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'โหลดข้อเสนอไม่สำเร็จ'));
+      this.loadError.set(apiErrorMessage(e, 'โหลดข้อเสนอไม่สำเร็จ'));
     } finally {
+      this.hint.end();
       this.loading.set(false);
     }
   }

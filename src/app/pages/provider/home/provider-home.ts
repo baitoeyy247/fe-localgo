@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -7,16 +7,23 @@ import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderDetail } from '../../../core/models';
 import { AuthService } from '../../../core/auth.service';
+import { apiErrorMessage } from '../../../core/api-error.util';
+import { SlowLoadHint } from '../../../shared/load-state';
+import { ErrorState } from '../../../shared/ui/error-state';
+import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 
 @Component({
   selector: 'app-provider-home-page',
-  imports: [PageShell, RouterLink, ProviderBottomNav],
+  imports: [PageShell, RouterLink, ProviderBottomNav, ErrorState, SkeletonCard],
   templateUrl: './provider-home.html',
 })
-export class ProviderHomePage implements OnInit {
+export class ProviderHomePage implements OnInit, OnDestroy {
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly hasProfile = signal(false);
   protected readonly loading = signal(true);
+  protected readonly error = signal<string | null>(null);
+  protected readonly pendingConfirmCount = signal(0);
+  protected readonly hint = new SlowLoadHint();
 
   constructor(
     private readonly api: LocalGoApiService,
@@ -25,15 +32,37 @@ export class ProviderHomePage implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
+    await this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.hint.end();
+  }
+
+  protected async load(): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+    this.hint.begin();
     try {
       const mine = await firstValueFrom(this.api.getMyProvider());
       this.provider.set(mine);
       this.hasProfile.set(true);
+      try {
+        const matching = await firstValueFrom(this.api.listMatchingRequests());
+        this.pendingConfirmCount.set(
+          matching.filter((r) => r.needsAppointmentConfirm).length,
+        );
+      } catch {
+        this.pendingConfirmCount.set(0);
+      }
     } catch (e) {
-      if (!(e instanceof HttpErrorResponse) || e.status !== 404) {
-        throw e;
+      if (e instanceof HttpErrorResponse && e.status === 404) {
+        this.hasProfile.set(false);
+      } else {
+        this.error.set(apiErrorMessage(e, 'โหลดข้อมูลผู้ให้บริการไม่สำเร็จ'));
       }
     } finally {
+      this.hint.end();
       this.loading.set(false);
     }
   }

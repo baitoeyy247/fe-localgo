@@ -1,0 +1,51 @@
+<app-page-shell title="ข้อเสนอของฉัน" backLink="/provider">
+  @if (loading()) {
+    <app-skeleton-card [slow]="hint.slow()" [count]="2" />
+  } @else if (error()) {
+    <app-error-state [message]="error()!" (retry)="load()" />
+  } @else if (items().length === 0) {
+    <div class="state">
+      <div class="em">💬</div>
+      <h3>ยังไม่มีข้อเสนอ</h3>
+      <p>เมื่อส่งราคาแล้ว รายการจะแสดงราคาและสถานะที่นี่</p>
+      <a class="btn btn-primary" routerLink="/provider/requests">ดูงานที่ตรงกับบริการ</a>
+    </div>
+  } @else {
+    <div class="chips" role="tablist" aria-label="กรองตามสถานะ">
+      @for (chip of chips; track chip.key) {
+        <button type="button" class="chip" [class.on]="filter() === chip.key" (click)="setFilter(chip.key)">
+          {{ chip.label }}
+        </button>
+      }
+    </div>
+
+    @if (filtered().length === 0) {
+      <p class="muted">ไม่มีรายการในตัวกรองนี้</p>
+    }
+
+    @for (item of filtered(); track item.id) {
+      <article class="card">
+        <button type="button" class="row between" style="width: 100%; background: none; border: 0; padding: 0; font: inherit; text-align: left; cursor: pointer; align-items: flex-start" (click)="openItem(item)">
+          <span class="grow">
+            <b>{{ item.requestTitle }}</b><br />
+            <span class="muted"
+              >ราคาเสนอ <span class="price" style="font-size: 16px">{{ formatPrice(item.priceText) }}</span></span
+            ><br />
+            <span class="muted" style="font-size: 13px">
+              ส่งเมื่อ {{ formatProposed(item.createdAt) }}
+              @if (item.appointmentScheduledAt) {
+                · นัด {{ formatWhen(item.appointmentScheduledAt) }}
+              }
+            </span>
+          </span>
+          <span class="badge" [ngClass]="rowStatus(item).badgeClass">{{ rowStatus(item).label }}</span>
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm btn-block" style="margin-top: 12px" (click)="openItem(item)">
+          {{ ctaLabel(item) }}
+        </button>
+      </article>
+    }
+  }
+
+  <app-provider-bottom-nav />
+</app-page-shell>

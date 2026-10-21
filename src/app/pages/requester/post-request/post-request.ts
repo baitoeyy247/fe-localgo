@@ -12,6 +12,8 @@ import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { Category } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import { UserLocationService } from '../../../core/user-location.service';
+import { apiErrorMessage } from '../../../core/api-error.util';
+import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 
 @Component({
   selector: 'app-post-request-page',
@@ -24,8 +26,10 @@ export class PostRequestPage implements OnInit {
   protected readonly selectedCategoryId = signal<string | null>(null);
   protected readonly title = signal('');
   protected readonly description = signal('');
-  protected readonly budgetText = signal('เปิดรับราคา');
+  protected readonly budgetMode = signal<'open' | 'fixed'>('open');
+  protected readonly budgetAmount = signal('');
   protected readonly posting = signal(false);
+  protected readonly error = signal<string | null>(null);
   protected readonly requestLocation = signal({
     title: 'จุดรับงานปัจจุบัน',
     subtitle: 'พิกัดเริ่มต้นของประกาศนี้',
@@ -68,8 +72,17 @@ export class PostRequestPage implements OnInit {
     this.description.set(value);
   }
 
-  protected updateBudget(value: string): void {
-    this.budgetText.set(value);
+  protected setBudgetMode(mode: 'open' | 'fixed'): void {
+    this.budgetMode.set(mode);
+  }
+
+  protected updateBudgetAmount(value: string): void {
+    this.budgetAmount.set(value.replace(/[^\d–-]/gu, ''));
+  }
+
+  protected showCoords(): boolean {
+    const loc = this.requestLocation();
+    return loc.title === 'พื้นที่ค้นหาเริ่มต้น' || loc.title === 'จุดรับงานปัจจุบัน';
   }
 
   protected openPicker(): void {
@@ -97,9 +110,14 @@ export class PostRequestPage implements OnInit {
     const categoryId = this.selectedCategoryId();
     const title = this.title().trim();
     if (!categoryId || !title || this.posting()) {
+      if (!title) {
+        this.error.set('กรุณาระบุหัวข้องาน');
+        scrollToFirstError();
+      }
       return;
     }
     this.posting.set(true);
+    this.error.set(null);
     try {
       const loc = this.requestLocation();
       const created = await firstValueFrom(
@@ -111,7 +129,7 @@ export class PostRequestPage implements OnInit {
           latitude: loc.lat,
           longitude: loc.lng,
           searchRadiusMeters: loc.radiusKm * 1000,
-          budgetText: this.budgetText().trim() || undefined,
+          budgetText: this.resolveBudgetText(),
           publish: true,
         }),
       );
@@ -119,8 +137,22 @@ export class PostRequestPage implements OnInit {
       await this.router.navigate(['/requester/bids'], {
         queryParams: { posted: '1', requestId: created.id },
       });
+    } catch (e) {
+      this.error.set(apiErrorMessage(e, 'ประกาศงานไม่สำเร็จ'));
+      scrollToFirstError();
     } finally {
       this.posting.set(false);
     }
+  }
+
+  private resolveBudgetText(): string | undefined {
+    if (this.budgetMode() === 'open') {
+      return 'เปิดรับราคา';
+    }
+    const amount = this.budgetAmount().trim();
+    if (!amount) {
+      return undefined;
+    }
+    return amount.includes('บาท') ? amount : `${amount} บาท`;
   }
 }

@@ -1,74 +1,59 @@
 <app-page-shell title="จองบริการ" [backLink]="profileBackLink()">
-  <section class="screen">
-    @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
-    } @else if (provider(); as p) {
-      <div class="stack">
-        <div class="hero-panel hero-panel--compact">
-          <h3>{{ p.name }}</h3>
-        </div>
+  @if (loading()) {
+    <p class="muted" style="text-align: center">กำลังโหลด…</p>
+  } @else if (provider(); as p) {
+    <div class="card">
+      <h2 style="margin: 0; font-size: 18px">{{ p.name }}</h2>
+    </div>
 
-        @if (selectedService(); as svc) {
-          <div class="summary-panel">
-            <span class="badge">บริการที่จอง</span>
-            <h3>{{ svc.title }}</h3>
-            <p>{{ svc.categoryName ?? 'บริการทั่วไป' }}</p>
-            <small>{{ svc.basePriceText ?? 'ติดต่อสอบถามราคา' }}</small>
-          </div>
-        }
-
-        <label class="form-field">
-          <span>วันและเวลา</span>
-          <input
-            class="form-field__input"
-            type="datetime-local"
-            [value]="scheduledAt()"
-            (input)="scheduledAt.set($any($event.target).value)"
-          />
-        </label>
-
-        <div class="form-field">
-          <span>สถานที่นัดหมาย</span>
-          <input
-            class="form-field__input"
-            placeholder="พิมพ์ที่อยู่ หรือเลือกจากแผนที่"
-            [value]="addressText()"
-            (input)="addressText.set($any($event.target).value)"
-          />
-          <div class="form-field__actions">
-            <button type="button" class="secondary secondary--pill" (click)="openPicker()">
-              ปักหมุดจากแผนที่
-            </button>
-            @if (mapLat() !== null && mapLng() !== null) {
-              <small class="form-field__hint">
-                {{ mapLat()!.toFixed(5) }}, {{ mapLng()!.toFixed(5) }}
-              </small>
-            }
-          </div>
-        </div>
-
-        <label class="form-area">
-          <span>หมายเหตุ</span>
-          <textarea
-            rows="3"
-            [value]="note()"
-            (input)="note.set($any($event.target).value)"
-          ></textarea>
-        </label>
-
-        @if (error()) {
-          <p class="error-text">{{ error() }}</p>
-        }
-        @if (success()) {
-          <p class="success-text">{{ success() }}</p>
-        }
-
-        <button class="primary" type="button" [disabled]="saving()" (click)="confirm()">
-          {{ saving() ? 'กำลังจอง…' : 'ยืนยันการจอง' }}
-        </button>
+    @if (selectedService(); as svc) {
+      <div class="card">
+        <span class="badge b-blue">บริการที่จอง</span>
+        <h3 style="margin: 8px 0 4px">{{ svc.title }}</h3>
+        <p class="muted" style="margin: 0">{{ svc.categoryName ?? 'บริการทั่วไป' }}</p>
+        <p class="price" style="margin: 8px 0 0; font-size: 16px">{{ svc.basePriceText ?? 'ติดต่อสอบถามราคา' }}</p>
       </div>
     }
-  </section>
+
+    <app-thai-datetime-field
+      label="วันและเวลา"
+      [value]="scheduledAt()"
+      [requireFuture]="true"
+      (valueChange)="scheduledAt.set($event)"
+    />
+
+    <label class="field">
+      <span>สถานที่นัดหมาย</span>
+      <input
+        class="input"
+        placeholder="พิมพ์ที่อยู่ หรือเลือกจากแผนที่"
+        [value]="addressText()"
+        (input)="addressText.set($any($event.target).value)"
+      />
+      <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 8px; width: fit-content" (click)="openPicker()">
+        ปักหมุดจากแผนที่
+      </button>
+      @if (mapLat() !== null && mapLng() !== null) {
+        <small class="muted">{{ mapLat()!.toFixed(5) }}, {{ mapLng()!.toFixed(5) }}</small>
+      }
+    </label>
+
+    <label class="field">
+      <span>หมายเหตุ</span>
+      <textarea class="input" rows="3" [value]="note()" (input)="note.set($any($event.target).value)"></textarea>
+    </label>
+
+    @if (error()) {
+      <p class="error-text">{{ error() }}</p>
+    }
+    @if (success()) {
+      <div class="banner ok">{{ success() }}</div>
+    }
+
+    <button class="btn btn-primary btn-block" type="button" [disabled]="saving()" (click)="confirm()">
+      {{ saving() ? 'กำลังจอง…' : 'ยืนยันการจอง' }}
+    </button>
+  }
 
   <app-location-picker-modal
     [open]="pickerOpen()"

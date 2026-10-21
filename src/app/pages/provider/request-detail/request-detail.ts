@@ -1,6 +1,6 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { catchError, firstValueFrom, of } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
@@ -9,17 +9,31 @@ import { SessionStateService } from '../../../core/session-state.service';
 import {
   appointmentStatusLabel,
   bidStatusLabel,
-  requestStatusLabel,
+  displayRequestStatusLabel,
 } from '../../../shared/status-labels';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { formatScheduledAt } from '../../../shared/datetime.util';
+import { SlowLoadHint, isNotFoundError } from '../../../shared/load-state';
+import { ErrorState } from '../../../shared/ui/error-state';
+import { NotFoundState } from '../../../shared/ui/not-found-state';
+import { SkeletonCard } from '../../../shared/ui/skeleton-card';
+import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
+import { formatPrice } from '../../../shared/format-price';
+import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 
 @Component({
   selector: 'app-provider-request-detail-page',
-  imports: [PageShell, RouterLink, ProviderBottomNav],
+  imports: [
+    PageShell,
+    ProviderBottomNav,
+    ErrorState,
+    NotFoundState,
+    SkeletonCard,
+    ConfirmSheet,
+  ],
   templateUrl: './request-detail.html',
 })
-export class ProviderRequestDetailPage implements OnInit {
+export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly myBid = signal<BidItem | null>(null);
   protected readonly myProvider = signal<ProviderDetail | null>(null);
@@ -31,7 +45,25 @@ export class ProviderRequestDetailPage implements OnInit {
   protected readonly actingLabel = signal('กำลังบันทึก…');
   protected readonly error = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
-  protected readonly statusLabel = requestStatusLabel;
+  protected readonly notFound = signal(false);
+  protected readonly withdrawOpen = signal(false);
+  protected readonly advanceConfirmOpen = signal(false);
+  protected readonly distanceMeters = signal<number | null>(null);
+  protected readonly hint = new SlowLoadHint();
+
+  protected readonly formatPrice = formatPrice;
+
+  private advanceConfirmConfig: {
+    status: 'Confirmed' | 'InProgress' | 'Completed';
+    allowed: () => boolean;
+    busyLabel: string;
+    notice: string;
+    errorFallback: string;
+  } | null = null;
+
+  protected statusLabel(status: string): string {
+    return displayRequestStatusLabel(status, this.appointment()?.status);
+  }
   protected readonly bidStatusLabel = bidStatusLabel;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
   protected readonly formatScheduledAt = formatScheduledAt;
@@ -46,26 +78,58 @@ export class ProviderRequestDetailPage implements OnInit {
     if (typeof navState?.notice === 'string' && navState.notice.trim()) {
       this.notice.set(navState.notice);
     }
+    await this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.hint.end();
+  }
+
+  protected async load(): Promise<void> {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
+      this.notFound.set(true);
       this.loading.set(false);
       return;
     }
     this.session.providerRequestId = id;
+    this.loading.set(true);
+    this.error.set(null);
+    this.notFound.set(false);
+    this.hint.begin();
     try {
       const [detail, myProvider] = await Promise.all([
         firstValueFrom(this.api.getRequest(id)),
-        firstValueFrom(this.api.getMyProvider()),
+        firstValueFrom(
+          this.api
+            .getMyProvider()
+            .pipe(catchError((err) => (isNotFoundError(err) ? of(null) : Promise.reject(err)))),
+        ),
       ]);
       this.request.set(detail);
       this.myProvider.set(myProvider);
-      this.myBid.set(detail.bids?.find((bid) => bid.providerId === myProvider.id) ?? null);
-      if (this.hasActiveEngagement(detail, myProvider.id)) {
+      this.myBid.set(
+        myProvider ? (detail.bids?.find((bid) => bid.providerId === myProvider.id) ?? null) : null,
+      );
+      try {
+        const matching = await firstValueFrom(this.api.listMatchingRequests());
+        const hit = matching.find((item) => item.id === id);
+        this.distanceMeters.set(hit?.distanceMeters ?? null);
+      } catch {
+        this.distanceMeters.set(null);
+      }
+      if (myProvider && this.hasActiveEngagement(detail, myProvider.id)) {
         await this.loadAppointment(id);
       }
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'โหลดรายละเอียดไม่สำเร็จ'));
+      if (isNotFoundError(e)) {
+        this.request.set(null);
+        this.notFound.set(true);
+      } else {
+        this.error.set(apiErrorMessage(e, 'โหลดรายละเอียดไม่สำเร็จ'));
+      }
     } finally {
+      this.hint.end();
       this.loading.set(false);
     }
   }
@@ -100,19 +164,25 @@ export class ProviderRequestDetailPage implements OnInit {
       return;
     }
     this.session.providerRequestId = id;
-    await this.router.navigateByUrl('/provider/bid');
+    await this.router.navigate(['/provider/bid'], { queryParams: { requestId: id } });
   }
 
   protected async withdrawMyBid(): Promise<void> {
     const bid = this.myBid();
-    if (!bid || !this.canWithdrawBid() || !confirm('ถอนข้อเสนอราคานี้?')) {
+    if (!bid || !this.canWithdrawBid() || this.acting()) {
       return;
     }
+    this.acting.set(true);
+    this.actingLabel.set('กำลังถอนข้อเสนอ…');
     try {
       await firstValueFrom(this.api.withdrawBid(bid.id));
       await this.router.navigateByUrl('/provider/requests');
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'ถอนข้อเสนอไม่สำเร็จ'));
+      scrollToFirstError();
+    } finally {
+      this.withdrawOpen.set(false);
+      this.acting.set(false);
     }
   }
 
@@ -162,49 +232,151 @@ export class ProviderRequestDetailPage implements OnInit {
 
   protected canStartJob(): boolean {
     const appt = this.appointment();
-    return this.hasActiveEngagement() && appt?.status === 'Confirmed';
+    return this.hasActiveEngagement() && appt?.status === 'Confirmed' && this.isWithinAppointmentWindow();
   }
 
   protected canCompleteJob(): boolean {
     const appt = this.appointment();
-    return this.hasActiveEngagement() && appt?.status === 'InProgress';
+    return this.hasActiveEngagement() && appt?.status === 'InProgress' && this.isWithinAppointmentWindow();
   }
 
-  protected async confirmAppointment(): Promise<void> {
-    await this.advanceAppointment('Confirmed', {
+  /** Matches backend: start/complete allowed from 1 hour before scheduledAt. */
+  protected isWithinAppointmentWindow(): boolean {
+    const at = this.appointment()?.scheduledAt;
+    if (!at) {
+      return false;
+    }
+    const scheduled = new Date(at).getTime();
+    if (Number.isNaN(scheduled)) {
+      return false;
+    }
+    return Date.now() >= scheduled - 60 * 60 * 1000;
+  }
+
+  protected startWindowHint(): string | null {
+    const appt = this.appointment();
+    if (!appt || appt.status !== 'Confirmed' || this.isWithinAppointmentWindow()) {
+      return null;
+    }
+    return 'ยังไม่ถึงเวลานัด — กดเริ่มงานได้ตั้งแต่ 1 ชั่วโมงก่อนเวลานัด';
+  }
+
+  protected locationLine(r: ServiceRequestDetail): string {
+    const text = r.addressText?.trim();
+    if (text) {
+      return text;
+    }
+    if (typeof r.latitude === 'number' && typeof r.longitude === 'number') {
+      return `${r.latitude.toFixed(5)}, ${r.longitude.toFixed(5)}`;
+    }
+    return 'ยังไม่ระบุสถานที่';
+  }
+
+  protected distanceLine(): string | null {
+    const meters = this.distanceMeters();
+    if (meters == null) {
+      return null;
+    }
+    if (meters >= 1000) {
+      return `${(meters / 1000).toFixed(1)} กม.`;
+    }
+    return `${Math.round(meters)} ม.`;
+  }
+
+  protected searchRadiusKm(r: ServiceRequestDetail): string {
+    return (r.searchRadiusMeters / 1000).toFixed(0);
+  }
+
+  protected openConfirmAppointment(): void {
+    this.openAdvanceConfirm('Confirmed', {
       allowed: () => this.canConfirmAppointment(),
-      confirmText: 'ยืนยันรับนัดหมายตามวัน เวลา และสถานที่ที่ลูกค้าส่งมา?',
       busyLabel: 'กำลังยืนยัน…',
       notice: 'ยืนยันรับนัดหมายแล้ว — กดเริ่มงานเมื่อถึงเวลานัด',
       errorFallback: 'ยืนยันนัดหมายไม่สำเร็จ',
     });
   }
 
-  protected async startJob(): Promise<void> {
-    await this.advanceAppointment('InProgress', {
+  protected openStartJob(): void {
+    this.openAdvanceConfirm('InProgress', {
       allowed: () => this.canStartJob(),
-      confirmText: 'เริ่มงานตามนัดหมายนี้?',
       busyLabel: 'กำลังเริ่มงาน…',
       notice: 'เริ่มงานแล้ว — ลูกค้าจะเห็นสถานะกำลังดำเนินงาน',
       errorFallback: 'เริ่มงานไม่สำเร็จ',
     });
   }
 
-  protected async completeJob(): Promise<void> {
-    await this.advanceAppointment('Completed', {
+  protected openCompleteJob(): void {
+    this.openAdvanceConfirm('Completed', {
       allowed: () => this.canCompleteJob(),
-      confirmText: 'ยืนยันว่างานนี้เสร็จสิ้นแล้ว? ลูกค้าจะสามารถรีวิวได้',
       busyLabel: 'กำลังปิดงาน…',
       notice: 'ปิดงานแล้ว — ลูกค้าสามารถให้คะแนนและรีวิวได้',
       errorFallback: 'ปิดงานไม่สำเร็จ',
     });
   }
 
+  protected advanceConfirmTitle(): string {
+    const status = this.advanceConfirmConfig?.status;
+    if (status === 'Confirmed') {
+      return 'ยืนยันรับนัดหมาย?';
+    }
+    if (status === 'InProgress') {
+      return 'เริ่มงานตามนัด?';
+    }
+    if (status === 'Completed') {
+      return 'ยืนยันว่างานเสร็จแล้ว?';
+    }
+    return 'ยืนยันการทำรายการ';
+  }
+
+  protected advanceConfirmMessage(): string {
+    const status = this.advanceConfirmConfig?.status;
+    if (status === 'Confirmed') {
+      return 'ยืนยันรับนัดหมายตามวัน เวลา และสถานที่ที่ลูกค้าส่งมา';
+    }
+    if (status === 'InProgress') {
+      return 'เริ่มงานตามนัดหมายนี้';
+    }
+    if (status === 'Completed') {
+      return 'ลูกค้าจะสามารถให้คะแนนและรีวิวได้หลังปิดงาน';
+    }
+    return '';
+  }
+
+  protected async runAdvanceConfirm(): Promise<void> {
+    const cfg = this.advanceConfirmConfig;
+    if (!cfg) {
+      return;
+    }
+    await this.advanceAppointment(cfg.status, cfg);
+    this.advanceConfirmOpen.set(false);
+    this.advanceConfirmConfig = null;
+  }
+
+  protected cancelAdvanceConfirm(): void {
+    this.advanceConfirmOpen.set(false);
+    this.advanceConfirmConfig = null;
+  }
+
+  private openAdvanceConfirm(
+    status: 'Confirmed' | 'InProgress' | 'Completed',
+    options: {
+      allowed: () => boolean;
+      busyLabel: string;
+      notice: string;
+      errorFallback: string;
+    },
+  ): void {
+    if (!this.appointment() || !options.allowed() || this.acting()) {
+      return;
+    }
+    this.advanceConfirmConfig = { status, ...options };
+    this.advanceConfirmOpen.set(true);
+  }
+
   private async advanceAppointment(
     status: 'Confirmed' | 'InProgress' | 'Completed',
     options: {
       allowed: () => boolean;
-      confirmText: string;
       busyLabel: string;
       notice: string;
       errorFallback: string;
@@ -212,9 +384,6 @@ export class ProviderRequestDetailPage implements OnInit {
   ): Promise<void> {
     const appt = this.appointment();
     if (!appt || !options.allowed() || this.acting()) {
-      return;
-    }
-    if (!confirm(options.confirmText)) {
       return;
     }
     this.acting.set(true);
@@ -237,6 +406,7 @@ export class ProviderRequestDetailPage implements OnInit {
       this.notice.set(options.notice);
     } catch (e) {
       this.error.set(apiErrorMessage(e, options.errorFallback));
+      scrollToFirstError();
     } finally {
       this.acting.set(false);
     }

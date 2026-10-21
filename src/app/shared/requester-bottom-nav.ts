@@ -7,18 +7,23 @@ export type RequesterNavTab = 'home' | 'search' | 'post' | 'bids';
   selector: 'app-requester-bottom-nav',
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <nav class="bottom-nav" aria-label="เมนูผู้รับบริการ">
-      <a routerLink="/requester" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">
-        <span aria-hidden="true">🏠</span>หน้าหลัก
+    <nav class="bnav" aria-label="เมนูผู้รับบริการ">
+      <a
+        routerLink="/requester"
+        routerLinkActive="on"
+        [routerLinkActiveOptions]="{ exact: true }"
+        [attr.aria-current]="null"
+      >
+        <i aria-hidden="true">🏠</i>หน้าหลัก
       </a>
-      <a routerLink="/requester/search" routerLinkActive="is-active">
-        <span aria-hidden="true">🔍</span>ค้นหา
+      <a routerLink="/requester/search" routerLinkActive="on">
+        <i aria-hidden="true">🔍</i>ค้นหา
       </a>
-      <a routerLink="/requester/post" routerLinkActive="is-active">
-        <span aria-hidden="true">📢</span>ประกาศ
+      <a routerLink="/requester/post" routerLinkActive="on" class="fab">
+        <i aria-hidden="true">➕</i>ประกาศ
       </a>
-      <a routerLink="/requester/bids" routerLinkActive="is-active">
-        <span aria-hidden="true">💬</span>ข้อเสนอ
+      <a routerLink="/requester/bids" routerLinkActive="on">
+        <i aria-hidden="true">💬</i>ข้อเสนอ
       </a>
     </nav>
   `,

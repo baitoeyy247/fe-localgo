@@ -1,113 +1,115 @@
-<app-page-shell [title]="pageTitle()" backLink="/requester/search">
-  <section class="screen">
-    @if (loading()) {
-      <p>กำลังโหลด…</p>
-    } @else if (provider(); as p) {
-      <div class="stack">
-        <a class="ghost-link" routerLink="/requester/search">← กลับไปค้นหา</a>
-
-        @if (fromSearch() && primaryService(); as focused) {
-          <section class="summary-panel summary-panel--success">
-            <h3>{{ focused.title }}</h3>
-            <p>{{ focused.categoryName ?? 'บริการทั่วไป' }} · {{ p.name }}</p>
-            <small>{{ focused.basePriceText ?? 'ติดต่อสอบถามราคา' }}</small>
-          </section>
-        }
-
-        <div class="profile-hero">
-          <div>
-            @if (p.verifiedReviewCount > 0) {
-              <span class="badge">Verified {{ p.verifiedReviewCount }} รีวิว</span>
-            }
-            <h3>{{ p.name }}</h3>
-            <p>{{ primaryService()?.categoryName ?? 'บริการทั่วไป' }} · {{ p.providerType }}</p>
-          </div>
-        </div>
-
-        <div class="rating-row">
-          <strong>{{ p.averageVerifiedRating }}</strong>
-          <span>คะแนนจากงานจริง</span>
-          <small>Public {{ p.averagePublicRating }} · {{ p.publicReviewCount }} รีวิว</small>
-        </div>
-
-        @if (primaryService(); as svc) {
-          <div class="chips">
-            <span>{{ svc.categoryName ?? 'บริการ' }}</span>
-            @if (svc.isActive) {
-              <span>เปิดรับงาน</span>
-            } @else {
-              <span>หยุดชั่วคราว</span>
-            }
-          </div>
-        }
-
-        @if (primaryBranch(); as branch) {
-          <app-map-view
-            size="compact"
-            label="จุดให้บริการ"
-            [lat]="branch.latitude"
-            [lng]="branch.longitude"
-            [radiusLabel]="'รัศมี ' + (branch.serviceRadiusMeters / 1000) + ' กม.'"
-            [selectable]="false"
-          />
-        }
-
-        <div class="section-title">
-          <h3>รายการบริการ</h3>
-        </div>
-
-        @for (svc of visibleServices(); track svc.id) {
-          <article
-            class="service-card"
-            [class.service-card--matched]="isFocusedService(svc.id)"
-            [class.service-card--paused]="!svc.isActive"
-            [id]="isFocusedService(svc.id) ? 'focused-service' : null"
-          >
-            <strong>{{ svc.title }}</strong>
-            <span>{{ svc.basePriceText ?? 'ติดต่อสอบถาม' }}</span>
-            <small>{{ branchLabels() }}</small>
-          </article>
-        } @empty {
-          <article class="service-card">
-            <strong>ยังไม่มีบริการที่เปิด</strong>
-            <span>ผู้ให้บริการยังไม่ได้เพิ่มรายการ</span>
-          </article>
-        }
-
-        @if (fromSearch() && otherServiceCount() > 0) {
-          @if (!showAllServices()) {
-            <button class="secondary secondary--pill" type="button" (click)="showAllServicesToggle()">
-              ดูบริการอื่น ({{ otherServiceCount() }})
-            </button>
-          } @else {
-            <button class="secondary secondary--pill" type="button" (click)="collapseToFocusedService()">
-              ย่อรายการ
-            </button>
-          }
-        }
-
-        @for (review of reviews(); track review.id) {
-          <article class="request-card">
-            <strong>★ {{ review.rating }}</strong>
-            <span>{{ review.reviewType }}</span>
-            @if (review.comment) {
-              <small>{{ review.comment }}</small>
-            }
-          </article>
-        }
-
-        <div class="split">
-          <a class="secondary" routerLink="/requester/post">ประกาศงาน</a>
-          @if (p.contactUrl) {
-            <a class="primary" [href]="p.contactUrl" target="_blank" rel="noopener">ติดต่อผ่าน LINE</a>
-          } @else {
-            <button class="primary" type="button" (click)="bookAppointment()">นัดหมาย</button>
-          }
-        </div>
+<app-page-shell [title]="pageTitle()" backLink="/requester/search" [hideNavPad]="!!provider()">
+  @if (loading()) {
+    <app-skeleton-card [count]="2" />
+  } @else if (provider(); as p) {
+    @if (fromSearch() && primaryService(); as focused) {
+      <div class="banner ok" role="status">
+        <span
+          ><b>{{ focused.title }}</b><br /><span class="muted"
+            >{{ focused.categoryName ?? 'บริการทั่วไป' }} · {{ p.name }} ·
+            {{ focused.basePriceText ?? 'ติดต่อสอบถามราคา' }}</span
+          ></span
+        >
       </div>
-    } @else {
-      <p>ไม่พบผู้ให้บริการ</p>
-      <a routerLink="/requester/search">กลับไปค้นหา</a>
     }
-  </section>
+
+    <div class="card" style="text-align: center">
+      <span class="avatar lg" style="margin: 0 auto">{{ p.name[0] ?? '?' }}</span>
+      <h2 style="margin: 8px 0 0">{{ p.name }}</h2>
+      <p class="muted" style="margin: 0">
+        {{ p.providerType }}
+        @if (primaryService()?.isActive !== false) {
+          · <span class="badge b-green">เปิดรับงาน</span>
+        }
+      </p>
+      <p style="margin: 8px 0 0">
+        <span class="stars">★★★★★</span> <b>{{ p.averageVerifiedRating }}</b>
+        <span class="muted">({{ p.verifiedReviewCount }} รีวิว) · คะแนนจากงานจริง</span>
+      </p>
+      <p class="muted" style="margin: 4px 0 0; font-size: 14px">
+        คะแนนสาธารณะ {{ p.averagePublicRating }} · {{ p.publicReviewCount }} รีวิว
+      </p>
+    </div>
+
+    @if (primaryBranch(); as branch) {
+      <div class="card">
+        <h2 style="margin: 0 0 8px; font-size: 18px">จุดให้บริการ</h2>
+        <app-map-view
+          size="compact"
+          label="จุดให้บริการ"
+          [lat]="branch.latitude"
+          [lng]="branch.longitude"
+          [radiusLabel]="'รัศมี ' + branch.serviceRadiusMeters / 1000 + ' กม.'"
+          [selectable]="false"
+        />
+        <p class="muted" style="margin: 8px 0 0">{{ branchLabels() }} · รัศมี {{ branch.serviceRadiusMeters / 1000 }} กม.</p>
+      </div>
+    }
+
+    <div class="sec-title">รายการบริการ</div>
+    <div class="list">
+      @for (svc of visibleServices(); track svc.id) {
+        <div
+          class="li"
+          [class.card--selected]="isFocusedService(svc.id)"
+          [id]="isFocusedService(svc.id) ? 'focused-service' : null"
+          [style.opacity]="svc.isActive ? '1' : '0.65'"
+        >
+          <span class="ico">🛠</span>
+          <span class="grow">
+            <span class="t">{{ svc.title }}</span><br />
+            <span class="s">{{ svc.categoryName ?? 'บริการ' }}</span>
+          </span>
+          <span class="price" style="font-size: 16px">{{ svc.basePriceText ?? 'ติดต่อสอบถาม' }}</span>
+        </div>
+      } @empty {
+        <div class="state">
+          <div class="em">🧰</div>
+          <h3>ยังไม่มีบริการที่เปิด</h3>
+          <p>ผู้ให้บริการยังไม่ได้เพิ่มรายการ</p>
+        </div>
+      }
+    </div>
+
+    @if (fromSearch() && otherServiceCount() > 0) {
+      @if (!showAllServices()) {
+        <button class="btn btn-ghost btn-sm btn-block" type="button" (click)="showAllServicesToggle()">
+          ดูบริการอื่น ({{ otherServiceCount() }})
+        </button>
+      } @else {
+        <button class="btn btn-ghost btn-sm btn-block" type="button" (click)="collapseToFocusedService()">ย่อรายการ</button>
+      }
+    }
+
+    @if (reviews().length) {
+      <div class="sec-title">รีวิว</div>
+      @for (review of reviews(); track review.id) {
+        <div class="card">
+          <div class="row between">
+            <span class="stars">★ {{ review.rating }}</span>
+            <span class="badge b-blue">{{ review.reviewType === 'Verified' ? 'รีวิวที่ยืนยันแล้ว' : review.reviewType }}</span>
+          </div>
+          @if (review.comment) {
+            <p class="muted" style="margin: 8px 0 0">{{ review.comment }}</p>
+          }
+        </div>
+      }
+    }
+
+    <div class="actionbar">
+      <a class="btn btn-secondary" routerLink="/requester/post">ประกาศงาน</a>
+      @if (p.contactUrl) {
+        <a class="btn btn-primary" [href]="p.contactUrl" target="_blank" rel="noopener">ติดต่อผ่าน LINE</a>
+      } @else {
+        <button class="btn btn-primary" type="button" (click)="bookAppointment()">นัดหมาย</button>
+      }
+    </div>
+  } @else {
+    <div class="state">
+      <div class="em">🤷</div>
+      <h3>ไม่พบผู้ให้บริการ</h3>
+      <p>ลิงก์นี้อาจไม่ถูกต้อง</p>
+      <a class="btn btn-primary" routerLink="/requester/search">กลับไปค้นหา</a>
+    </div>
+  }
 </app-page-shell>

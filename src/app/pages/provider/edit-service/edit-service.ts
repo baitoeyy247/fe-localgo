@@ -7,6 +7,7 @@ import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { Category, ProviderDetail, ProviderService } from '../../../core/models';
+import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 
 @Component({
   selector: 'app-edit-service-page',
@@ -87,6 +88,10 @@ export class EditServicePage implements OnInit {
     const svc = this.service();
     const categoryId = this.selectedCategoryId();
     if (!p || !svc || !categoryId || !this.title().trim() || this.saving()) {
+      if (!this.title().trim()) {
+        this.error.set('กรุณาระบุชื่อบริการ');
+        scrollToFirstError();
+      }
       return;
     }
     this.saving.set(true);
@@ -105,6 +110,7 @@ export class EditServicePage implements OnInit {
       await this.router.navigateByUrl('/provider/manage');
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'บันทึกไม่สำเร็จ'));
+      scrollToFirstError();
     } finally {
       this.saving.set(false);
     }

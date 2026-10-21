@@ -1,76 +1,90 @@
-<app-page-shell title="ผู้รับบริการ" [showBack]="true" backLink="/" backLabel="สลับบทบาท">
-  <section class="screen">
-    <div class="stack">
-      <a class="action-card" routerLink="/requester/search">
-        <span>
-          <strong>🔍 ค้นหาบริการใกล้พื้นที่</strong>
-          <small>เลือกพื้นที่ หมวดหมู่ และรัศมีค้นหา</small>
-        </span>
-        <b>→</b>
-      </a>
+<app-page-shell title="ผู้รับบริการ" subtitle="ต้องการบริการอะไรวันนี้?" [showBack]="true" backLink="/" backLabel="กลับ" [hero]="true">
+  <a class="search" routerLink="/requester/search" style="background: #fff; box-shadow: var(--shadow-1)">
+    🔍 เช่น ซักรีด, ทำความสะอาด, ช่างไฟ
+  </a>
 
-      <a class="action-card action-card--accent" routerLink="/requester/post">
-        <span>
-          <strong>📢 ประกาศงานให้เสนอราคา</strong>
-          <small>ผู้ให้บริการในพื้นที่จะได้รับแจ้งเตือนทาง LINE</small>
-        </span>
-        <b>→</b>
-      </a>
+  <div class="row" style="align-items: stretch">
+    <a class="card grow" routerLink="/requester/search" style="text-decoration: none; color: inherit">
+      <span class="ico">🔍</span>
+      <b>ค้นหาบริการใกล้พื้นที่</b><br />
+      <span class="muted">เลือกพื้นที่ หมวดหมู่ และรัศมีค้นหา</span>
+    </a>
+    <a class="card grow" routerLink="/requester/post" style="text-decoration: none; color: inherit">
+      <span class="ico">📣</span>
+      <b>ประกาศงานให้เสนอราคา</b><br />
+      <span class="muted">ผู้ให้บริการในพื้นที่จะได้รับแจ้งเตือนทาง LINE</span>
+    </a>
+  </div>
 
-      <div class="section-title">
-        <h3>งานของฉัน</h3>
+  <div class="sec-title"><h3 style="margin: 0; font-size: 18px">งานของฉัน</h3></div>
+
+  @if (actionError()) {
+    <p class="error-text">{{ actionError() }}</p>
+  }
+
+  @if (loading()) {
+    <app-skeleton-card [slow]="hint.slow()" [count]="2" />
+  } @else if (error()) {
+    <app-error-state [message]="error()!" (retry)="load()" />
+  } @else {
+    @for (request of requests(); track request.id) {
+      <div class="card">
+        <div class="row between">
+          <b>{{ request.title }}</b>
+          @if (isReviewed(request)) {
+            <span class="badge b-green">รีวิวแล้ว ★{{ request.myReviewRating ?? '' }}</span>
+          } @else {
+            <span class="badge" [ngClass]="statusBadgeClass(request.status, request.appointmentStatus)">{{
+              statusLabel(request.status, request.appointmentStatus)
+            }}</span>
+          }
+        </div>
+        <p class="muted" style="margin: 4px 0 12px">
+          @if (request.categoryName) {
+            {{ request.categoryName }} ·
+          }
+          ข้อเสนอ {{ request.bidCount }}
+        </p>
+        <div class="row">
+          <button type="button" class="btn btn-primary btn-sm grow" (click)="openRequest(request)">
+            {{ continueLabel(request) }}
+          </button>
+          @if (!isReviewed(request) && request.status !== 'Completed') {
+            <button type="button" class="btn btn-ghost btn-sm" (click)="openDetail(request)">ดูรายละเอียด</button>
+          }
+          @if (canCancel(request.status)) {
+            <button type="button" class="btn btn-danger-o btn-sm" (click)="askCancel(request, $event)">ยกเลิก</button>
+          }
+        </div>
       </div>
+    } @empty {
+      <div class="state">
+        <div class="em">📝</div>
+        <h3>ยังไม่มีงาน</h3>
+        <p>เริ่มจากประกาศงานหรือค้นหาบริการในพื้นที่</p>
+        <a class="btn btn-primary" routerLink="/requester/post">ประกาศงานแรก</a>
+      </div>
+    }
+  }
 
-      @if (loading()) {
-        <p class="state-message">กำลังโหลด…</p>
-      } @else if (error()) {
-        <p class="error-text">{{ error() }}</p>
-      } @else {
-        @for (request of requests(); track request.id) {
-          <article class="request-card">
-            <div style="display: grid; gap: 0.25rem;">
-              <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.15rem; flex-wrap: wrap;">
-                <strong style="margin: 0;">{{ request.title }}</strong>
-                <span class="badge" [ngClass]="statusBadgeClass(request.status)">{{ statusLabel(request.status) }}</span>
-              </div>
-              <span>
-                @if (request.categoryName) { {{ request.categoryName }} · }
-                {{ request.bidCount }} ข้อเสนอ
-              </span>
-            </div>
-            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              <button
-                type="button"
-                (click)="openRequest(request)"
-              >
-                {{ continueLabel(request.status) }}
-              </button>
-              @if (canCancel(request.status)) {
-                <button
-                  type="button"
-                  class="danger"
-                  style="padding: 0.55rem 1.15rem; width: auto; min-height: auto;"
-                  (click)="cancelRequest(request, $event)"
-                >
-                  ยกเลิกงาน
-                </button>
-              }
-            </div>
-          </article>
-        } @empty {
-          <article class="empty-state">
-            <h3>ยังไม่มีงาน</h3>
-            <p>เริ่มจากประกาศงานหรือค้นหาบริการในพื้นที่</p>
-            <a class="primary" routerLink="/requester/post">ประกาศงานแรก</a>
-          </article>
-        }
-      }
-    </div>
-
-    <button type="button" class="ghost-link role-switch" (click)="switchToProvider()">
-      สลับไปโหมดผู้ให้บริการ
+  <div class="list">
+    <button type="button" class="li chev" (click)="switchToProvider()">
+      <span class="ico">🔄</span>
+      <span class="grow t">สลับไปโหมดผู้ให้บริการ</span>
     </button>
-  </section>
+  </div>
+
+  <app-confirm-sheet
+    [open]="!!cancelTarget()"
+    title="ยกเลิกงานนี้?"
+    [message]="cancelTarget() ? 'ยกเลิกงาน &quot;' + cancelTarget()!.title + '&quot; ใช่หรือไม่' : ''"
+    confirmLabel="ยืนยันยกเลิก"
+    cancelLabel="กลับ"
+    [danger]="true"
+    [busy]="busy()"
+    (confirm)="confirmCancel()"
+    (cancel)="closeCancel()"
+  />
 
   <app-requester-bottom-nav />
 </app-page-shell>

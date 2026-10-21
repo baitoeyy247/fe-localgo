@@ -1,0 +1,75 @@
+<app-page-shell title="รายละเอียดงาน" backLink="/requester">
+  @if (loading()) {
+    <app-skeleton-card [slow]="hint.slow()" [count]="2" />
+  } @else if (notFound()) {
+    <app-not-found-state
+      title="ไม่พบงานนี้"
+      message="งานนี้อาจถูกลบหรือลิงก์ไม่ถูกต้อง"
+      backLink="/requester"
+      backLabel="กลับหน้าหลัก"
+    />
+  } @else if (error()) {
+    <app-error-state [message]="error()!" (retry)="load()" />
+  } @else if (request(); as r) {
+    <div class="card">
+      <div class="row between">
+        <b>{{ r.title }}</b>
+        <span class="badge" [ngClass]="statusClass()">{{ statusLabel() }}</span>
+      </div>
+      <p class="muted" style="margin: 4px 0 0">
+        {{ r.categoryName ?? 'ทั่วไป' }}
+        @if (r.budgetText) {
+          · {{ r.budgetText }}
+        }
+      </p>
+    </div>
+
+    @if (r.description) {
+      <div class="card">
+        <span class="muted">รายละเอียด</span>
+        <p style="margin: 8px 0 0">{{ r.description }}</p>
+      </div>
+    }
+    @if (r.addressText) {
+      <div class="card">
+        <span class="muted">สถานที่</span>
+        <p style="margin: 8px 0 0">{{ r.addressText }}</p>
+      </div>
+    }
+
+    @if (bids().length > 0) {
+      <a class="btn btn-secondary btn-block" routerLink="/requester/bids" [queryParams]="{ requestId: r.id }">
+        ดูข้อเสนอ {{ bids().length }} รายการ
+      </a>
+    } @else {
+      <p class="muted">ยังไม่มีผู้เสนอราคา</p>
+    }
+
+    @if (actionError()) {
+      <p class="error-text">{{ actionError() }}</p>
+    }
+
+    @if (nextActionLabel(); as label) {
+      <button class="btn btn-primary btn-block" type="button" (click)="goNext()">{{ label }}</button>
+    }
+    @if (r.status === 'Completed') {
+      <a class="btn btn-primary btn-block" routerLink="/requester/review" [queryParams]="{ requestId: r.id }">ให้คะแนนและรีวิว</a>
+    }
+    @if (canCancel()) {
+      <button class="btn btn-danger btn-block" type="button" [disabled]="busy()" (click)="cancelOpen.set(true)">ยกเลิกงาน</button>
+    }
+  }
+
+  <app-confirm-sheet
+    [open]="cancelOpen()"
+    title="ยกเลิกงานนี้?"
+    message="เมื่อยกเลิกแล้ว ผู้ให้บริการจะไม่เห็นงานนี้อีก"
+    confirmLabel="ยกเลิกงาน"
+    cancelLabel="ไม่ยกเลิก"
+    [danger]="true"
+    [busy]="busy()"
+    (confirm)="confirmCancel()"
+    (cancel)="cancelOpen.set(false)"
+  />
+  <app-requester-bottom-nav />
+</app-page-shell>

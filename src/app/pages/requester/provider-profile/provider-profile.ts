@@ -3,13 +3,14 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { MapView } from '../../../demo/map-view';
 import { PageShell } from '../../../demo/page-shell';
+import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderDetail, ProviderService, ReviewItem } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 
 @Component({
   selector: 'app-provider-profile-page',
-  imports: [PageShell, RouterLink, MapView],
+  imports: [PageShell, RouterLink, MapView, SkeletonCard],
   templateUrl: './provider-profile.html',
 })
 export class ProviderProfilePage implements OnInit {

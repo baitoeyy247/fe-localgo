@@ -7,20 +7,23 @@ import { RequesterFlowBar, RequesterFlowStep } from '../../../shared/requester-f
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { SessionStateService } from '../../../core/session-state.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
+import { SkeletonCard } from '../../../shared/ui/skeleton-card';
+import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 
 @Component({
   selector: 'app-review-page',
-  imports: [PageShell, RequesterBottomNav, RequesterFlowBar],
+  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, SkeletonCard],
   templateUrl: './review.html',
 })
 export class ReviewPage implements OnInit {
-  protected readonly rating = signal(5);
+  protected readonly rating = signal(0);
   protected readonly comment = signal('');
   protected readonly providerName = signal('ผู้ให้บริการ');
   protected readonly submitting = signal(false);
   protected readonly canSubmit = signal(false);
   protected readonly statusHint = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
+  protected readonly loading = signal(true);
 
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
@@ -28,6 +31,7 @@ export class ReviewPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   async ngOnInit(): Promise<void> {
+    this.loading.set(true);
     const queryRequestId = this.route.snapshot.queryParamMap.get('requestId');
     const requestId = queryRequestId ?? this.session.requesterRequestId;
     if (queryRequestId) {
@@ -61,6 +65,7 @@ export class ReviewPage implements OnInit {
         /* keep default */
       }
     }
+    this.loading.set(false);
   }
 
   protected flowUnlockedThrough(): RequesterFlowStep {
@@ -69,6 +74,7 @@ export class ReviewPage implements OnInit {
 
   protected setRating(value: number): void {
     this.rating.set(value);
+    this.error.set(null);
   }
 
   protected async submit(): Promise<void> {
@@ -80,6 +86,12 @@ export class ReviewPage implements OnInit {
     }
     if (!this.canSubmit()) {
       this.error.set('ยังส่งรีวิวไม่ได้ — รอให้งานเสร็จสิ้นก่อน');
+      scrollToFirstError();
+      return;
+    }
+    if (this.rating() < 1) {
+      this.error.set('กรุณาให้คะแนนอย่างน้อย 1 ดาว');
+      scrollToFirstError();
       return;
     }
     this.submitting.set(true);
@@ -97,6 +109,7 @@ export class ReviewPage implements OnInit {
       await this.router.navigateByUrl('/requester');
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'ส่งรีวิวไม่สำเร็จ'));
+      scrollToFirstError();
     } finally {
       this.submitting.set(false);
     }

@@ -80,6 +80,9 @@ export interface ServiceRequestSummary {
   distanceMeters?: number | null;
   alreadyBidByMe?: boolean;
   needsAppointmentConfirm?: boolean;
+  hasReviewed?: boolean;
+  myReviewRating?: number | null;
+  appointmentStatus?: string | null;
 }
 
 export interface ServiceRequestDetail {
@@ -111,6 +114,20 @@ export interface BidItem {
   description?: string | null;
   availableAt?: string | null;
   status: string;
+  averageVerifiedRating?: number;
+  verifiedReviewCount?: number;
+}
+
+export interface ProviderBidListItem {
+  id: string;
+  serviceRequestId: string;
+  requestTitle: string;
+  priceText: string;
+  status: string;
+  createdAt: string;
+  requestStatus?: string | null;
+  appointmentStatus?: string | null;
+  appointmentScheduledAt?: string | null;
 }
 
 export interface AppointmentDetail {

@@ -44,12 +44,92 @@ export function requestStatusLabel(status: string): string {
   return REQUEST_STATUS[status] ?? status;
 }
 
+/**
+ * Request status label that accounts for the appointment state.
+ * `Scheduled` / `ProviderSelected` must not read "นัดหมายแล้ว" while the appointment is still pending.
+ */
+export function displayRequestStatusLabel(
+  status: string,
+  appointmentStatus?: string | null,
+): string {
+  if (status === 'Scheduled' || status === 'ProviderSelected' || status === 'Selected') {
+    if (appointmentStatus === 'Confirmed') {
+      return 'นัดหมายแล้ว (ยืนยันแล้ว)';
+    }
+    if (!appointmentStatus || appointmentStatus === 'Pending') {
+      return 'รอผู้ให้บริการยืนยันนัด';
+    }
+    if (appointmentStatus === 'Cancelled') {
+      return 'ยกเลิกนัดหมายแล้ว';
+    }
+  }
+  return requestStatusLabel(status);
+}
+
+export function displayRequestStatusBadgeClass(
+  status: string,
+  appointmentStatus?: string | null,
+): string {
+  if (status === 'Scheduled' || status === 'ProviderSelected' || status === 'Selected') {
+    if (appointmentStatus === 'Confirmed') {
+      return 'badge--green';
+    }
+    return 'badge--orange';
+  }
+  return requestStatusBadgeClass(status);
+}
+
 export function requestStatusBadgeClass(status: string): string {
   return REQUEST_STATUS_COLOR[status] ?? '';
 }
 
 export function bidStatusLabel(status: string): string {
   return BID_STATUS[status] ?? status;
+}
+
+export type ProviderBidFilterKey =
+  | 'all'
+  | 'waiting'
+  | 'selected'
+  | 'confirm'
+  | 'inprogress'
+  | 'done'
+  | 'withdrawn';
+
+export interface ProviderBidRowView {
+  key: ProviderBidFilterKey;
+  label: string;
+  badgeClass: string;
+}
+
+/** Provider “my bids” list row — composite job + bid + appointment state. */
+export function providerBidRowStatus(item: {
+  status: string;
+  requestStatus?: string | null;
+  appointmentStatus?: string | null;
+}): ProviderBidRowView {
+  if (item.status === 'Withdrawn') {
+    return { key: 'withdrawn', label: 'ถอนแล้ว', badgeClass: 'badge--muted' };
+  }
+  if (item.requestStatus === 'Completed') {
+    return { key: 'done', label: 'เสร็จ', badgeClass: 'badge--success' };
+  }
+  if (item.requestStatus === 'InProgress') {
+    return { key: 'inprogress', label: 'กำลังทำ', badgeClass: 'badge--blue' };
+  }
+  if (item.status === 'Selected') {
+    if (!item.appointmentStatus || item.appointmentStatus === 'Pending') {
+      return { key: 'confirm', label: 'รอยืนยันนัด', badgeClass: 'badge--orange' };
+    }
+    return { key: 'selected', label: 'ถูกเลือก', badgeClass: 'badge--green' };
+  }
+  if (item.status === 'Submitted' || item.status === 'Pending') {
+    return { key: 'waiting', label: 'รอผล', badgeClass: 'badge--orange' };
+  }
+  if (item.status === 'Rejected') {
+    return { key: 'waiting', label: 'ไม่ถูกเลือก', badgeClass: 'badge--muted' };
+  }
+  return { key: 'waiting', label: bidStatusLabel(item.status), badgeClass: 'badge--muted' };
 }
 
 const APPOINTMENT_STATUS: Record<string, string> = {
