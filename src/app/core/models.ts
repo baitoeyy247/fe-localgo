@@ -69,6 +69,29 @@ export interface ProviderDetail {
   services: ProviderService[];
 }
 
+export interface ProviderCoverageArea {
+  name: string;
+  serviceRadiusMeters: number;
+}
+
+export interface ProviderMatchingInbox {
+  items: ServiceRequestSummary[];
+  excludesOwnRequests: boolean;
+  areas: ProviderCoverageArea[];
+  myJobs?: ServiceRequestSummary[] | null;
+}
+
+export interface ProviderHomeSummary {
+  pendingConfirmCount: number;
+}
+
+export interface BidFormAccess {
+  allowed: boolean;
+  reason?: string | null;
+  reasonCode?: string | null;
+  request?: ServiceRequestDetail | null;
+}
+
 export interface ServiceRequestSummary {
   id: string;
   title: string;
@@ -80,6 +103,22 @@ export interface ServiceRequestSummary {
   distanceMeters?: number | null;
   alreadyBidByMe?: boolean;
   needsAppointmentConfirm?: boolean;
+  isOwnRequest?: boolean;
+  hasReviewed?: boolean;
+  myReviewRating?: number | null;
+  appointmentStatus?: string | null;
+}
+
+export interface ProviderBidListItem {
+  id: string;
+  serviceRequestId: string;
+  requestTitle: string;
+  priceText: string;
+  status: string;
+  createdAt: string;
+  requestStatus?: string | null;
+  appointmentStatus?: string | null;
+  appointmentScheduledAt?: string | null;
 }
 
 export interface ServiceRequestDetail {
@@ -93,6 +132,8 @@ export interface ServiceRequestDetail {
   latitude: number;
   longitude: number;
   searchRadiusMeters: number;
+  preferredStartAt?: string | null;
+  preferredEndAt?: string | null;
   budgetText?: string | null;
   selectedProviderId?: string | null;
   selectedBidId?: string | null;
@@ -111,6 +152,8 @@ export interface BidItem {
   description?: string | null;
   availableAt?: string | null;
   status: string;
+  averageVerifiedRating?: number | null;
+  verifiedReviewCount?: number | null;
 }
 
 export interface AppointmentDetail {
@@ -134,6 +177,8 @@ export interface ReviewItem {
   comment?: string | null;
   reviewType: string;
   createdAt: string;
+  reviewerDisplayName?: string | null;
+  serviceRequestId?: string | null;
 }
 
 export interface AdminDashboard {

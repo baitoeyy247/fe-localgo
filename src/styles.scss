@@ -21,6 +21,10 @@ body {
   margin: 0;
 }
 
+html {
+  scroll-padding-bottom: calc(4.15rem + env(safe-area-inset-bottom, 0px));
+}
+
 body {
   font-family:
     system-ui,
@@ -53,7 +57,7 @@ a {
 }
 
 .bottom-nav a {
-  min-height: 2.25rem;
+  min-height: 2.75rem;
   display: grid;
   place-items: center;
   border-radius: 0.5rem;

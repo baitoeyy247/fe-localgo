@@ -43,7 +43,7 @@ export class GeoService {
                 : 'หาตำแหน่งปัจจุบันไม่สำเร็จ';
           reject(new Error(msg));
         },
-        { enableHighAccuracy: true, timeout: 20_000, maximumAge: 30_000 },
+        { enableHighAccuracy: false, timeout: 8_000, maximumAge: 60_000 },
       );
     });
   }

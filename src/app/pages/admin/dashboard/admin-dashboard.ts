@@ -1,13 +1,15 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { AdminDashboard, AdminNotificationRow, AdminUserRow } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
+import { LoadingSkeleton } from '../../../shared/loading-skeleton';
+import { formatAdminUserLine, uniqueUsers } from './admin-user-line';
 
 @Component({
   selector: 'app-admin-dashboard-page',
-  imports: [PageShell],
+  imports: [PageShell, LoadingSkeleton],
   templateUrl: './admin-dashboard.html',
 })
 export class AdminDashboardPage implements OnInit {
@@ -18,6 +20,7 @@ export class AdminDashboardPage implements OnInit {
   protected readonly error = signal<string | null>(null);
 
   private readonly api = inject(LocalGoApiService);
+  protected readonly listedUsers = computed(() => uniqueUsers(this.users()));
 
   async ngOnInit(): Promise<void> {
     try {
@@ -37,9 +40,7 @@ export class AdminDashboardPage implements OnInit {
   }
 
   protected userLine(u: AdminUserRow): string {
-    const name = u.displayName ?? u.lineUserId ?? u.id;
-    const role = u.systemRole ?? '';
-    return `${name} (${role})`;
+    return formatAdminUserLine(u, this.listedUsers());
   }
 
   protected notificationLabel(row: AdminNotificationRow): string {

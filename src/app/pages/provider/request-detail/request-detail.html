@@ -1,10 +1,19 @@
-<app-page-shell title="รายละเอียดงาน" subtitle="ข้อมูลจาก API" [backLink]="'/provider/requests'">
+<app-page-shell title="รายละเอียดงาน" [backLink]="'/provider/requests'">
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
-    } @else if (error()) {
-      <p class="error-text">{{ error() }}</p>
-      <a routerLink="/provider/requests">กลับ</a>
+      <app-loading-skeleton />
+    } @else if (notFound()) {
+      <article class="empty-state">
+        <h3>ไม่พบหน้านี้</h3>
+        <p>ลิงก์นี้อาจไม่ถูกต้อง หรือหน้านี้ถูกย้ายแล้ว</p>
+        <a class="primary" routerLink="/">กลับหน้าแรก</a>
+      </article>
+    } @else if (error() && !request()) {
+      <article class="empty-state">
+        <h3>โหลดข้อมูลไม่สำเร็จ</h3>
+        <p class="error-text">{{ error() }}</p>
+        <button class="primary" type="button" (click)="retry()">ลองใหม่</button>
+      </article>
     } @else if (request(); as r) {
       <div class="stack">
         @if (notice()) {
@@ -13,9 +22,14 @@
         <div class="summary-panel">
           <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
             <h3 style="margin: 0;">{{ r.title }}</h3>
-            <span class="badge">{{ statusLabel(r.status) }}</span>
+            <span class="badge">{{ statusLabel(r.status, appointment()?.status) }}</span>
           </div>
           <p style="margin-top: 0.35rem;">{{ r.categoryName ?? 'ทั่วไป' }}</p>
+          <p>สถานที่: {{ placeLabel(r.addressText) }}</p>
+          <p>งบประมาณ: {{ formatBaht(r.budgetText) }}</p>
+          @if (distanceLabel()) {
+            <p>ระยะทาง: {{ distanceLabel() }}</p>
+          }
         </div>
         @if (r.description) {
           <div class="form-area">
@@ -25,8 +39,11 @@
         }
         <div class="chips">
           <span>รัศมี {{ (r.searchRadiusMeters / 1000).toFixed(0) }} กม.</span>
-          @if (r.budgetText) {
-            <span>{{ r.budgetText }}</span>
+          @if (r.budgetText && (r.status === 'Open' || r.status === 'HasOffers' || r.budgetText !== 'เปิดรับราคา')) {
+            <span>{{ formatBaht(r.budgetText) }}</span>
+          }
+          @if (r.preferredStartAt) {
+            <span>ต้องการ {{ formatScheduledAt(r.preferredStartAt) }}</span>
           }
         </div>
 
@@ -45,7 +62,7 @@
               @if (appt.note) {
                 <p><strong>หมายเหตุ:</strong> {{ appt.note }}</p>
               }
-              <p><strong>สถานะ:</strong> {{ appointmentStatusLabel(appt.status) }}</p>
+              <p><strong>สถานะนัดหมาย:</strong> {{ appointmentStatusLabel(appt.status) }}</p>
               @if (canConfirmAppointment()) {
                 <p class="state-hint">รอคุณยืนยันนัด</p>
                 <button
@@ -57,13 +74,15 @@
                 >
                   {{ acting() ? actingLabel() : 'ยืนยันรับนัดหมาย' }}
                 </button>
-              } @else if (canStartJob()) {
-                <p class="state-hint">ยืนยันรับนัดแล้ว — กดเริ่มงานเมื่อถึงเวลานัด</p>
+              } @else if (canStartJob() || startTooEarly()) {
+                <p class="state-hint">
+                  {{ startTooEarly() ? 'เริ่มงานได้ตั้งแต่ 1 ชั่วโมงก่อนเวลานัด' : 'ยืนยันรับนัดแล้ว — กดเริ่มงานเมื่อถึงเวลานัด' }}
+                </p>
                 <button
                   class="primary"
                   type="button"
                   style="margin-top: 0.5rem; width: 100%;"
-                  [disabled]="acting()"
+                  [disabled]="acting() || startTooEarly()"
                   (click)="startJob()"
                 >
                   {{ acting() ? actingLabel() : 'เริ่มงาน' }}
@@ -80,7 +99,7 @@
                   {{ acting() ? actingLabel() : 'งานเสร็จสิ้น' }}
                 </button>
               } @else if (appt.status === 'Completed') {
-                <p class="state-hint">งานเสร็จแล้ว — ลูกค้าสามารถให้คะแนนและรีวิวได้</p>
+                <p class="state-hint">ลูกค้าสามารถให้คะแนนและรีวิวได้</p>
               }
             } @else {
               @if (appointmentError()) {
@@ -98,8 +117,8 @@
           <article class="summary-panel">
             <span class="badge badge--blue">ข้อเสนอของคุณ</span>
             @if (bid.status !== 'Withdrawn') {
-              <strong>{{ bid.priceText }}</strong>
-              <p>{{ bid.description ?? '—' }}</p>
+              <strong>{{ formatBaht(bid.priceText) }}</strong>
+              <p class="line-clamp-4">{{ bid.description ?? '—' }}</p>
             } @else {
               <p>คุณถอนข้อเสนอไปแล้ว สามารถส่งข้อเสนอใหม่ได้หากงานยังเปิดรับ</p>
             }
@@ -117,5 +136,15 @@
       </div>
     }
   </section>
+  <app-confirm-modal
+    [open]="confirmOpen()"
+    [title]="confirmTitle()"
+    [message]="confirmMessage()"
+    [destructive]="confirmDestructive()"
+    confirmLabel="ยืนยัน"
+    cancelLabel="กลับ"
+    (confirm)="resolveConfirm(true)"
+    (cancel)="resolveConfirm(false)"
+  />
   <app-provider-bottom-nav />
 </app-page-shell>

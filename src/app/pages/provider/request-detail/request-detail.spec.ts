@@ -30,9 +30,12 @@ describe('ProviderRequestDetailPage job completion', () => {
     return current;
   }
 
+  const requestId = '11111111-1111-4111-8111-111111111111';
+  let scheduledAt = '2020-01-01T00:00:00Z';
+
   function makeRequest(): ServiceRequestDetail {
     return {
-      id: 'req-1',
+      id: requestId,
       title: 'รับสอนพิเศษ เขียนโปรแกรมม',
       categoryId: 'cat-1',
       categoryName: 'ติวเตอร์และสอนพิเศษ',
@@ -51,10 +54,10 @@ describe('ProviderRequestDetailPage job completion', () => {
   function makeAppointment(): AppointmentDetail {
     return {
       id: 'appt-1',
-      serviceRequestId: 'req-1',
+      serviceRequestId: requestId,
       providerId: provider.id,
       requesterUserId: 'user-1',
-      scheduledAt: '2026-10-21T18:00:00Z',
+      scheduledAt,
       addressText: 'บ้านลูกค้า',
       status: phase,
       createdAt: '2026-10-21T00:00:00Z',
@@ -70,6 +73,14 @@ describe('ProviderRequestDetailPage job completion', () => {
       phase = status;
       return of(makeAppointment());
     }),
+    startRequest: vi.fn(() => {
+      phase = 'InProgress';
+      return of(undefined);
+    }),
+    completeRequest: vi.fn(() => {
+      phase = 'Completed';
+      return of(undefined);
+    }),
   };
 
   async function render(): Promise<ComponentFixture<ProviderRequestDetailPage>> {
@@ -80,7 +91,7 @@ describe('ProviderRequestDetailPage job completion', () => {
         provideRouter([]),
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: convertToParamMap({ id: 'req-1' }) } },
+          useValue: { snapshot: { paramMap: convertToParamMap({ id: requestId }) } },
         },
         { provide: LocalGoApiService, useValue: api },
       ],
@@ -96,11 +107,16 @@ describe('ProviderRequestDetailPage job completion', () => {
 
   beforeEach(() => {
     phase = 'Confirmed';
+    scheduledAt = '2020-01-01T00:00:00Z';
     api.getRequest.mockClear();
     api.getMyProvider.mockClear();
     api.getAppointment.mockClear();
     api.updateAppointmentStatus.mockClear();
-    vi.stubGlobal('confirm', () => true);
+    api.startRequest.mockClear();
+    api.completeRequest.mockClear();
+    vi.stubGlobal('confirm', () => {
+      throw new Error('native confirm should not be used');
+    });
   });
 
   afterEach(() => {
@@ -115,17 +131,21 @@ describe('ProviderRequestDetailPage job completion', () => {
     expect(root.textContent).not.toContain('ส่งข้อเสนอราคา');
 
     buttonByText(root, 'เริ่มงาน').click();
+    fixture.detectChanges();
+    buttonByText(root, 'ยืนยัน').click();
     await vi.waitFor(() => {
       fixture.detectChanges();
-      expect(api.updateAppointmentStatus).toHaveBeenCalledWith('appt-1', 'InProgress');
+      expect(api.startRequest).toHaveBeenCalledWith(requestId);
       expect(root.textContent).toContain('งานเสร็จสิ้น');
       expect(root.textContent).toContain('กำลังดำเนินงาน');
     });
 
     buttonByText(root, 'งานเสร็จสิ้น').click();
+    fixture.detectChanges();
+    buttonByText(root, 'ยืนยัน').click();
     await vi.waitFor(() => {
       fixture.detectChanges();
-      expect(api.updateAppointmentStatus).toHaveBeenCalledWith('appt-1', 'Completed');
+      expect(api.completeRequest).toHaveBeenCalledWith(requestId);
       expect(root.textContent).toContain('ลูกค้าสามารถให้คะแนนและรีวิวได้');
       expect(root.textContent).toContain('เสร็จสิ้น');
     });
@@ -137,6 +157,39 @@ describe('ProviderRequestDetailPage job completion', () => {
     const root = fixture.nativeElement as HTMLElement;
     expect(root.textContent).toContain('ยืนยันรับนัดหมาย');
     expect(root.textContent).not.toContain('เริ่มงาน');
+  });
+
+  it('keeps start disabled until the appointment window', async () => {
+    scheduledAt = '2099-01-01T00:00:00Z';
+    const fixture = await render();
+    const root = fixture.nativeElement as HTMLElement;
+    const start = buttonByText(root, 'เริ่มงาน');
+    expect(start.disabled).toBe(true);
+    start.click();
+    expect(api.startRequest).not.toHaveBeenCalled();
+  });
+
+  it('shows the shared not-found page for a bad id', async () => {
+    TestBed.resetTestingModule();
+    await TestBed.configureTestingModule({
+      imports: [ProviderRequestDetailPage],
+      providers: [
+        provideRouter([]),
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { paramMap: convertToParamMap({ id: 'bad-id' }) } },
+        },
+        { provide: LocalGoApiService, useValue: api },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(ProviderRequestDetailPage);
+    fixture.detectChanges();
+    await fixture.componentInstance.ngOnInit();
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('ไม่พบหน้านี้');
+    expect(root.textContent).toContain('กลับหน้าแรก');
+    expect(api.getRequest).not.toHaveBeenCalled();
   });
 });
 

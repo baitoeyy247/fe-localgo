@@ -7,66 +7,40 @@ export type RequesterFlowStep = 'post' | 'bids' | 'appointment' | 'review';
   selector: 'app-requester-flow-bar',
   template: `
     <nav class="flow-bar" aria-label="ขั้นตอนงานของฉัน">
-      <a
-        class="flow-bar__step"
-        [class.is-active]="active() === 'post'"
-        [class.is-done]="stepIndex('post') < stepIndex(active())"
-        [class.is-locked]="!canOpen('post')"
-        [attr.aria-disabled]="!canOpen('post')"
-        [attr.tabindex]="canOpen('post') ? 0 : -1"
-        (click)="onStepClick($event, 'post')"
-        routerLink="/requester/post"
-      >
-        <span>1</span> ประกาศ
-      </a>
-      <a
-        class="flow-bar__step"
-        [class.is-active]="active() === 'bids'"
-        [class.is-done]="stepIndex('bids') < stepIndex(active())"
-        [class.is-locked]="!canOpen('bids')"
-        [attr.aria-disabled]="!canOpen('bids')"
-        [attr.tabindex]="canOpen('bids') ? 0 : -1"
-        (click)="onStepClick($event, 'bids')"
-        routerLink="/requester/bids"
-      >
-        <span>2</span> ข้อเสนอ
-      </a>
-      <a
-        class="flow-bar__step"
-        [class.is-active]="active() === 'appointment'"
-        [class.is-done]="stepIndex('appointment') < stepIndex(active())"
-        [class.is-locked]="!canOpen('appointment')"
-        [attr.aria-disabled]="!canOpen('appointment')"
-        [attr.tabindex]="canOpen('appointment') ? 0 : -1"
-        (click)="onStepClick($event, 'appointment')"
-        routerLink="/requester/appointment"
-      >
-        <span>3</span> นัดหมาย
-      </a>
-      <a
-        class="flow-bar__step"
-        [class.is-active]="active() === 'review'"
-        [class.is-done]="stepIndex('review') < stepIndex(active())"
-        [class.is-locked]="!canOpen('review')"
-        [attr.aria-disabled]="!canOpen('review')"
-        [attr.tabindex]="canOpen('review') ? 0 : -1"
-        (click)="onStepClick($event, 'review')"
-        routerLink="/requester/review"
-      >
-        <span>4</span> รีวิว
-      </a>
+      @for (step of steps; track step.id) {
+        @if (canOpen(step.id)) {
+          <a
+            class="flow-bar__step"
+            [class.is-active]="active() === step.id"
+            [class.is-done]="stepIndex(step.id) < stepIndex(active())"
+            [attr.aria-current]="active() === step.id ? 'step' : null"
+            [routerLink]="step.link"
+          >
+            <span>{{ step.n }}</span> {{ step.label }}
+          </a>
+        } @else {
+          <span class="flow-bar__step is-locked" aria-disabled="true">
+            <span>{{ step.n }}</span> {{ step.label }}
+          </span>
+        }
+      }
     </nav>
   `,
   imports: [RouterLink],
 })
 export class RequesterFlowBar {
   readonly active = input.required<RequesterFlowStep>();
-  /** ขั้นสูงสุดที่เปิดได้ (เช่น ปลดรีวิวหลังนัดหมายแล้ว แม้ยังอยู่หน้านัดหมาย) */
   readonly unlockedThrough = input<RequesterFlowStep | null>(null);
 
+  protected readonly steps: Array<{ id: RequesterFlowStep; n: string; label: string; link: string }> = [
+    { id: 'post', n: '1', label: 'ประกาศ', link: '/requester/post' },
+    { id: 'bids', n: '2', label: 'ข้อเสนอ', link: '/requester/bids' },
+    { id: 'appointment', n: '3', label: 'นัดหมาย', link: '/requester/appointment' },
+    { id: 'review', n: '4', label: 'รีวิว', link: '/requester/review' },
+  ];
+
   protected stepIndex(step: RequesterFlowStep): number {
-    const order: RequesterFlowStep[] = ['post', 'bids', 'appointment', 'review'];
-    return order.indexOf(step);
+    return this.steps.findIndex((item) => item.id === step);
   }
 
   protected maxUnlockedStep(): RequesterFlowStep {
@@ -75,12 +49,5 @@ export class RequesterFlowBar {
 
   protected canOpen(step: RequesterFlowStep): boolean {
     return this.stepIndex(step) <= this.stepIndex(this.maxUnlockedStep());
-  }
-
-  protected onStepClick(event: Event, step: RequesterFlowStep): void {
-    if (!this.canOpen(step)) {
-      event.preventDefault();
-      event.stopPropagation();
-    }
   }
 }

@@ -1,5 +1,5 @@
-import { Component } from '@angular/core';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, inject } from '@angular/core';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 
 @Component({
   selector: 'app-provider-bottom-nav',
@@ -9,7 +9,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
       <a routerLink="/provider" routerLinkActive="is-active" [routerLinkActiveOptions]="{ exact: true }">
         <span aria-hidden="true">🏠</span>หน้าหลัก
       </a>
-      <a routerLink="/provider/manage" routerLinkActive="is-active">
+      <a routerLink="/provider/manage" [class.is-active]="servicesActive()">
         <span aria-hidden="true">🛠</span>บริการ
       </a>
       <a routerLink="/provider/requests" routerLinkActive="is-active">
@@ -21,4 +21,15 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
     </nav>
   `,
 })
-export class ProviderBottomNav {}
+export class ProviderBottomNav {
+  private readonly router = inject(Router);
+
+  protected servicesActive(): boolean {
+    const path = this.router.url.split('?')[0];
+    return (
+      path.startsWith('/provider/manage') ||
+      path.startsWith('/provider/service') ||
+      path.startsWith('/provider/coverage')
+    );
+  }
+}

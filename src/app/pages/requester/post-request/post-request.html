@@ -4,34 +4,77 @@
     <div class="hero-panel hero-panel--search">
       <span class="badge">โพสต์แล้วรอรับราคา</span>
       <h3>กำหนดจุดรับงานให้ชัด แล้วเปิดรับข้อเสนอจากผู้ให้บริการรอบพื้นที่นั้น</h3>
-      <p>เลือกตำแหน่งใน popup แล้วกดยืนยัน ระบบจะอัปเดตจุดรับงานของประกาศนี้ทันที</p>
+      <p>ค้นหาสถานที่บนแผนที่ แล้วกดยืนยัน ระบบจะอัปเดตจุดรับงานของประกาศนี้ทันที</p>
     </div>
 
     <div class="stack">
       <label class="form-field form-field--modern">
-        <span>หมวดหมู่</span>
-        <select aria-label="หมวดหมู่" (change)="selectCategory($any($event.target).value)">
-          @for (cat of categories(); track cat.id) {
-            <option [value]="cat.id" [selected]="selectedCategoryId() === cat.id">{{ cat.name }}</option>
-          }
-        </select>
+        <span>หมวดหมู่ <abbr class="required-mark" title="จำเป็น">*</abbr></span>
+        @if (categoriesError()) {
+          <p class="error-text" role="alert">{{ categoriesError() }}</p>
+          <button class="secondary" type="button" (click)="retryCategories()">ลองใหม่</button>
+        } @else {
+          <select
+            id="post-category"
+            aria-label="หมวดหมู่"
+            [attr.aria-invalid]="fieldErrors().category ? 'true' : null"
+            [attr.aria-describedby]="fieldErrors().category ? 'post-category-error' : null"
+            [value]="selectedCategoryId() ?? ''"
+            (change)="selectCategory($any($event.target).value)"
+          >
+            <option value="">เลือกหมวดหมู่</option>
+            @for (cat of categories(); track cat.id) {
+              <option [value]="cat.id">{{ cat.name }}</option>
+            }
+          </select>
+        }
+        <app-field-error [message]="fieldErrors().category" errorId="post-category-error" />
       </label>
       <label class="form-field form-field--modern">
-        <span>หัวข้องาน</span>
+        <span>หัวข้องาน <abbr class="required-mark" title="จำเป็น">*</abbr></span>
         <input
+          id="post-title"
           aria-label="หัวข้องาน"
           placeholder="เช่น ต้องการซักผ้าด่วน 5 กก."
+          [attr.maxlength]="titleMax"
+          [attr.aria-invalid]="fieldErrors().title ? 'true' : null"
+          [attr.aria-describedby]="fieldErrors().title ? 'post-title-error' : null"
+          [value]="title()"
           (input)="updateTitle($any($event.target).value)"
         />
+        <small>{{ title().length }}/{{ titleMax }}</small>
+        <app-field-error [message]="fieldErrors().title" errorId="post-title-error" />
       </label>
       <label class="form-area form-area--modern">
-        <span>รายละเอียด</span>
+        <span>รายละเอียด <abbr class="required-mark" title="จำเป็น">*</abbr></span>
         <textarea
+          id="post-description"
           rows="3"
           aria-label="รายละเอียด"
           placeholder="ระบุสถานที่ รอบเวลา และเงื่อนไขที่ต้องการ"
+          [attr.maxlength]="detailsMax"
+          [attr.aria-invalid]="fieldErrors().description ? 'true' : null"
+          [attr.aria-describedby]="fieldErrors().description ? 'post-description-error' : null"
+          [value]="description()"
           (input)="updateDescription($any($event.target).value)"
         ></textarea>
+        <small>{{ description().length }}/{{ detailsMax }}</small>
+        <app-field-error [message]="fieldErrors().description" errorId="post-description-error" />
+      </label>
+      <label class="form-field form-field--modern">
+        <span>วันที่และเวลาที่ต้องการ <abbr class="required-mark" title="จำเป็น">*</abbr></span>
+        <input
+          id="post-preferred"
+          type="datetime-local"
+          aria-label="วันที่และเวลาที่ต้องการ"
+          [attr.min]="minPreferredLocal()"
+          [attr.aria-invalid]="fieldErrors().preferred ? 'true' : null"
+          [attr.aria-describedby]="fieldErrors().preferred ? 'post-preferred-error' : null"
+          [value]="preferredWhen()"
+          (input)="updatePreferredWhen($any($event.target).value)"
+        />
+        <small>ต้องเป็นเวลาปัจจุบันหรือหลังจากนั้น</small>
+        <app-field-error [message]="fieldErrors().preferred" errorId="post-preferred-error" />
       </label>
 
       <section class="summary-panel summary-panel--interactive">
@@ -41,34 +84,72 @@
           <p>{{ requestLocation().subtitle }}</p>
           <div class="chips">
             <span>รัศมี {{ requestLocation().radiusKm }} กม.</span>
-            <span>{{ requestLocation().lat.toFixed(4) }}, {{ requestLocation().lng.toFixed(4) }}</span>
+            <span>{{ requestLocation().title }}</span>
           </div>
         </div>
         <button type="button" class="secondary secondary--pill" (click)="openPicker()">
-          เลือกตำแหน่ง
+          ค้นหาสถานที่บนแผนที่
         </button>
+        @if (fieldErrors().location) {
+          <p class="field-error">{{ fieldErrors().location }}</p>
+        }
       </section>
 
-      <label class="form-field form-field--modern">
-        <span>งบประมาณ</span>
+      <fieldset class="form-field form-field--modern budget-fieldset">
+        <legend>งบประมาณ</legend>
+        <label class="budget-choice" for="budget-open">
+          <input
+            id="budget-open"
+            type="radio"
+            name="budget-mode"
+            aria-label="เปิดรับราคา"
+            [checked]="budgetMode() === 'open'"
+            (change)="setBudgetMode('open')"
+          />
+          <span>{{ openBudgetLabel }}</span>
+        </label>
+        <label class="budget-choice" for="budget-amount">
+          <input
+            id="budget-amount"
+            type="radio"
+            name="budget-mode"
+            aria-label="ระบุจำนวน"
+            [checked]="budgetMode() === 'amount'"
+            (change)="setBudgetMode('amount')"
+          />
+          <span>ระบุจำนวน</span>
+        </label>
         <input
+          id="post-budget"
           aria-label="งบประมาณ"
-          [value]="budgetText()"
-          (input)="updateBudget($any($event.target).value)"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          placeholder="เช่น 500"
+          [attr.aria-invalid]="fieldErrors().budget ? 'true' : null"
+          [attr.aria-describedby]="fieldErrors().budget ? 'post-budget-error' : null"
+          [value]="budgetAmount()"
+          [disabled]="budgetMode() !== 'amount'"
+          (input)="updateBudgetAmount($any($event.target).value)"
         />
-      </label>
+        <app-field-error [message]="fieldErrors().budget" errorId="post-budget-error" />
+      </fieldset>
 
       <div class="glass-card">
         <span class="muted-label">สิ่งที่จะเกิดขึ้นหลังโพสต์</span>
         <strong>ผู้ให้บริการในพื้นที่จะได้รับแจ้งเตือนทาง LINE</strong>
-        <p>คุณจะเห็น bid ทั้งหมดในหน้าเดียว และเลือกข้อเสนอได้เฉพาะคนที่ประกาศงานนี้</p>
+        <p>คุณจะเห็นข้อเสนอทั้งหมดในหน้าเดียว และเลือกได้เฉพาะคนที่ประกาศงานนี้</p>
       </div>
+
+      @if (submitError()) {
+        <p class="error-text" role="alert">{{ submitError() }}</p>
+      }
 
       <button
         class="primary"
         type="button"
-        [disabled]="posting() || !title().trim()"
-        (click)="publish()"
+        [disabled]="posting()"
+        (pointerdown)="pressPublish($event)"
+        (click)="pressPublish($event)"
       >
         {{ posting() ? 'กำลังประกาศ…' : 'ประกาศงาน' }}
       </button>

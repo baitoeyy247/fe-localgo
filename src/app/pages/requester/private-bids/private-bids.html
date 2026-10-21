@@ -1,54 +1,88 @@
 <app-page-shell title="ข้อเสนอที่ได้รับ" backLink="/requester">
-  <app-requester-flow-bar active="bids" />
+  @if (request() && !isCancelled()) {
+    <app-requester-flow-bar active="bids" />
+  }
   <section class="screen">
     <div class="stack">
+      @if (justPosted()) {
+        <p class="toast" role="status">ประกาศงานแล้ว กำลังโหลดข้อเสนอ</p>
+      }
       @if (request(); as r) {
         <div class="summary-panel" [class.summary-panel--success]="justPosted()">
           <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
             <h3 style="margin: 0;">{{ r.title }}</h3>
             <span class="badge" [class.badge--warn]="isExpired()">{{ statusLabel(r.status) }}</span>
           </div>
-          @if (!justPosted()) {
+          @if (r.preferredStartAt) {
+            <p style="margin-top: 0.35rem;">วันที่และเวลาที่ต้องการ: {{ formatWhen(r.preferredStartAt) }}</p>
+          }
+          @if (isCancelled()) {
+            <p style="margin-top: 0.35rem;">งานนี้ถูกยกเลิกเมื่อ {{ formatWhen(r.updatedAt) }}</p>
+          } @else if (!justPosted() && (r.status === 'Open' || r.status === 'HasOffers')) {
             <p style="margin-top: 0.35rem;">หมดอายุอัตโนมัติหากไม่มีความคืบหน้า 14 วัน</p>
           }
         </div>
       }
 
-      @if (!request() && !loading()) {
+      @if (loading()) {
+        <app-loading-skeleton />
+      } @else if (error() && !request() && jobChoices().length === 0) {
         <div class="empty-state">
-          <h3>ยังไม่มีงานที่เปิดรับข้อเสนอ</h3>
-          <p>เริ่มจากประกาศงานใหม่ แล้วกลับมาดูข้อเสนอที่ได้รับ</p>
-          <a class="primary" routerLink="/requester/post">ประกาศงาน</a>
+          <h3>โหลดข้อมูลไม่สำเร็จ</h3>
+          <p class="error-text">{{ error() }}</p>
+          <button class="primary" type="button" (click)="retry()">ลองใหม่</button>
         </div>
-      } @else if (loading()) {
-        <p class="state-message">กำลังโหลดข้อเสนอ…</p>
-      } @else if (bids().length === 0) {
+      } @else if (!request()) {
+        @if (jobChoices().length === 0) {
+          <div class="empty-state">
+            <h3>ยังไม่มีงานที่มีข้อเสนอ</h3>
+            <p>เริ่มจากประกาศงานใหม่ แล้วกลับมาดูข้อเสนอที่ได้รับ</p>
+            <a class="primary" routerLink="/requester/post">ประกาศงาน</a>
+          </div>
+        } @else {
+          @for (job of jobChoices(); track job.id) {
+            <button class="request-card" type="button" [disabled]="choosing()" (click)="openJob(job)">
+              <span>
+                <strong>{{ job.title }}</strong>
+                <small>{{ statusLabel(job.status) }} · {{ job.bidCount }} ข้อเสนอ</small>
+              </span>
+              <b>{{ formatBaht(job.budgetText) }}</b>
+            </button>
+          }
+        }
+      } @else if (!isCancelled() && bids().length === 0) {
         <div class="empty-state">
           <h3>ยังไม่มีผู้เสนอราคา</h3>
           <p>ระบบจะแจ้งเตือนทาง LINE เมื่อมีข้อเสนอใหม่</p>
         </div>
       } @else {
         @for (bid of bids(); track bid.id) {
-          <button
-            class="bid-card"
-            [class.bid-card--selected]="selectedBidId() === bid.id"
-            type="button"
-            (click)="selectBid(bid)"
-          >
-            <span>
+          <article class="bid-card" [class.bid-card--selected]="selectedBidId() === bid.id">
+            <a class="bid-card__body" [routerLink]="['/requester/provider', bid.providerId]">
               <strong>{{ bid.providerName }}</strong>
-              <small>{{ bid.description ?? 'ไม่มีรายละเอียดเพิ่ม' }}</small>
-            </span>
-            <b>{{ bid.priceText }}</b>
-          </button>
+              <small>{{ ratingLine(bid) }}</small>
+              <small [class.line-clamp-4]="!expandedBids().has(bid.id)">{{ bid.description ?? 'ไม่มีรายละเอียดเพิ่ม' }}</small>
+            </a>
+            <b>{{ formatBaht(bid.priceText) }}</b>
+            @if (messageLong(bid.description)) {
+              <button type="button" class="ghost-link" (click)="toggleMessage(bid.id, $event)">
+                {{ expandedBids().has(bid.id) ? 'ย่อข้อความ' : 'ดูเพิ่มเติม' }}
+              </button>
+            }
+            @if (canSchedule()) {
+              <button type="button" (click)="selectBid(bid)">
+                {{ selectedBidId() === bid.id ? 'เลือกแล้ว' : 'เลือกข้อเสนอนี้' }}
+              </button>
+            }
+          </article>
         }
       }
 
-      @if (error()) {
-        <p class="error-text">{{ error() }}</p>
+      @if (!loading() && error() && request()) {
+        <p class="error-text" role="alert">{{ error() }}</p>
       }
 
-      @if (canClearBidSelection()) {
+      @if (canClearBidSelection() && request()?.status !== 'Scheduled') {
         <button
           class="danger"
           type="button"
@@ -59,14 +93,40 @@
         </button>
       }
 
-      @if (!isExpired()) {
-        <button class="primary" type="button" [disabled]="!selectedBidId()" (click)="confirmSelection()">
+      @if (loading() || !request() || isCancelled()) {
+      } @else if (canSchedule() && bids().length === 0) {
+        <button class="primary is-unavailable" type="button" disabled aria-disabled="true">
           เลือกข้อเสนอและนัดหมาย
         </button>
-      } @else {
+        <p>ยังไม่มีข้อเสนอ</p>
+      } @else if (canSchedule()) {
+        <button
+          class="primary"
+          type="button"
+          [disabled]="!selectedBidId() || choosing()"
+          [attr.aria-disabled]="!selectedBidId() || choosing()"
+          (click)="confirmSelection()"
+        >
+          {{ choosing() ? 'กำลังเปิดนัดหมาย…' : 'เลือกข้อเสนอและนัดหมาย' }}
+        </button>
+      } @else if (isExpired()) {
         <a class="primary" routerLink="/requester/post">ประกาศงานใหม่</a>
+      } @else {
+        <a class="primary" routerLink="/requester/appointment">ไปหน้านัดหมาย</a>
       }
     </div>
   </section>
   <app-requester-bottom-nav />
+  <app-confirm-modal
+    [open]="confirmClear()"
+    title="ยกเลิกการเลือกข้อเสนอ"
+    message="ข้อเสนอที่เลือกไว้จะถูกยกเลิก และคุณสามารถกลับไปเลือกข้อเสนอใหม่ได้"
+    [destructive]="true"
+    confirmLabel="ยืนยันยกเลิก"
+    cancelLabel="กลับ"
+    [busy]="clearing()"
+    busyLabel="กำลังยกเลิก…"
+    (confirm)="confirmClearSelection()"
+    (cancel)="dismissClear()"
+  />
 </app-page-shell>

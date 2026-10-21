@@ -3,7 +3,7 @@
     <div class="hero-panel hero-panel--search">
       <span class="badge badge--blue">ค้นหาจากพื้นที่จริง</span>
       <h3>เลือกจุดที่ต้องการ แล้วระบบจะจัดบริการรอบนั้นให้ทันที</h3>
-      <p>แตะปุ่มเลือกบนแผนที่ แล้วกดยืนยันตำแหน่งใน popup เพื่ออัปเดตพื้นที่ค้นหาหน้านี้</p>
+      <p>ค้นหาสถานที่บนแผนที่ แล้วยืนยันเพื่ออัปเดตพื้นที่ค้นหาหน้านี้</p>
     </div>
 
     <div class="stack">
@@ -48,11 +48,11 @@
           <p>{{ selectedArea().subtitle }}</p>
           <div class="chips">
             <span>รัศมี {{ selectedArea().radiusKm }} กม.</span>
-            <span>{{ selectedArea().lat.toFixed(4) }}, {{ selectedArea().lng.toFixed(4) }}</span>
+            <span>{{ selectedArea().title }}</span>
           </div>
         </div>
         <button type="button" class="secondary secondary--pill" (click)="openPicker()">
-          เลือกบนแผนที่
+          ค้นหาสถานที่บนแผนที่
         </button>
       </section>
 
@@ -61,16 +61,24 @@
           <span class="muted-label">ผลลัพธ์ที่ตรงกับพื้นที่</span>
           <strong>ผู้ให้บริการที่ตอบโจทย์ตอนนี้</strong>
         </div>
-        <span class="result-count">{{ providers().length }} ราย</span>
+        @if (!loading()) {
+          <span class="result-count">{{ providers().length }} ราย</span>
+        }
       </div>
 
       @if (loading()) {
-        <p class="state-message">กำลังค้นหา…</p>
+        <app-loading-skeleton />
+      } @else if (error()) {
+        <div class="empty-state">
+          <h3>ค้นหาไม่สำเร็จ</h3>
+          <p class="error-text">{{ error() }}</p>
+          <button class="secondary" type="button" (click)="search()">ลองใหม่</button>
+        </div>
       } @else if (providers().length === 0) {
         <div class="empty-state">
           <h3>ไม่พบผู้ให้บริการในพื้นที่นี้</h3>
           <p>ลองขยายรัศมีหรือเปลี่ยนคำค้น</p>
-          <a class="primary" routerLink="/requester/post">ประกาศงานแทน</a>
+          <a class="primary" routerLink="/requester/post">ประกาศงาน</a>
         </div>
       }
       @for (provider of providers(); track provider.providerId) {
@@ -89,7 +97,6 @@
         </a>
       }
 
-      <a class="primary" routerLink="/requester/post">ไม่เจอที่ต้องการ → ประกาศงาน</a>
     </div>
   </section>
 
@@ -106,6 +113,7 @@
     [lat]="selectedArea().lat"
     [lng]="selectedArea().lng"
     [radiusOptions]="[1, 3, 5, 8]"
+    [autoLocateOnOpen]="false"
     (cancel)="closePicker()"
     (confirm)="applyLocation($event)"
   />

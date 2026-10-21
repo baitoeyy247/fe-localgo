@@ -160,7 +160,7 @@ export class MapView implements AfterViewInit, OnChanges, OnDestroy {
     }
 
     if (!this.marker) {
-      this.marker = L.marker(position, { icon: markerIcon }).addTo(this.map);
+      this.marker = L.marker(position, { icon: markerIcon, interactive: false, keyboard: false }).addTo(this.map);
     } else {
       this.marker.setLatLng(position);
     }
@@ -172,6 +172,7 @@ export class MapView implements AfterViewInit, OnChanges, OnDestroy {
         weight: 2,
         fillColor: '#0a9f50',
         fillOpacity: 0.08,
+        interactive: false,
       }).addTo(this.map);
     } else {
       this.circle.setLatLng(position);

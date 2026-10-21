@@ -1,4 +1,4 @@
-<app-page-shell title="ผู้รับบริการ" [showBack]="true" backLink="/" backLabel="สลับบทบาท">
+<app-page-shell title="ผู้รับบริการ" [showBack]="true" backLink="/" backLabel="สลับบทบาท" [backAsText]="true">
   <section class="screen">
     <div class="stack">
       <a class="action-card" routerLink="/requester/search">
@@ -17,40 +17,54 @@
         <b>→</b>
       </a>
 
+      @if (notice()) {
+        <p class="success-text" role="status">{{ notice() }}</p>
+      }
+
       <div class="section-title">
         <h3>งานของฉัน</h3>
       </div>
 
       @if (loading()) {
-        <p class="state-message">กำลังโหลด…</p>
+        <app-loading-skeleton />
       } @else if (error()) {
-        <p class="error-text">{{ error() }}</p>
+        <article class="empty-state">
+          <h3>โหลดข้อมูลไม่สำเร็จ</h3>
+          <p class="error-text">{{ error() }}</p>
+          <button class="primary" type="button" (click)="reload()">ลองใหม่</button>
+        </article>
       } @else {
         @for (request of requests(); track request.id) {
           <article class="request-card">
             <div style="display: grid; gap: 0.25rem;">
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.15rem; flex-wrap: wrap;">
                 <strong style="margin: 0;">{{ request.title }}</strong>
-                <span class="badge" [ngClass]="statusBadgeClass(request.status)">{{ statusLabel(request.status) }}</span>
+                <span class="badge" [ngClass]="statusBadgeClass(request.status, request.appointmentStatus)">{{ statusLabel(request.status, request.appointmentStatus) }}</span>
               </div>
               <span>
                 @if (request.categoryName) { {{ request.categoryName }} · }
                 {{ request.bidCount }} ข้อเสนอ
               </span>
+              <small>สร้างเมื่อ {{ formatWhen(request.createdAt) }}</small>
             </div>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              <button
-                type="button"
-                (click)="openRequest(request)"
-              >
-                {{ continueLabel(request.status) }}
-              </button>
+              @if (reviewBadge(request); as reviewed) {
+                <span class="badge">{{ reviewed }}</span>
+              } @else {
+                <button
+                  type="button"
+                  [disabled]="openingId() === request.id"
+                  (pointerdown)="armOpen(request, $event)"
+                  (click)="openRequest(request)"
+                >
+                  {{ openingId() === request.id ? 'กำลังเปิด…' : 'ดูรายละเอียด' }}
+                </button>
+              }
               @if (canCancel(request.status)) {
                 <button
                   type="button"
-                  class="danger"
-                  style="padding: 0.55rem 1.15rem; width: auto; min-height: auto;"
-                  (click)="cancelRequest(request, $event)"
+                  class="danger danger--pill"
+                  (click)="askCancel(request, $event)"
                 >
                   ยกเลิกงาน
                 </button>
@@ -67,10 +81,32 @@
       }
     </div>
 
-    <button type="button" class="ghost-link role-switch" (click)="switchToProvider()">
-      สลับไปโหมดผู้ให้บริการ
-    </button>
   </section>
 
   <app-requester-bottom-nav />
+
+  @if (cancelTarget(); as target) {
+    <div class="cancel-modal" role="dialog" aria-modal="true" aria-labelledby="cancel-job-title">
+      <div class="cancel-modal__sheet">
+        <h2 id="cancel-job-title">ยกเลิกงาน</h2>
+        <p>
+          ยกเลิก "{{ target.title }}" แล้วงานนี้จะถูกปิด และผู้ที่เสนอราคาไว้จะได้รับแจ้งเตือน
+        </p>
+        @if (cancelError()) {
+          <p class="error-text">{{ cancelError() }}</p>
+        }
+        <div class="cancel-modal__actions">
+          <button type="button" (click)="dismissCancel()" [disabled]="cancelling()">กลับ</button>
+          <button
+            type="button"
+            class="cancel-modal__confirm"
+            [disabled]="cancelling()"
+            (click)="confirmCancel()"
+          >
+            {{ cancelling() ? 'กำลังยกเลิก…' : 'ยืนยันยกเลิก' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </app-page-shell>

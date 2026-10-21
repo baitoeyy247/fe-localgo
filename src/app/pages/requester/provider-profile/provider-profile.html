@@ -1,7 +1,7 @@
 <app-page-shell [title]="pageTitle()" backLink="/requester/search">
   <section class="screen">
     @if (loading()) {
-      <p>กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else if (provider(); as p) {
       <div class="stack">
         <a class="ghost-link" routerLink="/requester/search">← กลับไปค้นหา</a>
@@ -10,24 +10,24 @@
           <section class="summary-panel summary-panel--success">
             <h3>{{ focused.title }}</h3>
             <p>{{ focused.categoryName ?? 'บริการทั่วไป' }} · {{ p.name }}</p>
-            <small>{{ focused.basePriceText ?? 'ติดต่อสอบถามราคา' }}</small>
+            <small>{{ formatBaht(focused.basePriceText) }}</small>
           </section>
         }
 
         <div class="profile-hero">
           <div>
             @if (p.verifiedReviewCount > 0) {
-              <span class="badge">Verified {{ p.verifiedReviewCount }} รีวิว</span>
+              <span class="badge">รีวิวจากงานจริง {{ p.verifiedReviewCount }} รายการ</span>
             }
             <h3>{{ p.name }}</h3>
-            <p>{{ primaryService()?.categoryName ?? 'บริการทั่วไป' }} · {{ p.providerType }}</p>
+            <p>{{ primaryService()?.categoryName ?? 'บริการทั่วไป' }} · {{ typeLabel(p.providerType) }}</p>
           </div>
         </div>
 
         <div class="rating-row">
           <strong>{{ p.averageVerifiedRating }}</strong>
           <span>คะแนนจากงานจริง</span>
-          <small>Public {{ p.averagePublicRating }} · {{ p.publicReviewCount }} รีวิว</small>
+          <small>รีวิวทั่วไป {{ p.averagePublicRating }} · {{ p.publicReviewCount }} รายการ</small>
         </div>
 
         @if (primaryService(); as svc) {
@@ -64,7 +64,7 @@
             [id]="isFocusedService(svc.id) ? 'focused-service' : null"
           >
             <strong>{{ svc.title }}</strong>
-            <span>{{ svc.basePriceText ?? 'ติดต่อสอบถาม' }}</span>
+            <span>{{ formatBaht(svc.basePriceText) }}</span>
             <small>{{ branchLabels() }}</small>
           </article>
         } @empty {
@@ -89,7 +89,7 @@
         @for (review of reviews(); track review.id) {
           <article class="request-card">
             <strong>★ {{ review.rating }}</strong>
-            <span>{{ review.reviewType }}</span>
+            <span>{{ reviewKind(review.reviewType) }}</span>
             @if (review.comment) {
               <small>{{ review.comment }}</small>
             }

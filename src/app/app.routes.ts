@@ -56,6 +56,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/requester/review/review').then((m) => m.ReviewPage),
   },
   {
+    path: 'requester/requests/:id',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/requester/request-detail/request-detail').then(
+        (m) => m.RequesterRequestDetailPage,
+      ),
+  },
+  {
     path: 'provider',
     canActivate: [authGuard],
     loadComponent: () =>
@@ -91,6 +99,20 @@ export const routes: Routes = [
       import('./pages/provider/manage-services/manage-services').then((m) => m.ManageServicesPage),
   },
   {
+    path: 'provider/services',
+    redirectTo: '/provider/manage',
+  },
+  {
+    path: 'provider/jobs',
+    redirectTo: '/provider/requests',
+  },
+  {
+    path: 'provider/my-bids',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./pages/provider/my-bids/my-bids').then((m) => m.ProviderMyBidsPage),
+  },
+  {
     path: 'provider/requests',
     canActivate: [authGuard],
     loadComponent: () =>
@@ -118,5 +140,8 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./pages/admin/dashboard/admin-dashboard').then((m) => m.AdminDashboardPage),
   },
-  { path: '**', redirectTo: '' },
+  {
+    path: '**',
+    loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFoundPage),
+  },
 ];

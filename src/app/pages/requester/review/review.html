@@ -1,47 +1,62 @@
-<app-page-shell title="รีวิวงานจริง" backLink="/requester/appointment">
+<app-page-shell title="รีวิวและให้คะแนน" backLink="/requester/appointment">
   <app-requester-flow-bar active="review" [unlockedThrough]="flowUnlockedThrough()" />
   <section class="screen">
     <div class="stack">
-      <div class="summary-panel" [class.summary-panel--success]="canSubmit()">
-        <span class="badge">{{ canSubmit() ? 'เสร็จสิ้น' : 'รอดำเนินงาน' }}</span>
+      <div class="summary-panel" [class.summary-panel--success]="canSubmit() || savedReview()">
+        <span class="badge">{{ savedReview() ? 'รีวิวแล้ว' : canSubmit() ? 'เสร็จสิ้น' : 'รอดำเนินงาน' }}</span>
         <h3>รีวิว {{ providerName() }}</h3>
-        <p>รีวิวนี้เป็น verified review จากงานในระบบ</p>
+        <p>รีวิวนี้มาจากงานที่เสร็จในระบบ</p>
         @if (statusHint()) {
           <p class="state-hint">{{ statusHint() }}</p>
         }
       </div>
-      <div class="rating-picker" role="group" aria-label="ให้คะแนน">
-        @for (star of [1, 2, 3, 4, 5]; track star) {
-          <button
-            type="button"
-            class="rating-picker__star"
-            [class.is-active]="rating() >= star"
-            (click)="setRating(star)"
-          >
-            ★
-          </button>
+      @if (savedReview(); as saved) {
+        <article class="summary-panel">
+          <p>คะแนน {{ saved.rating }} จาก 5</p>
+          <p>{{ saved.comment || 'ไม่มีความคิดเห็นเพิ่ม' }}</p>
+          <a class="primary" routerLink="/requester">กลับหน้าหลัก</a>
+        </article>
+      } @else {
+        <div class="rating-picker" role="radiogroup" aria-label="ให้คะแนน">
+          @for (star of [1, 2, 3, 4, 5]; track star) {
+            <button
+              type="button"
+              [id]="'review-star-' + star"
+              class="rating-picker__star"
+              role="radio"
+              [class.is-active]="rating() !== null && rating()! >= star"
+              [attr.aria-checked]="rating() === star"
+              [attr.aria-label]="'ให้ ' + star + ' ดาว'"
+              (click)="setRating(star)"
+              (keydown)="onStarKey($event, star)"
+            >
+              ★
+            </button>
+          }
+        </div>
+        <p class="state-hint">เลือกจำนวนดาวก่อนส่ง ความคิดเห็นไม่บังคับ</p>
+        <label class="form-area">
+          <span>ความคิดเห็น ({{ comment().length }}/{{ commentMax }})</span>
+          <textarea
+            rows="3"
+            [maxLength]="commentMax"
+            placeholder="บอกประสบการณ์สั้น ๆ"
+            [value]="comment()"
+            (input)="updateComment($any($event.target).value)"
+          ></textarea>
+        </label>
+        @if (error()) {
+          <p class="error-text">{{ error() }}</p>
         }
-      </div>
-      <label class="form-area">
-        <span>ความคิดเห็น</span>
-        <textarea
-          rows="3"
-          placeholder="บอกประสบการณ์สั้น ๆ"
-          [value]="comment()"
-          (input)="comment.set($any($event.target).value)"
-        ></textarea>
-      </label>
-      @if (error()) {
-        <p class="error-text">{{ error() }}</p>
+        <button
+          class="primary"
+          type="button"
+          [disabled]="submitting() || !canSubmit() || rating() === null"
+          (click)="submit()"
+        >
+          {{ submitting() ? 'กำลังส่ง…' : 'ส่งรีวิวและกลับหน้าหลัก' }}
+        </button>
       }
-      <button
-        class="primary"
-        type="button"
-        [disabled]="submitting() || !canSubmit()"
-        (click)="submit()"
-      >
-        {{ submitting() ? 'กำลังส่ง…' : 'ส่งรีวิวและกลับหน้าหลัก' }}
-      </button>
     </div>
   </section>
   <app-requester-bottom-nav />

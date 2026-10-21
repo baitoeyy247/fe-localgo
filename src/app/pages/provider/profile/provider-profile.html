@@ -1,25 +1,61 @@
-<app-page-shell title="โปรไฟล์ผู้ให้บริการ" subtitle="ขั้นตอนที่ 1 จาก 3" backLink="/provider">
-  <app-provider-setup-bar active="profile" />
+<app-page-shell [title]="editing() ? 'โปรไฟล์ผู้ให้บริการ' : 'โปรไฟล์ของฉัน'" [subtitle]="editing() && !provider() ? 'ขั้นตอนที่ 1 จาก 3' : null" backLink="/provider">
+  @if (editing() && !provider()) {
+    <app-provider-setup-bar active="profile" />
+  }
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
+      <app-loading-skeleton />
+    } @else if (provider() && !editing()) {
+      <div class="stack">
+        <div class="summary-panel">
+          <h3 style="margin: 0;">{{ provider()!.name }}</h3>
+          <p>{{ typeLabel(provider()!.providerType) }}</p>
+          @if (provider()!.description) {
+            <p>{{ provider()!.description }}</p>
+          }
+          <p>เบอร์โทร: {{ provider()!.contactPhone || 'ยังไม่ระบุ' }}</p>
+          <p>LINE: {{ provider()!.contactLineId || 'ยังไม่ระบุ' }}</p>
+        </div>
+        <button class="primary" type="button" (click)="beginEdit()">แก้ไข</button>
+        <button class="secondary" type="button" [disabled]="switching()" (click)="switchRole()">
+          {{ switching() ? 'กำลังสลับ…' : 'สลับบทบาท' }}
+        </button>
+        <button class="danger" type="button" [disabled]="loggingOut()" (click)="logout()">
+          {{ loggingOut() ? 'กำลังออก…' : 'ออกจากระบบ' }}
+        </button>
+      </div>
     } @else {
       <div class="stack">
+        @if (saveError()) {
+          <p class="error-text" role="alert">{{ saveError() }}</p>
+        }
         <label class="form-field">
-          <span>ประเภทผู้ให้บริการ</span>
-          <select aria-label="ประเภท" (change)="selectProviderType($any($event.target).value)">
+          <span>ประเภทผู้ให้บริการ <abbr class="required-mark" title="จำเป็น">*</abbr></span>
+          <select
+            id="profile-type"
+            aria-label="ประเภทผู้ให้บริการ"
+            [attr.aria-invalid]="typeError() ? 'true' : null"
+            [attr.aria-describedby]="typeError() ? 'profile-type-error' : null"
+            (change)="selectProviderType($any($event.target).value)"
+          >
+            <option value="" [selected]="!providerType()">เลือกประเภท</option>
             @for (opt of typeOptions; track opt.value) {
               <option [value]="opt.value" [selected]="providerType() === opt.value">{{ opt.label }}</option>
             }
           </select>
+          <app-field-error [message]="typeError()" errorId="profile-type-error" />
         </label>
         <label class="form-field">
-          <span>ชื่อที่แสดง (ร้าน / บริษัท / ชื่อเล่น)</span>
+          <span>ชื่อที่แสดง (ร้าน / บริษัท / ชื่อเล่น) <abbr class="required-mark" title="จำเป็น">*</abbr></span>
           <input
+            id="profile-name"
             [value]="name()"
-            aria-label="ชื่อบริการ"
+            aria-label="ชื่อที่แสดง (ร้าน / บริษัท / ชื่อเล่น)"
+            [attr.aria-invalid]="nameError() ? 'true' : null"
+            [attr.aria-describedby]="nameError() ? 'profile-name-error' : null"
             (input)="updateName($any($event.target).value)"
           />
+          <app-field-error [message]="nameError()" errorId="profile-name-error" />
         </label>
         <label class="form-area">
           <span>รายละเอียด</span>
@@ -34,7 +70,7 @@
           <span>LINE ติดต่อ</span>
           <input
             [value]="contactLineId()"
-            aria-label="LINE"
+            aria-label="LINE ติดต่อ"
             placeholder="@username"
             (input)="updateContactLine($any($event.target).value)"
           />
@@ -42,13 +78,25 @@
         <label class="form-field">
           <span>เบอร์โทร</span>
           <input
+            id="profile-phone"
             [value]="contactPhone()"
             aria-label="เบอร์โทร"
+            inputmode="tel"
+            placeholder="06xxxxxxxx"
+            [attr.aria-invalid]="phoneError() ? 'true' : null"
+            [attr.aria-describedby]="phoneError() ? 'profile-phone-error' : null"
             (input)="updateContactPhone($any($event.target).value)"
           />
+          <app-field-error [message]="phoneError()" errorId="profile-phone-error" />
         </label>
-        <button class="primary" type="button" [disabled]="saving() || !name().trim()" (click)="saveAndContinue()">
-          {{ saving() ? 'กำลังบันทึก…' : 'บันทึกและตั้งพื้นที่' }}
+        <button
+          class="primary"
+          type="button"
+          [disabled]="saving()"
+          (pointerdown)="pressSave($event)"
+          (click)="pressSave($event)"
+        >
+          {{ saving() ? 'กำลังบันทึก…' : provider() ? 'บันทึกโปรไฟล์' : 'บันทึกและตั้งพื้นที่' }}
         </button>
       </div>
     }

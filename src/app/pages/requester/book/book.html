@@ -1,7 +1,7 @@
 <app-page-shell title="จองบริการ" [backLink]="profileBackLink()">
   <section class="screen">
     @if (loading()) {
-      <p class="state-message">กำลังโหลด…</p>
+      <app-loading-skeleton />
     } @else if (provider(); as p) {
       <div class="stack">
         <div class="hero-panel hero-panel--compact">
@@ -13,7 +13,7 @@
             <span class="badge">บริการที่จอง</span>
             <h3>{{ svc.title }}</h3>
             <p>{{ svc.categoryName ?? 'บริการทั่วไป' }}</p>
-            <small>{{ svc.basePriceText ?? 'ติดต่อสอบถามราคา' }}</small>
+            <small>{{ formatBaht(svc.basePriceText) }}</small>
           </div>
         }
 

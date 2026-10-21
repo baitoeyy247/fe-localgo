@@ -1,5 +1,11 @@
 <app-page-shell title="เลือกบทบาท" [showBack]="false">
   <section class="entry">
+    @if (adminDenied()) {
+      <div class="access-alert" role="alert">
+        <p style="margin: 0;">ไม่มีสิทธิ์เข้าถึงหลังบ้านแอดมิน บัญชีนี้ไม่ใช่ผู้ดูแลระบบ</p>
+        <button type="button" (click)="dismissDenied()">ปิด</button>
+      </div>
+    }
     <div class="entry-hero">
       <app-map-view size="hero" label="ค้นหาพื้นที่" radiusLabel="รัศมี 5 กม." />
       <div class="entry-hero__content">
@@ -11,13 +17,20 @@
     @if (categories().length) {
       <div class="category-strip" aria-label="หมวดบริการ">
         @for (cat of categories(); track cat.id) {
-          <button class="category-chip" type="button" (click)="searchCategory(cat)">{{ cat.name }}</button>
+          <button
+            class="category-chip"
+            type="button"
+            [class.is-pressed]="pressedId() === cat.id"
+            [attr.aria-busy]="pressedId() === cat.id"
+            (pointerdown)="armPress(cat.id, $event)"
+            (click)="searchCategory(cat)"
+          >{{ cat.name }}</button>
         }
       </div>
     }
 
     @if (loading()) {
-      <p class="state-message">กำลังเชื่อมต่อระบบ…</p>
+      <app-loading-skeleton />
     } @else if (error()) {
       <p class="error-text">{{ error() }}</p>
       @if (lineHint()) {
@@ -30,23 +43,26 @@
         }
       </div>
       @if (allowDevLogin && !auth.isLineClient()) {
-        <button class="secondary" type="button" (click)="useDevLogin()">เข้าด้วย Dev login (เบราว์เซอร์)</button>
+        <button class="secondary" type="button" (click)="useDevLogin()">เข้าสู่ระบบทดลอง (เบราว์เซอร์)</button>
       }
     } @else {
       @if (auth.user(); as u) {
-        <p class="badge entry-greeting">
-          สวัสดี {{ u.displayName }}
-          @if (auth.authMode() === 'line') { · <span>LINE</span> }
-          @if (auth.authMode() === 'dev') { · <span>Dev</span> }
-        </p>
+        <p class="badge entry-greeting">สวัสดี {{ u.displayName }}</p>
       }
       @if (!auth.user() && allowDevLogin) {
-        <p class="muted-label">LINE จริง: <a [href]="liffEntryUrl()">{{ liffEntryUrl() }}</a></p>
+        <p class="muted-label">เปิดผ่าน LINE: <a [href]="liffEntryUrl()">{{ liffEntryUrl() }}</a></p>
       }
       @if (!auth.isAuthenticated()) {
         <button class="secondary" type="button" (click)="retryLogin()">เข้าสู่ระบบใหม่</button>
       }
-      <button class="role-card role-card--requester" type="button" (click)="enterAs('Requester')">
+      <button
+        class="role-card role-card--requester"
+        type="button"
+        [class.is-pressed]="pressedId() === 'Requester'"
+        [attr.aria-busy]="pressedId() === 'Requester'"
+        (pointerdown)="armPress('Requester', $event)"
+        (click)="enterAs('Requester')"
+      >
         <span class="role-card__icon">🔍</span>
         <span>
           <strong>ผู้รับบริการ</strong>
@@ -54,7 +70,14 @@
         </span>
       </button>
 
-      <button class="role-card role-card--provider" type="button" (click)="enterAs('Provider')">
+      <button
+        class="role-card role-card--provider"
+        type="button"
+        [class.is-pressed]="pressedId() === 'Provider'"
+        [attr.aria-busy]="pressedId() === 'Provider'"
+        (pointerdown)="armPress('Provider', $event)"
+        (click)="enterAs('Provider')"
+      >
         <span class="role-card__icon">🛠</span>
         <span>
           <strong>ผู้ให้บริการ</strong>
@@ -62,7 +85,7 @@
         </span>
       </button>
 
-      @if (!auth.isLineClient()) {
+      @if (auth.isAdmin()) {
         <p class="muted-label entry-admin">
           <button type="button" class="ghost-link" (click)="enterAdmin()">เข้าหลังบ้านแอดมิน</button>
         </p>
