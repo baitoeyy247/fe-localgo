@@ -206,9 +206,11 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
     this.pendingConfirmCount.set(0);
     this.hint.begin();
     try {
-      const mine = await firstValueFrom(this.api.getMyProvider());
+      const [mine, items] = await Promise.all([
+        firstValueFrom(this.api.getMyProvider()),
+        firstValueFrom(this.cache.listMatchingRequests(true)),
+      ]);
       this.provider.set(mine);
-      const items = await firstValueFrom(this.cache.listMatchingRequests(true));
       this.matchingRequests.set(items);
 
       this.pendingConfirmCount.set(

@@ -187,6 +187,7 @@ export class AuthService {
       sessionStorage.removeItem(PERSONA_KEY);
     }
     this.setSession(response.accessToken, response.user, 'dev');
+    this.locations.reloadFromStorage(options?.personaKey ?? null);
     this.cache.preloadHome();
   }
 
@@ -271,7 +272,7 @@ export class AuthService {
     sessionStorage.removeItem(USER_KEY);
     sessionStorage.removeItem(PERSONA_KEY);
     sessionStorage.removeItem(AUTH_MODE_KEY);
-    this.locations.clear();
+    this.locations.forgetSessionCache();
     this.session.clearRequesterFlow();
     this.session.clearProviderRequest();
     this.cache.invalidateAll();

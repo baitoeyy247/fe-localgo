@@ -12,18 +12,19 @@ export interface UserLocationArea {
   needsPick?: boolean;
 }
 
-const STORAGE_KEY = 'localgo.lastLocation';
+const STORAGE_PREFIX = 'localgo.lastLocation.';
+const LEGACY_STORAGE_KEY = 'localgo.lastLocation';
+const PERSONA_KEY = 'localgo_persona_key';
 
 @Injectable({ providedIn: 'root' })
 export class UserLocationService {
   private cached: UserLocationArea | null = null;
 
-  constructor(private readonly geo: GeoService) {
-    this.cached = this.readStored();
-  }
+  constructor(private readonly geo: GeoService) {}
 
   /** Last area the user searched/picked — preferred for booking defaults. */
   getLastArea(): (UserLocationArea & { radiusKm: number }) | null {
+    this.ensureCacheLoaded();
     if (!this.cached || this.cached.needsPick) {
       return null;
     }
@@ -38,6 +39,7 @@ export class UserLocationService {
    * Then GPS. Never silently treat Bangkok map defaults as "current location".
    */
   async resolveSearchArea(): Promise<UserLocationArea & { radiusKm: number }> {
+    this.ensureCacheLoaded();
     if (this.cached && !this.cached.needsPick) {
       return {
         ...this.cached,
@@ -56,7 +58,7 @@ export class UserLocationService {
         const short = label.split(',').slice(0, 2).join(',').trim() || 'ตำแหน่งปัจจุบัน';
         const area: UserLocationArea = {
           title: short,
-          subtitle: 'ตำแหน่งปัจจุบันของคุณ',
+          subtitle: 'ตำแหน่งปัจจุบัน',
           lat: pos.lat,
           lng: pos.lng,
           radiusKm: 5,
@@ -81,29 +83,73 @@ export class UserLocationService {
       radiusKm: area.radiusKm ?? this.cached?.radiusKm ?? 5,
       needsPick: false,
     };
+    const key = this.storageKeyForPersona(this.currentPersonaKey());
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.cached));
+      localStorage.setItem(key, JSON.stringify(this.cached));
+      localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(this.cached));
     } catch {
       // ignore quota / private mode
     }
   }
 
-  /** Clear remembered search area / radius (logout or account switch). */
+  /** Drop in-memory cache only (logout) — persisted per-persona data stays in localStorage. */
+  forgetSessionCache(): void {
+    this.cached = null;
+  }
+
+  /** Clear persisted area for the current persona (account switch). */
   clear(): void {
     this.cached = null;
+    const key = this.storageKeyForPersona(this.currentPersonaKey());
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(key);
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
     } catch {
       // ignore
     }
   }
 
-  private readStored(): UserLocationArea | null {
+  /** Reload from localStorage after login (same or new persona). */
+  reloadFromStorage(personaKey?: string | null): void {
+    this.cached = this.readStored(personaKey ?? this.currentPersonaKey());
+  }
+
+  private ensureCacheLoaded(): void {
+    if (this.cached === null) {
+      this.cached = this.readStored(this.currentPersonaKey());
+    }
+  }
+
+  private currentPersonaKey(): string | null {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
-        return null;
+      return sessionStorage.getItem(PERSONA_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  private storageKeyForPersona(personaKey: string | null): string {
+    return personaKey ? `${STORAGE_PREFIX}${personaKey}` : LEGACY_STORAGE_KEY;
+  }
+
+  private readStored(personaKey: string | null): UserLocationArea | null {
+    const keys = personaKey
+      ? [this.storageKeyForPersona(personaKey), LEGACY_STORAGE_KEY]
+      : [LEGACY_STORAGE_KEY];
+    for (const key of keys) {
+      const parsed = this.parseStored(localStorage.getItem(key));
+      if (parsed) {
+        return parsed;
       }
+    }
+    return null;
+  }
+
+  private parseStored(raw: string | null): UserLocationArea | null {
+    if (!raw) {
+      return null;
+    }
+    try {
       const parsed = JSON.parse(raw) as UserLocationArea;
       if (
         typeof parsed?.lat === 'number' &&

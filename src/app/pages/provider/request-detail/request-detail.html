@@ -143,7 +143,7 @@
           <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" (click)="submitBid()">เสนอราคาใหม่</button>
         }
       </article>
-    } @else if (!showAppointmentSection() && !isTerminal()) {
+    } @else if (canOfferNewBid()) {
       <button class="btn btn-primary btn-block" type="button" (click)="submitBid()">ส่งข้อเสนอราคา</button>
     }
   }

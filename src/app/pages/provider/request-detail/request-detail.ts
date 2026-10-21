@@ -69,7 +69,11 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   } | null = null;
 
   protected statusLabel(status: string): string {
-    return displayRequestStatusLabel(status, this.appointment()?.status);
+    return displayRequestStatusLabel(status, this.effectiveAppointmentStatus());
+  }
+
+  protected effectiveAppointmentStatus(): string | null | undefined {
+    return this.appointment()?.status ?? this.request()?.appointmentStatus ?? null;
   }
   protected readonly bidStatusLabel = bidStatusLabel;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
@@ -109,16 +113,20 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.notFound.set(false);
     this.hint.begin();
     try {
-      const [detail, myProvider] = await Promise.all([
+      const [detail, myProvider, appt] = await Promise.all([
         firstValueFrom(this.api.getRequest(id)),
         firstValueFrom(
           this.api
             .getMyProvider()
             .pipe(catchError((err) => (isNotFoundError(err) ? of(null) : Promise.reject(err)))),
         ),
+        firstValueFrom(
+          this.api.getAppointment(id).pipe(catchError(() => of(null as AppointmentDetail | null))),
+        ),
       ]);
       this.request.set(detail);
       this.myProvider.set(myProvider);
+      this.appointment.set(appt);
       this.myBid.set(
         myProvider ? (detail.bids?.find((bid) => bid.providerId === myProvider.id) ?? null) : null,
       );
@@ -136,9 +144,6 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
         }
       }
       this.distanceMeters.set(meters);
-      if (myProvider && this.hasActiveEngagement(detail, myProvider.id)) {
-        await this.loadAppointment(id);
-      }
     } catch (e) {
       if (isNotFoundError(e)) {
         this.request.set(null);
@@ -239,12 +244,20 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     return bid?.status === 'Selected';
   }
 
+  protected hasProviderAppointmentRecord(): boolean {
+    return !!this.appointment() || !!this.request()?.appointmentStatus;
+  }
+
   protected showAppointmentSection(): boolean {
-    return this.hasActiveEngagement();
+    return this.hasActiveEngagement() || this.hasProviderAppointmentRecord();
   }
 
   protected isTerminal(): boolean {
-    return isTerminalAppointment(this.appointment()?.status);
+    return isTerminalAppointment(this.effectiveAppointmentStatus());
+  }
+
+  protected canOfferNewBid(): boolean {
+    return !this.isTerminal() && !this.hasProviderAppointmentRecord() && !this.hasActiveEngagement();
   }
 
   protected canConfirmAppointment(): boolean {
