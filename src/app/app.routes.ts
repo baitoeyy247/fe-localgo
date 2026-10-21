@@ -10,6 +10,11 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/entry/entry').then((m) => m.EntryPage),
   },
   {
+    path: 'login',
+    pathMatch: 'full',
+    redirectTo: '',
+  },
+  {
     path: 'requester',
     title: 'หน้าหลัก | LocalGo',
     canActivate: [authGuard],
@@ -74,6 +79,11 @@ export const routes: Routes = [
     data: { role: 'requester' },
     loadComponent: () =>
       import('./pages/shared/appointment-by-id').then((m) => m.AppointmentByIdPage),
+  },
+  {
+    path: 'provider/appointments',
+    pathMatch: 'full',
+    redirectTo: 'provider/requests',
   },
   {
     path: 'provider/appointments/:id',

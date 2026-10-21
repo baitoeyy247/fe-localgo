@@ -12,7 +12,7 @@
       <p class="muted" style="margin: 4px 0 0">
         {{ p.services.length }} บริการ · {{ p.branches.length }} จุดให้บริการ ·
         @if (p.verifiedReviewCount > 0) {
-          ★ {{ p.averageVerifiedRating }}&nbsp;({{ p.verifiedReviewCount }} รีวิว)
+          <span class="stars">{{ formatVerifiedRatingLine(p.averageVerifiedRating, p.verifiedReviewCount) }}</span>
         } @else {
           ยังไม่มีรีวิว
         }

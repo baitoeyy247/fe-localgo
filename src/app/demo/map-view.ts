@@ -42,7 +42,7 @@ const markerIcon = L.divIcon({
 export class MapView implements AfterViewInit, OnChanges, OnDestroy {
   readonly size = input<MapSize>('default');
   readonly label = input('พื้นที่บริการ');
-  readonly radiusLabel = input('รัศมี 5 กม.');
+  readonly radiusLabel = input('');
   readonly radiusKm = input<number | null>(null);
   readonly lat = input(13.7563);
   readonly lng = input(100.5018);
@@ -82,6 +82,7 @@ export class MapView implements AfterViewInit, OnChanges, OnDestroy {
     }
 
     if (changes['radiusLabel'] || changes['radiusKm']) {
+      this.syncRadiusCaption();
       if (this.marker) {
         this.placeMarker(this.marker.getLatLng());
       }
@@ -119,7 +120,7 @@ export class MapView implements AfterViewInit, OnChanges, OnDestroy {
   private initMap(): void {
     const center = L.latLng(this.lat(), this.lng());
 
-    this.selectedLabel.set(this.radiusLabel());
+    this.syncRadiusCaption();
     this.map = L.map(this.mapContainer.nativeElement, {
       center,
       zoom: this.zoom(),
@@ -180,6 +181,18 @@ export class MapView implements AfterViewInit, OnChanges, OnDestroy {
     } else {
       this.circle.setLatLng(position);
       this.circle.setRadius(radiusMeters);
+    }
+  }
+
+  private syncRadiusCaption(): void {
+    const km = this.radiusKm();
+    if (km != null && km > 0) {
+      this.selectedLabel.set(`รัศมี ${km} กม.`);
+      return;
+    }
+    const label = this.radiusLabel()?.trim();
+    if (label) {
+      this.selectedLabel.set(label);
     }
   }
 

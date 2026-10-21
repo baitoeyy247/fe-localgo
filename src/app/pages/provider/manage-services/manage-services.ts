@@ -9,6 +9,7 @@ import { ProviderDetail } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { ErrorState } from '../../../shared/ui/error-state';
 import { formatPrice } from '../../../shared/format-price';
+import { formatVerifiedRatingLine } from '../../../shared/format-verified-rating';
 
 @Component({
   selector: 'app-manage-services-page',
@@ -20,6 +21,7 @@ export class ManageServicesPage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly formatPrice = formatPrice;
+  protected readonly formatVerifiedRatingLine = formatVerifiedRatingLine;
 
   constructor(private readonly api: LocalGoApiService) {}
 

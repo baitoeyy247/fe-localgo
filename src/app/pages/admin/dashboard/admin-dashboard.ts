@@ -130,8 +130,10 @@ export class AdminDashboardPage implements OnInit {
       const result = await firstValueFrom(this.api.resetTestData());
       const kept = (result as { keptUsers?: number }).keptUsers ?? 10;
       const deletedReq = (result as { deletedRequests?: number }).deletedRequests ?? 0;
+      const seeded = (result as { sampleReviewsSeeded?: number }).sampleReviewsSeeded ?? 0;
+      const automated = (result as { deletedAutomatedRequests?: number }).deletedAutomatedRequests ?? 0;
       this.notice.set(
-        `ล้างงานทดสอบแล้ว (ลบ ${deletedReq} งาน) — คงบัญชีทดสอบ ${kept} บัญชี`,
+        `ล้างงานทดสอบแล้ว (ลบ ${deletedReq} งาน${automated ? ` รวม automated ${automated}` : ''}) — คงบัญชี ${kept} · seed รีวิว QA ผู้ให้ 01: ${seeded} รายการ`,
       );
       await this.load();
     } catch (e) {

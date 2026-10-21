@@ -17,8 +17,12 @@
         <span class="badge b-green">พร้อมรับงาน</span>
       </div>
       <p class="muted" style="margin: 6px 0 0">
-        {{ provider()!.services.length }} บริการ · {{ provider()!.branches.length }} จุด · ★
-        {{ provider()!.averageVerifiedRating }}&nbsp;({{ provider()!.verifiedReviewCount }} รีวิว)
+        {{ provider()!.services.length }} บริการ · {{ provider()!.branches.length }} จุด ·
+        @if (provider()!.verifiedReviewCount > 0) {
+          <span class="stars">{{ formatVerifiedRatingLine(provider()!.averageVerifiedRating, provider()!.verifiedReviewCount) }}</span>
+        } @else {
+          ยังไม่มีรีวิว
+        }
       </p>
     </div>
 

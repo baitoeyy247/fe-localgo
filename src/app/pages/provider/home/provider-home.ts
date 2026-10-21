@@ -11,6 +11,7 @@ import { apiErrorMessage } from '../../../core/api-error.util';
 import { SlowLoadHint } from '../../../shared/load-state';
 import { ErrorState } from '../../../shared/ui/error-state';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
+import { formatVerifiedRatingLine } from '../../../shared/format-verified-rating';
 
 @Component({
   selector: 'app-provider-home-page',
@@ -24,6 +25,7 @@ export class ProviderHomePage implements OnInit, OnDestroy {
   protected readonly error = signal<string | null>(null);
   protected readonly pendingConfirmCount = signal(0);
   protected readonly hint = new SlowLoadHint();
+  protected readonly formatVerifiedRatingLine = formatVerifiedRatingLine;
 
   constructor(
     private readonly api: LocalGoApiService,

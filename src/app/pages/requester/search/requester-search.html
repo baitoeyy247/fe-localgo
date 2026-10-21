@@ -113,7 +113,7 @@
       <app-map-view
         size="compact"
         label="พื้นที่ค้นหา"
-        [radiusLabel]="'รัศมี ' + radiusKmLabel()"
+        [radiusLabel]="searchRadiusCaption()"
         [radiusKm]="selectedArea().radiusKm"
         [lat]="selectedArea().lat"
         [lng]="selectedArea().lng"

@@ -11,6 +11,7 @@ import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { Category, ProviderSummary } from '../../../core/models';
 import { UserLocationService } from '../../../core/user-location.service';
 import { formatDistanceMeters } from '../../../shared/geo-distance';
+import { searchRadiusCaption, searchRadiusKmLabel } from '../../../shared/search-area-radius';
 import { MapView } from '../../../demo/map-view';
 
 @Component({
@@ -100,7 +101,11 @@ export class RequesterSearchPage implements OnInit {
 
   /** Single source of truth for radius display (card text + map). */
   protected radiusKmLabel(): string {
-    return `${this.selectedArea().radiusKm} กม.`;
+    return searchRadiusKmLabel(this.selectedArea().radiusKm);
+  }
+
+  protected searchRadiusCaption(): string {
+    return searchRadiusCaption(this.selectedArea().radiusKm);
   }
 
   protected updateKeyword(value: string): void {
