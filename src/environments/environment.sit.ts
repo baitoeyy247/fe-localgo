@@ -5,7 +5,7 @@ export const environment = {
   liffId: '2010177240-Bu98ZCLT',
   mapDefaultLat: 13.7563,
   mapDefaultLng: 100.5018,
-  devLoginDisplayName: '',
-  allowDevLogin: false,
+  devLoginDisplayName: 'ทดสอบ ผู้รับ 01',
+  allowDevLogin: true,
   privacyVersion: '1.0-mvp',
 };

@@ -1,4 +1,12 @@
 <app-page-shell title="บริการใกล้คุณ ในที่เดียว" subtitle="ค้นหา · ประกาศงาน · รับข้อเสนอ · นัดหมาย" [showBack]="false" [hero]="true" [hideNavPad]="true">
+  @if (showTestMode()) {
+    <div class="banner warn" role="status">
+      <span
+        ><b>โหมดทดสอบชั่วคราว</b><br />เลือกบัญชีด้านล่างได้ทันที (ไม่ต้องผ่าน LINE) — มี 10 user สำหรับเล่น QA</span
+      >
+    </div>
+  }
+
   @if (loading()) {
     <div class="card" aria-busy="true">
       <div class="skel" style="height: 20px; width: 60%"></div>
@@ -6,7 +14,7 @@
       <div class="skel" style="height: 14px; width: 80%; margin-top: 8px"></div>
       <p class="muted" style="text-align: center; margin-top: 12px">กำลังโหลด…</p>
     </div>
-  } @else if (error()) {
+  } @else if (error() && !showTestMode()) {
     <div class="state" role="alert">
       <div class="em">⚠️</div>
       <h3>เข้าสู่ระบบไม่สำเร็จ</h3>
@@ -18,11 +26,12 @@
       @if (auth.isAuthenticated()) {
         <button class="btn btn-ghost btn-block" type="button" (click)="logout()">ออกจากระบบ</button>
       }
-      @if (allowDevLogin && !auth.isLineClient()) {
-        <button class="btn btn-secondary btn-block" type="button" (click)="useDevLogin()">เข้าด้วย Dev login</button>
-      }
     </div>
   } @else {
+    @if (error() && showTestMode()) {
+      <div class="banner err" role="alert">{{ error() }}</div>
+    }
+
     <div class="card">
       <p class="muted" style="margin: 0">สวัสดี</p>
       @if (auth.user(); as u) {
@@ -30,46 +39,76 @@
       } @else {
         <h2 style="margin: 4px 0">ยินดีต้อนรับ 👋</h2>
       }
-      <p class="muted" style="margin: 0">เลือกบทบาทเพื่อเริ่มใช้งาน</p>
+      <p class="muted" style="margin: 0">
+        @if (auth.isAuthenticated()) {
+          เลือกบทบาทเพื่อเริ่มใช้งาน
+        } @else if (showTestMode()) {
+          เลือกบัญชีทดสอบด้านล่าง แล้วเลือกบทบาท
+        } @else {
+          เข้าสู่ระบบด้วย LINE แล้วเลือกบทบาท
+        }
+      </p>
     </div>
 
-    @if (!auth.isAuthenticated()) {
-      <button class="btn btn-primary btn-block" type="button" (click)="retryLogin()">เข้าสู่ระบบใหม่</button>
-    }
-
-    <button class="card row" type="button" style="width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer" (click)="enterAs('Requester')">
-      <span class="ico">🙋</span>
-      <span class="grow">
-        <b>ผู้รับบริการ</b><br />
-        <span class="muted">ค้นหาบริการ ประกาศงาน รับข้อเสนอราคา และรีวิวหลังงานสำเร็จ</span>
-      </span>
-      <span class="chev"></span>
-    </button>
-
-    <button class="card row" type="button" style="width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer" (click)="enterAs('Provider')">
-      <span class="ico">🧰</span>
-      <span class="grow">
-        <b>ผู้ให้บริการ</b><br />
-        <span class="muted">สร้างโปรไฟล์ เพิ่มบริการ ตั้งพื้นที่ให้บริการ และเสนอราคาแข่งขัน</span>
-      </span>
-      <span class="chev"></span>
-    </button>
-
-    @if (categories().length) {
-      <div class="sec-title">หมวดบริการ</div>
-      <div class="chips">
-        @for (cat of categories(); track cat.id) {
-          <button class="chip" type="button" (click)="searchCategory(cat)">{{ cat.name }}</button>
+    @if (showTestMode() && !auth.isAuthenticated()) {
+      <div class="sec-title"><h3 style="margin: 0; font-size: 18px">บัญชีทดสอบ (10)</h3></div>
+      <div class="list">
+        @for (p of personas; track p.key) {
+          <button type="button" class="li chev" [disabled]="personaBusy()" (click)="loginAsPersona(p)">
+            <span class="ico">{{ p.asAdmin ? '🛡' : p.activeRole === 'Provider' ? '🧰' : '🙋' }}</span>
+            <span class="grow">
+              <span class="t">{{ p.displayName }}</span><br />
+              <span class="muted">{{ p.blurb }}</span>
+            </span>
+          </button>
         }
       </div>
+      @if (personaBusy()) {
+        <p class="muted" style="text-align: center">กำลังเข้าสู่ระบบ…</p>
+      }
     }
 
-    @if (!auth.isLineClient()) {
-      <button class="btn btn-ghost btn-block" type="button" (click)="enterAdmin()">เข้าหลังบ้านแอดมิน</button>
+    @if (!auth.isAuthenticated() && !showTestMode()) {
+      <button class="btn btn-primary btn-block" type="button" (click)="retryLogin()">เข้าสู่ระบบด้วย LINE</button>
     }
 
     @if (auth.isAuthenticated()) {
-      <button class="btn btn-danger-o btn-block" type="button" (click)="logout()">ออกจากระบบ</button>
+      <button class="card row" type="button" style="width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer" (click)="enterAs('Requester')">
+        <span class="ico">🙋</span>
+        <span class="grow">
+          <b>ผู้รับบริการ</b><br />
+          <span class="muted">ค้นหาบริการ ประกาศงาน รับข้อเสนอราคา และรีวิวหลังงานสำเร็จ</span>
+        </span>
+        <span class="chev"></span>
+      </button>
+
+      <button class="card row" type="button" style="width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer" (click)="enterAs('Provider')">
+        <span class="ico">🧰</span>
+        <span class="grow">
+          <b>ผู้ให้บริการ</b><br />
+          <span class="muted">สร้างโปรไฟล์ เพิ่มบริการ ตั้งพื้นที่ให้บริการ และเสนอราคาแข่งขัน</span>
+        </span>
+        <span class="chev"></span>
+      </button>
+
+      @if (auth.isAdmin()) {
+        <button class="btn btn-ghost btn-block" type="button" (click)="goAdmin()">เข้าหลังบ้านแอดมิน</button>
+      }
+
+      @if (categories().length) {
+        <div class="sec-title">หมวดบริการ</div>
+        <div class="chips">
+          @for (cat of categories(); track cat.id) {
+            <button class="chip" type="button" (click)="searchCategory(cat)">{{ cat.name }}</button>
+          }
+        </div>
+      }
+
+      <button class="btn btn-danger-o btn-block" type="button" (click)="logout()">ออกจากระบบ / เปลี่ยนบัญชี</button>
+    }
+
+    @if (!auth.isLineClient() && !showTestMode()) {
+      <button class="btn btn-ghost btn-block" type="button" (click)="enterAdmin()">เข้าหลังบ้านแอดมิน</button>
     }
   }
 </app-page-shell>

@@ -5,6 +5,7 @@ import { PageShell } from '../../demo/page-shell';
 import { AuthService } from '../../core/auth.service';
 import { LocalGoApiService } from '../../core/localgo-api.service';
 import { Category } from '../../core/models';
+import { TEST_PERSONAS, TestPersona } from '../../core/test-personas';
 import { environment } from '../../../environments/environment';
 
 @Component({
@@ -17,11 +18,16 @@ export class EntryPage implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly categories = signal<Category[]>([]);
   protected readonly lineHint = signal<string | null>(null);
-  protected readonly allowDevLogin = environment.allowDevLogin;
+  protected readonly personaBusy = signal(false);
+  protected readonly personas = TEST_PERSONAS;
   protected readonly auth = inject(AuthService);
   private readonly api = inject(LocalGoApiService);
   private readonly router = inject(Router);
   private static readonly DEFAULT_AUTH_ERROR = 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
+
+  protected showTestMode(): boolean {
+    return this.auth.canUseTestLogin();
+  }
 
   protected liffEntryUrl(): string {
     return this.auth.liffEntryUrl();
@@ -56,14 +62,40 @@ export class EntryPage implements OnInit {
     await this.loadLineHint();
   }
 
+  protected async loginAsPersona(persona: TestPersona): Promise<void> {
+    if (this.personaBusy()) {
+      return;
+    }
+    this.personaBusy.set(true);
+    this.error.set(null);
+    try {
+      await this.auth.devLogin({
+        displayName: persona.displayName,
+        activeRole: persona.activeRole,
+        asAdmin: persona.asAdmin === true,
+        personaKey: persona.key,
+      });
+      await this.loadCategories();
+    } catch (e) {
+      this.error.set(e instanceof Error ? e.message : 'เข้าบัญชีทดสอบไม่สำเร็จ');
+    } finally {
+      this.personaBusy.set(false);
+    }
+  }
+
   private async bootstrapEntry(): Promise<void> {
     try {
       this.auth.resetBootstrap();
       await this.auth.ensureSession();
-      await this.loadCategories();
+      if (this.auth.isAuthenticated()) {
+        await this.loadCategories();
+      }
       await this.loadLineHint();
     } catch (e) {
-      this.error.set(this.toAuthErrorMessage(e));
+      // On SIT test mode, LIFF may fail — still show persona picker.
+      if (!this.showTestMode()) {
+        this.error.set(this.toAuthErrorMessage(e));
+      }
       console.error('[LocalGo auth]', e);
       await this.loadLineHint();
     } finally {
@@ -76,14 +108,12 @@ export class EntryPage implements OnInit {
       const cats = await firstValueFrom(this.api.listCategories());
       this.categories.set(cats);
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'โหลดหมวดบริการไม่สำเร็จ');
       console.error('[LocalGo categories]', e);
     }
   }
 
   private async loadLineHint(): Promise<void> {
-    const host = window.location.hostname;
-    if (this.isLocalDevHost(host)) {
+    if (this.showTestMode()) {
       return;
     }
     try {
@@ -93,7 +123,7 @@ export class EntryPage implements OnInit {
       const liffId = cfg.liffId?.trim();
       if (!liffId) {
         this.lineHint.set(
-          'LIFF ต้องสร้างบน Channel 2010177046 — ใส่ LIFF ID ใน appsettings.Development.json และ environment.ts',
+          'LIFF ต้องสร้างบน Channel 2010177240 — ใส่ LIFF ID ใน appsettings และ environment',
         );
       } else if (expected && expected !== current) {
         this.lineHint.set(
@@ -103,23 +133,8 @@ export class EntryPage implements OnInit {
         this.lineHint.set(`LIFF Endpoint ใน LINE Console ต้องเป็น: ${expected}`);
       }
     } catch {
-      this.lineHint.set(
-        'ตรวจว่า FE (4200), API (5080) และ ngrok http 4200 รันอยู่ แล้วเปิดจากลิงก์ LIFF ไม่ใช่ localhost',
-      );
+      /* ignore */
     }
-  }
-
-  private isLocalDevHost(host: string): boolean {
-    return (
-      host === 'localhost' ||
-      host === '0.0.0.0' ||
-      host === '::1' ||
-      host.endsWith('.local') ||
-      /^127\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
-      /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
-      /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) ||
-      /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host)
-    );
   }
 
   protected async enterAs(role: 'Requester' | 'Provider'): Promise<void> {
@@ -127,26 +142,20 @@ export class EntryPage implements OnInit {
     await this.router.navigateByUrl(role === 'Requester' ? '/requester' : '/provider');
   }
 
+  protected async goAdmin(): Promise<void> {
+    await this.router.navigateByUrl('/admin');
+  }
+
   protected async enterAdmin(): Promise<void> {
     await this.auth.loginAsAdmin();
     await this.router.navigateByUrl('/admin');
   }
 
-  protected async useDevLogin(): Promise<void> {
-    this.loading.set(true);
-    try {
-      await this.auth.devLogin();
-      this.error.set(null);
-    } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Dev login failed');
-    } finally {
-      this.loading.set(false);
-    }
-  }
-
   protected async searchCategory(cat: Category): Promise<void> {
     await this.auth.setActiveRole('Requester');
-    await this.router.navigate(['/requester/search'], { queryParams: { categoryId: cat.id, categoryName: cat.name } });
+    await this.router.navigate(['/requester/search'], {
+      queryParams: { categoryId: cat.id, categoryName: cat.name },
+    });
   }
 
   private toAuthErrorMessage(error: unknown): string {

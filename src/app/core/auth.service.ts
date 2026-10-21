@@ -43,10 +43,10 @@ export class AuthService {
   private resolvedLiffId: string | null = null;
 
   async bootstrap(): Promise<void> {
-    const useDevLogin = environment.allowDevLogin && this.isLocalDevHost();
+    const allowTestLogin = environment.allowDevLogin && this.canUseTestLogin();
 
-    // เปิดจาก LINE / ngrok — อย่าใช้ token Dev เก่าค้างจาก localhost/LAN dev
-    if (!useDevLogin) {
+    // LINE / production hosts — clear leftover Dev tokens, then LIFF
+    if (!allowTestLogin) {
       if (sessionStorage.getItem(AUTH_MODE_KEY) !== 'line') {
         this.clearSession();
       }
@@ -69,7 +69,9 @@ export class AuthService {
       }
     }
 
-    if (useDevLogin) {
+    // SIT/test: wait for persona picker on entry (do not auto-create a throwaway user).
+    // Localhost: keep one-click convenience with the default display name.
+    if (this.isLocalDevHost()) {
       await this.devLogin();
     }
   }
@@ -86,8 +88,8 @@ export class AuthService {
       await liff.init({ liffId });
       this.isLineClient.set(liff.isInClient());
     } catch (e) {
-      if (environment.allowDevLogin && this.isLocalDevHost()) {
-        await this.devLogin();
+      if (environment.allowDevLogin && this.canUseTestLogin()) {
+        // Let entry show test personas / Dev login instead of hard-failing LIFF.
         return;
       }
       throw this.toAuthError(e, 'ไม่สามารถเริ่ม LIFF ได้ — ตรวจ Endpoint URL ใน LINE Console (ต้องเป็น ngrok HTTPS)');
@@ -149,14 +151,29 @@ export class AuthService {
     this.clearReloginGuard();
   }
 
-  async devLogin(): Promise<void> {
+  async devLogin(options?: {
+    displayName?: string;
+    activeRole?: 'Requester' | 'Provider';
+    asAdmin?: boolean;
+    personaKey?: string;
+  }): Promise<void> {
     const response = await firstValueFrom(
       this.api.devLogin({
-        displayName: environment.devLoginDisplayName,
-        activeRole: 'Requester',
+        displayName: options?.displayName ?? (environment.devLoginDisplayName || 'Dev User'),
+        activeRole: options?.activeRole ?? 'Requester',
+        asAdmin: options?.asAdmin ?? false,
+        personaKey: options?.personaKey,
       }),
     );
     this.setSession(response.accessToken, response.user, 'dev');
+  }
+
+  /** Localhost / LAN, or temporary SIT playtest hosts (Pages). */
+  canUseTestLogin(): boolean {
+    if (!environment.allowDevLogin) {
+      return false;
+    }
+    return this.isLocalDevHost() || this.isSitPlaytestHost();
   }
 
   liffEntryUrl(): string {
@@ -206,10 +223,12 @@ export class AuthService {
   }
 
   async loginAsAdmin(): Promise<void> {
-    const response = await firstValueFrom(
-      this.api.devLogin({ displayName: 'Demo Admin', asAdmin: true, activeRole: 'Requester' }),
-    );
-    this.setSession(response.accessToken, response.user, 'dev');
+    await this.devLogin({
+      displayName: 'ทดสอบ แอดมิน',
+      activeRole: 'Requester',
+      asAdmin: true,
+      personaKey: 'admin-01',
+    });
   }
 
   clearSession(): void {
@@ -232,6 +251,15 @@ export class AuthService {
       /^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host) ||
       /^192\.168\.\d{1,3}\.\d{1,3}$/.test(host) ||
       /^172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}$/.test(host)
+    );
+  }
+
+  private isSitPlaytestHost(): boolean {
+    const host = window.location.hostname;
+    return (
+      host === 'localgo-sit-616.pages.dev' ||
+      host.endsWith('.localgo-sit-616.pages.dev') ||
+      host === 'localgo-sit.pages.dev'
     );
   }
 

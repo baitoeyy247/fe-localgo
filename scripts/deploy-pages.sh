@@ -18,6 +18,8 @@ fi
 export CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID
 export NG_APP_API_BASE_URL="${NG_APP_API_BASE_URL:-https://be-localgo-ul36.onrender.com/api}"
 export NG_APP_LIFF_ID="${NG_APP_LIFF_ID:-2010177240-Bu98ZCLT}"
+# Temporary SIT playtest: persona picker (set NG_APP_ALLOW_DEV_LOGIN=false to turn off)
+export NG_APP_ALLOW_DEV_LOGIN="${NG_APP_ALLOW_DEV_LOGIN:-true}"
 
 echo "==> Generating SIT environment (api=$NG_APP_API_BASE_URL)"
 node scripts/generate-fe-environment.mjs

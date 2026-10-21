@@ -41,6 +41,7 @@ export class LocalGoApiService {
     displayName?: string;
     activeRole?: string;
     asAdmin?: boolean;
+    personaKey?: string;
   }): Observable<AuthResponse> {
     return this.post<AuthResponse>('/auth/dev/login', body);
   }
