@@ -118,13 +118,17 @@ export class AdminDashboardPage implements OnInit {
     if (this.acting()) {
       return;
     }
-    if (!confirm('ลบข้อมูลบัญชีทดสอบ (dev-persona-*) ทั้งหมด?')) {
+    if (!confirm('ล้างงาน/นัด/รีวิวของบัญชีทดสอบ? (คงไว้ 10 บัญชีทดสอบ)')) {
       return;
     }
     this.acting.set(true);
     try {
       const result = await firstValueFrom(this.api.resetTestData());
-      this.notice.set(`รีเซ็ตข้อมูลทดสอบแล้ว (ลบ ${result.deletedUsers} ผู้ใช้)`);
+      const kept = (result as { keptUsers?: number }).keptUsers ?? 10;
+      const deletedReq = (result as { deletedRequests?: number }).deletedRequests ?? 0;
+      this.notice.set(
+        `ล้างงานทดสอบแล้ว (ลบ ${deletedReq} งาน) — คงบัญชีทดสอบ ${kept} บัญชี`,
+      );
       await this.load();
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'รีเซ็ตข้อมูลทดสอบไม่สำเร็จ'));

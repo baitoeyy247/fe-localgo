@@ -11,10 +11,12 @@ import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderDetail } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import { UserLocationService } from '../../../core/user-location.service';
+import { GeoService } from '../../../core/geo.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { ThaiDatetimeField } from '../../../shared/ui/thai-datetime-field';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { formatPrice } from '../../../shared/format-price';
+import { ToastService } from '../../../core/toast.service';
 
 @Component({
   selector: 'app-requester-book-page',
@@ -42,6 +44,8 @@ export class RequesterBookPage implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly userLocation = inject(UserLocationService);
+  private readonly geo = inject(GeoService);
+  private readonly toast = inject(ToastService);
   private readonly datetimeField = viewChild(ThaiDatetimeField);
 
   async ngOnInit(): Promise<void> {
@@ -90,15 +94,14 @@ export class RequesterBookPage implements OnInit {
     return p?.services.find((s) => s.id === id) ?? null;
   }
 
-  protected profileBackLink(): string {
+  protected profileBackCommands(): unknown[] {
     const p = this.provider();
-    if (!p) {
-      return '/requester/search';
-    }
+    return p ? ['/requester/provider', p.id] : ['/requester/search'];
+  }
+
+  protected profileBackQuery(): Record<string, string> | null {
     const svcId = this.serviceId();
-    return svcId
-      ? `/requester/provider/${p.id}?serviceId=${encodeURIComponent(svcId)}`
-      : `/requester/provider/${p.id}`;
+    return svcId ? { serviceId: svcId } : null;
   }
 
   protected openPicker(): void {
@@ -122,8 +125,9 @@ export class RequesterBookPage implements OnInit {
   protected async confirm(): Promise<void> {
     const providerId = this.provider()?.id;
     const serviceId = this.serviceId();
-    const lat = this.mapLat();
-    const lng = this.mapLng();
+    let lat = this.mapLat();
+    let lng = this.mapLng();
+    const address = this.addressText().trim();
     const dt = this.datetimeField();
     dt?.markTouched();
     this.error.set(null);
@@ -138,8 +142,36 @@ export class RequesterBookPage implements OnInit {
       scrollToFirstError();
       return;
     }
-    if (!providerId || !serviceId || lat === null || lng === null || this.saving()) {
-      this.error.set('กรุณาเลือกสถานที่นัดหมายบนแผนที่หรือพิมพ์ที่อยู่');
+    if (!providerId || !serviceId || this.saving()) {
+      return;
+    }
+
+    // Allow typed address alone — geocode when map pin is missing.
+    if ((lat === null || lng === null) && address) {
+      this.saving.set(true);
+      this.toast.show('กำลังค้นหาพิกัดจากที่อยู่…');
+      try {
+        const place = await this.geo.searchPlace(address);
+        if (!place) {
+          this.error.set('หาพิกัดจากที่อยู่ไม่เจอ — ลองพิมพ์ละเอียดขึ้น หรือปักหมุดบนแผนที่');
+          scrollToFirstError();
+          this.saving.set(false);
+          return;
+        }
+        lat = place.lat;
+        lng = place.lng;
+        this.mapLat.set(lat);
+        this.mapLng.set(lng);
+      } catch (e) {
+        this.error.set(e instanceof Error ? e.message : 'ค้นหาพิกัดไม่สำเร็จ');
+        scrollToFirstError();
+        this.saving.set(false);
+        return;
+      }
+    }
+
+    if (lat === null || lng === null) {
+      this.error.set('กรุณาพิมพ์ที่อยู่นัดหมาย หรือปักหมุดบนแผนที่');
       scrollToFirstError();
       return;
     }
@@ -147,11 +179,12 @@ export class RequesterBookPage implements OnInit {
     this.saving.set(true);
     this.error.set(null);
     this.success.set('กำลังบันทึกนัดหมาย…');
+    this.toast.show('กำลังบันทึกนัดหมาย…');
     try {
       const result = await firstValueFrom(
         this.api.bookProviderService(providerId, serviceId, {
           scheduledAt: new Date(this.scheduledAt()).toISOString(),
-          addressText: this.addressText().trim() || undefined,
+          addressText: address || undefined,
           latitude: lat,
           longitude: lng,
           note: this.note().trim() || undefined,
@@ -159,6 +192,7 @@ export class RequesterBookPage implements OnInit {
       );
       this.session.requesterRequestId = result.serviceRequestId;
       this.success.set('จองนัดหมายแล้ว ระบบจะแจ้งผู้ให้บริการให้ทราบ');
+      this.toast.show('จองนัดหมายแล้ว');
       setTimeout(() => {
         void this.router.navigate(['/requester/appointments', result.appointmentId]);
       }, 400);

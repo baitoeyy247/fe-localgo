@@ -335,16 +335,28 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   }
 
   protected rejectReason(appt: AppointmentDetail): string | null {
+    const direct = appt.declineReason?.trim();
+    if (direct) {
+      return direct;
+    }
     const note = appt.note?.trim();
-    if (!note) {
+    if (!note || appt.status !== 'Rejected') {
       return null;
     }
     const marker = 'เหตุผลที่ปฏิเสธ:';
     const idx = note.lastIndexOf(marker);
-    if (idx >= 0) {
-      return note.slice(idx + marker.length).trim() || null;
+    return idx >= 0 ? note.slice(idx + marker.length).trim() || null : null;
+  }
+
+  protected customerNote(appt: AppointmentDetail): string | null {
+    const note = appt.note?.trim();
+    if (!note) {
+      return null;
     }
-    return appt.status === 'Rejected' ? note : null;
+    if (note.includes('เหตุผลที่ปฏิเสธ:')) {
+      return note.replace(/\n?เหตุผลที่ปฏิเสธ:[\s\S]*$/u, '').trim() || null;
+    }
+    return note;
   }
 
   protected async rejectAppointment(reason: string): Promise<void> {
@@ -502,7 +514,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
           }
         }
       }
-      this.notice.set(options.notice);
+      this.notice.set(updated.status === status ? options.notice : null);
     } catch (e) {
       this.appointment.set(appt);
       this.error.set(apiErrorMessage(e, options.errorFallback));

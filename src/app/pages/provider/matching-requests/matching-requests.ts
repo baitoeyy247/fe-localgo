@@ -22,6 +22,7 @@ import { formatPrice } from '../../../shared/format-price';
 import { normalizeList } from '../../../shared/normalize-list';
 
 type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
+type JobTab = 'active' | 'completed' | 'cancelled' | 'rejected' | 'open';
 
 @Component({
   selector: 'app-matching-requests-page',
@@ -71,21 +72,34 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   protected readonly error = signal<string | null>(null);
   protected readonly setupIssue = signal<SetupIssue | null>(null);
   protected readonly pendingConfirmCount = signal(0);
+  protected readonly tab = signal<JobTab>('active');
   protected readonly statusLabel = displayRequestStatusLabel;
   protected readonly statusBadgeClass = displayRequestStatusBadgeClass;
   protected readonly hint = new SlowLoadHint();
 
   protected readonly formatPrice = formatPrice;
+  protected readonly tabs: { key: JobTab; label: string }[] = [
+    { key: 'active', label: 'กำลังทำ' },
+    { key: 'open', label: 'เปิดรับราคา' },
+    { key: 'completed', label: 'เสร็จสิ้น' },
+    { key: 'cancelled', label: 'ยกเลิก' },
+    { key: 'rejected', label: 'ปฏิเสธ' },
+  ];
 
-  /** M6: jobs open for bidding (not yet mine). */
+  /** Jobs open for bidding (not yet mine). */
   protected readonly openJobs = computed(() => {
     const list = normalizeList<ServiceRequestSummary>(this.matchingRequests());
     return list.filter((r) => !this.isMine(r) && this.isBiddable(r));
   });
-  /** M6: jobs I already bid on / need confirm / are in progress. */
+  /** Jobs I already bid on / engaged / terminal history. */
   protected readonly myJobs = computed(() => {
     const list = normalizeList<ServiceRequestSummary>(this.matchingRequests());
     return list.filter((r) => this.isMine(r));
+  });
+
+  protected readonly filteredMyJobs = computed(() => {
+    const t = this.tab();
+    return this.myJobs().filter((r) => this.matchesTab(r, t));
   });
 
   constructor(
@@ -109,7 +123,53 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
 
   protected isMine(request: ServiceRequestSummary): boolean {
     return (
-      !!request.alreadyBidByMe || !!request.needsAppointmentConfirm || this.isMyActiveJob(request)
+      !!request.alreadyBidByMe ||
+      !!request.needsAppointmentConfirm ||
+      this.isMyActiveJob(request) ||
+      request.status === 'Completed' ||
+      request.status === 'Cancelled' ||
+      request.appointmentStatus === 'Completed' ||
+      request.appointmentStatus === 'Cancelled' ||
+      request.appointmentStatus === 'Rejected'
+    );
+  }
+
+  protected setTab(key: JobTab): void {
+    this.tab.set(key);
+  }
+
+  protected tabCount(key: JobTab): number {
+    if (key === 'open') {
+      return this.openJobs().length;
+    }
+    return this.myJobs().filter((r) => this.matchesTab(r, key)).length;
+  }
+
+  protected currentTabLabel(): string {
+    return this.tabs.find((t) => t.key === this.tab())?.label ?? 'งานของฉัน';
+  }
+
+  private matchesTab(request: ServiceRequestSummary, tab: JobTab): boolean {
+    if (tab === 'open') {
+      return false;
+    }
+    if (tab === 'completed') {
+      return request.status === 'Completed' || request.appointmentStatus === 'Completed';
+    }
+    if (tab === 'cancelled') {
+      return (
+        (request.status === 'Cancelled' || request.appointmentStatus === 'Cancelled') &&
+        request.appointmentStatus !== 'Rejected'
+      );
+    }
+    if (tab === 'rejected') {
+      return request.appointmentStatus === 'Rejected';
+    }
+    // active
+    return (
+      !this.isTerminalJob(request) &&
+      request.status !== 'Completed' &&
+      request.appointmentStatus !== 'Completed'
     );
   }
 

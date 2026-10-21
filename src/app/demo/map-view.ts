@@ -110,8 +110,9 @@ export class MapView implements AfterViewInit, OnChanges, OnDestroy {
     const center = L.latLng(lat, lng);
     this.placeMarker(center);
     this.map.flyTo(center, zoom, { duration: 0.6 });
+    const radius = this.radiusLabel()?.trim();
     this.selectedLabel.set(
-      `${lat.toFixed(5)}, ${lng.toFixed(5)} · ${this.radiusLabel()}`,
+      radius ? `${lat.toFixed(5)}, ${lng.toFixed(5)} · ${radius}` : `${lat.toFixed(5)}, ${lng.toFixed(5)}`,
     );
   }
 
@@ -141,8 +142,11 @@ export class MapView implements AfterViewInit, OnChanges, OnDestroy {
     if (this.selectable() && this.size() !== 'hero') {
       this.map.on('click', (event: L.LeafletMouseEvent) => {
         this.placeMarker(event.latlng);
+        const radius = this.radiusLabel()?.trim();
         this.selectedLabel.set(
-          `${event.latlng.lat.toFixed(5)}, ${event.latlng.lng.toFixed(5)} · ${this.radiusLabel()}`,
+          radius
+            ? `${event.latlng.lat.toFixed(5)}, ${event.latlng.lng.toFixed(5)} · ${radius}`
+            : `${event.latlng.lat.toFixed(5)}, ${event.latlng.lng.toFixed(5)}`,
         );
         this.selected.emit({ lat: event.latlng.lat, lng: event.latlng.lng });
       });

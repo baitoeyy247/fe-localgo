@@ -14,14 +14,15 @@
     <span class="ico">📍</span>
     <span class="grow">
       <b>{{ selectedArea().title }}</b><br />
-      <span class="muted">{{ selectedArea().subtitle }} · รัศมี {{ radiusKmLabel() }}</span>
+      <span class="muted">{{ selectedArea().subtitle }}</span>
     </span>
     <button type="button" class="btn btn-secondary btn-sm" (click)="openPicker()">เลือกบนแผนที่</button>
   </div>
   <p class="muted" style="margin: 0">รัศมีค้นหา {{ radiusKmLabel() }}</p>
 
   @if (categories().length) {
-    <div class="chips" aria-label="กรองหมวดบริการ">
+    <div class="chips chips--scroll" aria-label="กรองหมวดบริการ">
+      <span class="chips__hint muted" aria-hidden="true">เลื่อนดูหมวด →</span>
       <button
         class="chip"
         [class.on]="selectedCategoryId() === null"
@@ -53,7 +54,7 @@
 
   <div class="sec-title">
     ผู้ให้บริการที่ตอบโจทย์ตอนนี้
-    <span class="muted">{{ providers().length }} ราย · รัศมี {{ radiusKmLabel() }}</span>
+    <span class="muted">{{ providers().length }} ราย</span>
   </div>
 
   <div class="search-layout">

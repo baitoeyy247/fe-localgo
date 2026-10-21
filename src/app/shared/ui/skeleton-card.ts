@@ -12,7 +12,9 @@ import { Component, input, output } from '@angular/core';
       </div>
     } @else {
       @if (slow()) {
-        <p class="muted" style="text-align: center" role="status">กำลังเชื่อมต่อเซิร์ฟเวอร์ อาจใช้เวลาสักครู่</p>
+        <p class="muted" style="text-align: center" role="status">
+          เซิร์ฟเวอร์กำลังตื่น — รอสักครู่หรือกดลองใหม่หากค้างนาน
+        </p>
       }
       @for (i of items(); track i) {
         <div class="card" aria-hidden="true">

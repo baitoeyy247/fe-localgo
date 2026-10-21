@@ -64,10 +64,11 @@
         } @else if (appointment(); as appt) {
           <p style="margin-top: 8px"><b>วันและเวลา:</b> {{ formatScheduledAt(appt.scheduledAt) }}</p>
           <p><b>สถานที่:</b> {{ appt.addressText?.trim() || 'ยังไม่ระบุสถานที่' }}</p>
+          @if (customerNote(appt); as cnote) {
+            <p><b>หมายเหตุลูกค้า:</b> {{ cnote }}</p>
+          }
           @if (appt.status === 'Rejected' && rejectReason(appt); as reason) {
             <p><b>เหตุผลที่ปฏิเสธ:</b> {{ reason }}</p>
-          } @else if (appt.note) {
-            <p><b>หมายเหตุ:</b> {{ appt.note }}</p>
           }
           <p>
             <b>สถานะ:</b>

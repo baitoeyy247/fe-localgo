@@ -141,6 +141,7 @@ export interface AppointmentDetail {
   longitude?: number | null;
   status: string;
   note?: string | null;
+  declineReason?: string | null;
   createdAt: string;
   updatedAt: string;
 }

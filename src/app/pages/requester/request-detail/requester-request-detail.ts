@@ -85,12 +85,10 @@ export class RequesterRequestDetailPage implements OnInit, OnDestroy {
       this.request.set(detail);
       this.session.currentRequestId = detail.id;
       this.bids.set(detail.bids ?? (await firstValueFrom(this.api.listBids(id))));
-      if (detail.selectedProviderId || detail.status === 'Scheduled') {
-        try {
-          this.appointment.set(await firstValueFrom(this.api.getAppointment(id)));
-        } catch {
-          this.appointment.set(null);
-        }
+      try {
+        this.appointment.set(await firstValueFrom(this.api.getAppointment(id)));
+      } catch {
+        this.appointment.set(null);
       }
     } catch (e) {
       if (isNotFoundError(e)) {
@@ -110,7 +108,22 @@ export class RequesterRequestDetailPage implements OnInit, OnDestroy {
     return st === 'Draft' || st === 'Open' || st === 'HasOffers';
   }
 
+  protected isRejected(): boolean {
+    return this.appointment()?.status === 'Rejected';
+  }
+
+  protected declineReason(): string | null {
+    const appt = this.appointment();
+    if (!appt || appt.status !== 'Rejected') {
+      return null;
+    }
+    return appt.declineReason?.trim() || null;
+  }
+
   protected nextActionLabel(): string | null {
+    if (this.isRejected()) {
+      return null;
+    }
     const st = this.request()?.status;
     if (st === 'Open' || st === 'HasOffers') {
       return 'ดูข้อเสนอ';
@@ -119,6 +132,16 @@ export class RequesterRequestDetailPage implements OnInit, OnDestroy {
       return 'ไปหน้านัดหมาย';
     }
     return null;
+  }
+
+  protected async goBookOther(): Promise<void> {
+    this.session.clearRequesterFlow();
+    await this.router.navigateByUrl('/requester/search');
+  }
+
+  protected async goNewAppointment(): Promise<void> {
+    this.session.clearRequesterFlow();
+    await this.router.navigateByUrl('/requester/post');
   }
 
   protected async goNext(): Promise<void> {

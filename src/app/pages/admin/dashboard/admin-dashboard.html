@@ -123,7 +123,8 @@
             <th>สถานะ</th>
             <th>เวลานัด</th>
             <th>สถานที่</th>
-            <th>หมายเหตุ / เหตุผล</th>
+            <th>หมายเหตุลูกค้า</th>
+            <th>เหตุผลที่ปฏิเสธ</th>
           </tr>
         </thead>
         <tbody>
@@ -140,10 +141,11 @@
               <td>{{ formatWhen(a.scheduledAt) }}</td>
               <td>{{ a.addressText || '—' }}</td>
               <td>{{ a.note || '—' }}</td>
+              <td>{{ a.declineReason || '—' }}</td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="4" class="muted">ไม่มีนัด</td>
+              <td colspan="5" class="muted">ไม่มีนัด</td>
             </tr>
           }
         </tbody>

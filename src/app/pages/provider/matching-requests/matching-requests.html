@@ -1,11 +1,11 @@
 <app-page-shell title="งานที่ตรงกับบริการ" backLink="/provider">
   <div class="sec-title">
-    รายการงาน ({{ matchingRequests().length }})
+    รายการงาน
     <button type="button" class="btn btn-ghost btn-sm" (click)="reload()" [disabled]="loading()">รีเฟรช</button>
   </div>
 
   @if (loading()) {
-    <app-skeleton-card [slow]="hint.slow()" [count]="3" />
+    <app-skeleton-card [slow]="hint.slow()" [timedOut]="hint.timedOut()" [count]="3" (retry)="reload()" />
   } @else if (error()) {
     <app-error-state [message]="error()!" (retry)="reload()" />
   } @else if (setupIssue()) {
@@ -15,73 +15,69 @@
       <p>{{ setupMessage() }}</p>
       <a class="btn btn-primary" [routerLink]="setupLink()">{{ setupActionLabel() }}</a>
     </div>
-  } @else if (matchingRequests().length === 0) {
-    <div class="state">
-      <div class="em">📋</div>
-      <h3>ยังไม่มีงานที่ตรงเงื่อนไข</h3>
-      <p>รอประกาศใหม่ในพื้นที่ หรือลองขยายพื้นที่และเปิดบริการเพิ่ม</p>
-    </div>
   } @else {
-    @if (pendingConfirmCount() > 0) {
+    @if (pendingConfirmCount() > 0 && tab() === 'active') {
       <div class="banner warn" role="status">
         <span
-          ><b>มีงานรอยืนยันนัด {{ pendingConfirmCount() }} รายการ</b><br />เลื่อนไปที่ “งานของฉัน” แล้วกดยืนยันรับนัด</span
+          ><b>มีงานรอยืนยันนัด {{ pendingConfirmCount() }} รายการ</b><br />กดยืนยันรับนัดในงานของฉัน</span
         >
       </div>
     }
 
-    <div class="sec-title">งานของฉัน ({{ myJobs().length }})</div>
-    @for (request of myJobs(); track request.id) {
-      <article class="card">
-        <div class="row between" style="align-items: flex-start">
-          <b>{{ request.title }}</b>
-          <span class="badge" [ngClass]="chipClass(request)">{{ chipLabel(request) }}</span>
-        </div>
-        <p class="muted" style="margin: 4px 0 0">
-          {{ request.categoryName ?? 'ทั่วไป' }} · {{ formatDistance(request.distanceMeters) }}
-        </p>
-        <p class="muted" style="margin: 4px 0 12px; font-size: 13px">
-          โพสต์ {{ formatWhen(request.createdAt) }} · {{ request.bidCount }} ข้อเสนอ
-          @if (request.budgetText) {
-            · {{ formatPrice(request.budgetText) }}
-          }
-        </p>
-        <button
-          type="button"
-          class="btn btn-sm btn-block"
-          [class.btn-primary]="!isTerminalJob(request)"
-          [class.btn-ghost]="isTerminalJob(request)"
-          (click)="openRequest(request)"
-        >
-          {{ actionLabel(request) }}
+    <div class="chips chips--scroll" role="tablist" aria-label="กรองงาน">
+      @for (t of tabs; track t.key) {
+        <button type="button" class="chip" [class.on]="tab() === t.key" (click)="setTab(t.key)">
+          {{ t.label }} ({{ tabCount(t.key) }})
         </button>
-      </article>
-    } @empty {
-      <p class="muted">ยังไม่มีงานของคุณ</p>
-    }
+      }
+    </div>
 
-    <div class="sec-title">งานที่เปิดรับราคา ({{ openJobs().length }})</div>
-    @for (request of openJobs(); track request.id) {
-      <article class="card">
-        <div class="row between" style="align-items: flex-start">
-          <b>{{ request.title }}</b>
-          <span class="badge" [ngClass]="chipClass(request)">{{ chipLabel(request) }}</span>
-        </div>
-        <p class="muted" style="margin: 4px 0 0">
-          {{ request.categoryName ?? 'ทั่วไป' }} · {{ formatDistance(request.distanceMeters) }}
-        </p>
-        <p class="muted" style="margin: 4px 0 12px; font-size: 13px">
-          โพสต์ {{ formatWhen(request.createdAt) }} · {{ request.bidCount }} ข้อเสนอ
-          @if (request.budgetText) {
-            · {{ formatPrice(request.budgetText) }}
+    @if (tab() === 'open') {
+      <div class="sec-title">งานที่เปิดรับราคา</div>
+      @for (request of openJobs(); track request.id) {
+        <article class="card">
+          <div class="row between" style="align-items: flex-start">
+            <b>{{ request.title }}</b>
+            <span class="badge" [ngClass]="chipClass(request)">{{ chipLabel(request) }}</span>
+          </div>
+          <p class="muted" style="margin: 4px 0 0">
+            {{ request.categoryName ?? 'ทั่วไป' }} · {{ formatDistance(request.distanceMeters) }}
+          </p>
+          <button type="button" class="btn btn-primary btn-sm btn-block" style="margin-top: 8px" (click)="openRequest(request)">
+            {{ actionLabel(request) }}
+          </button>
+        </article>
+      } @empty {
+        <p class="muted">ยังไม่มีงานที่เปิดรับราคาในตอนนี้</p>
+      }
+    } @else {
+      <div class="sec-title">{{ currentTabLabel() }}</div>
+      @for (request of filteredMyJobs(); track request.id) {
+        <article class="card">
+          <div class="row between" style="align-items: flex-start">
+            <b>{{ request.title }}</b>
+            <span class="badge" [ngClass]="chipClass(request)">{{ chipLabel(request) }}</span>
+          </div>
+          <p class="muted" style="margin: 4px 0 0">
+            {{ request.categoryName ?? 'ทั่วไป' }} · {{ formatDistance(request.distanceMeters) }}
+          </p>
+          <p class="muted" style="margin: 4px 0 12px; font-size: 13px">
+            โพสต์ {{ formatWhen(request.createdAt) }}
+            @if (request.budgetText) {
+              · {{ formatPrice(request.budgetText) }}
+            }
+          </p>
+          @if (!isTerminalJob(request)) {
+            <button type="button" class="btn btn-primary btn-sm btn-block" (click)="openRequest(request)">
+              {{ actionLabel(request) }}
+            </button>
+          } @else {
+            <button type="button" class="btn btn-ghost btn-sm btn-block" (click)="openRequest(request)">ดูรายละเอียด</button>
           }
-        </p>
-        <button type="button" class="btn btn-primary btn-sm btn-block" (click)="openRequest(request)">
-          {{ actionLabel(request) }}
-        </button>
-      </article>
-    } @empty {
-      <p class="muted">ยังไม่มีงานที่เปิดรับราคาในตอนนี้</p>
+        </article>
+      } @empty {
+        <p class="muted">ยังไม่มีงานในหมวดนี้</p>
+      }
     }
   }
 

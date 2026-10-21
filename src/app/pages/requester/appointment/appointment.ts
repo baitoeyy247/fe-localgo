@@ -424,16 +424,37 @@ export class AppointmentPage implements OnInit, OnDestroy {
     return this.appointment()?.status === 'Rejected';
   }
 
-  /** Prefer explicit reject reason; strip the BE prefix when present. */
   protected rejectReason(): string | null {
-    const note = this.appointment()?.note?.trim();
-    if (!note || this.appointment()?.status !== 'Rejected') {
+    const appt = this.appointment();
+    if (!appt || appt.status !== 'Rejected') {
+      return null;
+    }
+    const direct = appt.declineReason?.trim();
+    if (direct) {
+      return direct;
+    }
+    // Legacy notes that still embed the decline text.
+    const note = appt.note?.trim();
+    if (!note) {
       return null;
     }
     const marker = 'เหตุผลที่ปฏิเสธ:';
     const idx = note.lastIndexOf(marker);
-    if (idx >= 0) {
-      return note.slice(idx + marker.length).trim() || null;
+    return idx >= 0 ? note.slice(idx + marker.length).trim() || null : null;
+  }
+
+  protected customerNote(): string | null {
+    const appt = this.appointment();
+    if (!appt) {
+      return null;
+    }
+    const note = appt.note?.trim();
+    if (!note) {
+      return null;
+    }
+    if (appt.status === 'Rejected' && note.includes('เหตุผลที่ปฏิเสธ:')) {
+      const cleaned = note.replace(/\n?เหตุผลที่ปฏิเสธ:[\s\S]*$/u, '').trim();
+      return cleaned || null;
     }
     return note;
   }

@@ -1069,16 +1069,30 @@ app-offline-bar {
     border-radius: var(--r-lg);
   }
   .admin-table-wrap .admin-table {
-    min-width: 640px;
+    width: 100%;
+    min-width: 0;
   }
+  /* Forms only — do not constrain cards/grids/tables to 640px on desktop. */
   .admin-form,
-  .field,
-  form.card {
-    max-width: 640px;
-  }
-  app-page-shell .field,
   app-admin-dashboard-page .admin-form {
     max-width: 640px;
+  }
+  .chips--scroll {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: var(--s2);
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .chips--scroll .chip {
+    flex: 0 0 auto;
+  }
+  .chips__hint {
+    flex: 0 0 auto;
+    font-size: 12px;
+    align-self: center;
+    white-space: nowrap;
   }
   .btn:hover:not([disabled]),
   a.btn:hover {

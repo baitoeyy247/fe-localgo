@@ -415,8 +415,13 @@ export class LocalGoApiService {
     );
   }
 
-  resetTestData(): Observable<{ deletedUsers: number }> {
-    return this.post<{ deletedUsers: number }>('/admin/test-data/reset', {});
+  resetTestData(): Observable<{
+    deletedUsers: number;
+    keptUsers?: number;
+    deletedRequests?: number;
+    providersRecalculated?: number;
+  }> {
+    return this.post('/admin/test-data/reset', {});
   }
 
   repairTestData(): Observable<{

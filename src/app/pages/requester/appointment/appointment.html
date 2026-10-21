@@ -32,10 +32,11 @@
         >
         <p style="margin: 8px 0 0"><b>วันและเวลา:</b> {{ formatScheduledAt(appt.scheduledAt) }}</p>
         <p><b>สถานที่:</b> {{ addressText() || 'ยังไม่ระบุสถานที่' }}</p>
+        @if (customerNote(); as cnote) {
+          <p><b>หมายเหตุลูกค้า:</b> {{ cnote }}</p>
+        }
         @if (rejectReason(); as reason) {
           <p><b>เหตุผลที่ปฏิเสธ:</b> {{ reason }}</p>
-        } @else if (appt.note) {
-          <p><b>หมายเหตุ:</b> {{ appt.note }}</p>
         }
         @if (request()?.status; as jobStatus) {
           <p><b>สถานะงาน:</b> {{ statusLabel(jobStatus) }}</p>

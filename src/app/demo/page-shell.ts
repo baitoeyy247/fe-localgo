@@ -11,7 +11,15 @@ import { Router, RouterLink } from '@angular/router';
         <div class="hero">
           <div class="hero__top">
             @if (showBack()) {
-              @if (backLink()) {
+              @if (backCommands()) {
+                <a
+                  class="icon-btn hero__back"
+                  [routerLink]="backCommands()!"
+                  [queryParams]="backQueryParams()"
+                  [attr.aria-label]="backLabel()"
+                  >←</a
+                >
+              } @else if (backLink()) {
                 <a class="icon-btn hero__back" [routerLink]="backLink()!" [attr.aria-label]="backLabel()">←</a>
               } @else {
                 <button type="button" class="icon-btn hero__back" [attr.aria-label]="backLabel()" (click)="goBack()">
@@ -29,7 +37,15 @@ import { Router, RouterLink } from '@angular/router';
       } @else {
         <header class="hdr" [class.green]="greenHeader()">
           @if (showBack()) {
-            @if (backLink()) {
+            @if (backCommands()) {
+              <a
+                class="icon-btn"
+                [routerLink]="backCommands()!"
+                [queryParams]="backQueryParams()"
+                [attr.aria-label]="backLabel()"
+                >←</a
+              >
+            } @else if (backLink()) {
               <a class="icon-btn" [routerLink]="backLink()!" [attr.aria-label]="backLabel()">←</a>
             } @else {
               <button type="button" class="icon-btn" [attr.aria-label]="backLabel()" (click)="goBack()">←</button>
@@ -51,6 +67,9 @@ export class PageShell {
   readonly subtitle = input<string | null>(null);
   readonly showBack = input(true);
   readonly backLink = input<string | null>(null);
+  /** Prefer over backLink when query params are needed (avoids `?` encoding bugs). */
+  readonly backCommands = input<unknown[] | null>(null);
+  readonly backQueryParams = input<Record<string, string> | null>(null);
   readonly backLabel = input('กลับ');
   /** Green hero band (mockup). */
   readonly hero = input(false);

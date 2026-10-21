@@ -68,29 +68,31 @@ export interface LocationPickerValue {
                 <p class="error-text">{{ geoError() }}</p>
               }
 
-              <label class="field" style="margin: 0">
-                <span>รัศมี {{ draftRadiusKm() }} กม.</span>
-                <input
-                  type="range"
-                  min="1"
-                  max="15"
-                  step="1"
-                  [value]="draftRadiusKm()"
-                  aria-label="รัศมีกิโลเมตร"
-                  (input)="setRadius(+$any($event.target).value)"
-                />
-              </label>
-              <div class="pill-tabs" aria-label="ตัวเลือกรัศมีด่วน">
-                @for (radius of radiusOptions(); track radius) {
-                  <button
-                    type="button"
-                    [class.is-active]="draftRadiusKm() === radius"
-                    (click)="setRadius(radius)"
-                  >
-                    {{ radius }} กม.
-                  </button>
-                }
-              </div>
+              @if (showRadius()) {
+                <label class="field" style="margin: 0">
+                  <span>รัศมี {{ draftRadiusKm() }} กม.</span>
+                  <input
+                    type="range"
+                    min="1"
+                    max="15"
+                    step="1"
+                    [value]="draftRadiusKm()"
+                    aria-label="รัศมีกิโลเมตร"
+                    (input)="setRadius(+$any($event.target).value)"
+                  />
+                </label>
+                <div class="pill-tabs" aria-label="ตัวเลือกรัศมีด่วน">
+                  @for (radius of radiusOptions(); track radius) {
+                    <button
+                      type="button"
+                      [class.is-active]="draftRadiusKm() === radius"
+                      (click)="setRadius(radius)"
+                    >
+                      {{ radius }} กม.
+                    </button>
+                  }
+                </div>
+              }
             </section>
 
             <section class="location-modal__map" aria-label="แผนที่เลือกตำแหน่ง">
@@ -99,8 +101,8 @@ export interface LocationPickerValue {
                 label="แตะเพื่อเลือกตำแหน่ง"
                 [lat]="draftLat()"
                 [lng]="draftLng()"
-                [radiusKm]="draftRadiusKm()"
-                [radiusLabel]="radiusText()"
+                [radiusKm]="showRadius() ? draftRadiusKm() : null"
+                [radiusLabel]="showRadius() ? radiusText() : ''"
                 [zoom]="16"
                 [showOverlay]="false"
                 (selected)="updateSelection($event)"
@@ -146,6 +148,8 @@ export class LocationPickerModal {
   readonly lat = input(13.7563);
   readonly lng = input(100.5018);
   readonly radiusOptions = input<number[]>([1, 3, 5, 8, 10, 15]);
+  /** Hide radius controls (e.g. booking pin picker). */
+  readonly showRadius = input(true);
   /** เมื่อเปิด modal ครั้งแรก ให้พยายามโฟกัสตำแหน่งปัจจุบันอัตโนมัติ */
   readonly autoLocateOnOpen = input(true);
 

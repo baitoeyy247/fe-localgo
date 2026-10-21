@@ -142,13 +142,21 @@ export class RequesterHomePage implements OnInit, OnDestroy {
       });
       return;
     }
+    if (request.appointmentStatus === 'Rejected' || request.status === 'Cancelled') {
+      await this.router.navigate(['/requester/appointment'], {
+        queryParams: { requestId: request.id },
+      });
+      return;
+    }
     if (
       request.status === 'ProviderSelected' ||
       request.status === 'Selected' ||
       request.status === 'Scheduled' ||
       request.status === 'InProgress'
     ) {
-      await this.router.navigateByUrl('/requester/appointment');
+      await this.router.navigate(['/requester/appointment'], {
+        queryParams: { requestId: request.id },
+      });
       return;
     }
     await this.router.navigateByUrl('/requester/bids');
