@@ -140,11 +140,15 @@ export class AdminDashboardPage implements OnInit {
     if (!this.canToggleUserStatus(u) || this.acting()) {
       return;
     }
+    const userId = u.id;
+    if (!userId) {
+      return;
+    }
     const currentStatus = this.userStatus(u);
     const target = currentStatus === 'Suspended' ? 'Active' : 'Suspended';
     this.acting.set(true);
     try {
-      await firstValueFrom(this.api.setAdminUserStatus(u.id, target));
+      await firstValueFrom(this.api.setAdminUserStatus(userId, target));
       this.notice.set(target === 'Suspended' ? 'ระงับผู้ใช้แล้ว' : 'เปิดใช้งานผู้ใช้แล้ว');
       await this.load();
     } catch (e) {
