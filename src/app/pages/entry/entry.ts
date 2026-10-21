@@ -175,7 +175,8 @@ export class EntryPage implements OnInit, OnDestroy {
     });
   }
 
-  private static readonly SESSION_TIMEOUT_MS = 12_000;
+  /** Exported for tests — entry session bootstrap timeout. */
+  static readonly SESSION_TIMEOUT_MS = 12_000;
 
   private async ensureSessionWithTimeout(): Promise<void> {
     try {

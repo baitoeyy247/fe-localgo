@@ -75,6 +75,18 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   protected effectiveAppointmentStatus(): string | null | undefined {
     return this.appointment()?.status ?? this.request()?.appointmentStatus ?? null;
   }
+
+  private needsAppointmentFetch(
+    detail: ServiceRequestDetail,
+    myProvider: ProviderDetail | null,
+  ): boolean {
+    return (
+      detail.selectedProviderId === myProvider?.id ||
+      detail.status === 'Scheduled' ||
+      detail.status === 'ProviderSelected' ||
+      detail.status === 'InProgress'
+    );
+  }
   protected readonly bidStatusLabel = bidStatusLabel;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
   protected readonly formatScheduledAt = formatScheduledAt;
@@ -113,19 +125,22 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.notFound.set(false);
     this.hint.begin();
     try {
-      const [detail, myProvider, appt] = await Promise.all([
+      const [detail, myProvider] = await Promise.all([
         firstValueFrom(this.api.getRequest(id)),
         firstValueFrom(
-          this.api
+          this.cache
             .getMyProvider()
-            .pipe(catchError((err) => (isNotFoundError(err) ? of(null) : Promise.reject(err)))),
-        ),
-        firstValueFrom(
-          this.api.getAppointment(id).pipe(catchError(() => of(null as AppointmentDetail | null))),
+            .pipe(catchError((err) => (isNotFoundError(err) ? of(null as ProviderDetail | null) : Promise.reject(err)))),
         ),
       ]);
       this.request.set(detail);
       this.myProvider.set(myProvider);
+      let appt = detail.appointment ?? null;
+      if (!appt && (detail.appointmentStatus || this.needsAppointmentFetch(detail, myProvider))) {
+        appt = await firstValueFrom(
+          this.api.getAppointment(id).pipe(catchError(() => of(null as AppointmentDetail | null))),
+        );
+      }
       this.appointment.set(appt);
       this.myBid.set(
         myProvider ? (detail.bids?.find((bid) => bid.providerId === myProvider.id) ?? null) : null,

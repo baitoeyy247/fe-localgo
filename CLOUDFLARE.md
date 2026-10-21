@@ -1,5 +1,14 @@
 # Cloudflare Pages — build settings
 
+## SIT URL (official)
+
+| Host | Role |
+|------|------|
+| **https://localgo-sit-616.pages.dev/** | **Production** deployment of Cloudflare project `localgo-sit` (GHA `Deploy SIT Frontend` + `scripts/deploy-pages.sh`) |
+| https://localgo-sit.pages.dev/ | Alternate Pages hostname for the same project; may lag or differ from production — use **-616** for QA/LIFF |
+
+Both hosts can serve different bundle generations; always confirm the latest **production** deploy in the Cloudflare dashboard (project `localgo-sit`, branch `main`).
+
 Cloudflare auto-runs `npm ci` before your build command. If dependency cache is stale, that step fails with `@emnapi/*` lockfile errors even after the repo is fixed.
 
 ## Required settings

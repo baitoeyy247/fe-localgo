@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, of, tap, shareReplay, catchError } from 'rxjs';
 import { LocalGoApiService } from './localgo-api.service';
-import { ServiceRequestSummary } from './models';
+import { ProviderDetail, ServiceRequestSummary } from './models';
 
 type CacheEntry<T> = { at: number; data: T; stream$: Observable<T> };
 
@@ -12,6 +12,7 @@ export class MarketplaceCacheService {
   private readonly ttlMs = 45_000;
   private myRequests: CacheEntry<ServiceRequestSummary[]> | null = null;
   private matching: CacheEntry<ServiceRequestSummary[]> | null = null;
+  private myProvider: CacheEntry<ProviderDetail> | null = null;
 
   /** Stale-while-revalidate for requester home. */
   listMyRequests(force = false): Observable<ServiceRequestSummary[]> {
@@ -54,6 +55,22 @@ export class MarketplaceCacheService {
   invalidateAll(): void {
     this.myRequests = null;
     this.matching = null;
+    this.myProvider = null;
+  }
+
+  /** Cached provider profile for the logged-in provider user. */
+  getMyProvider(force = false): Observable<ProviderDetail> {
+    const now = Date.now();
+    if (!force && this.myProvider && now - this.myProvider.at < this.ttlMs) {
+      return of(this.myProvider.data);
+    }
+    const stream$ = this.api.getMyProvider().pipe(
+      tap((data) => {
+        this.myProvider = { at: Date.now(), data, stream$ };
+      }),
+      shareReplay(1),
+    );
+    return stream$;
   }
 
   private refreshMyRequests(): Observable<ServiceRequestSummary[]> {

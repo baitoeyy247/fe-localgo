@@ -105,6 +105,7 @@ export interface ServiceRequestDetail {
   updatedAt: string;
   bids?: BidItem[];
   appointmentStatus?: string | null;
+  appointment?: AppointmentDetail | null;
 }
 
 export interface BidItem {

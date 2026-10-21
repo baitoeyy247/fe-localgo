@@ -57,11 +57,14 @@
     <div class="sec-title">รายการบริการ</div>
     <div class="list">
       @for (svc of visibleServices(); track svc.id) {
-        <div
+        <button
+          type="button"
           class="li"
-          [class.card--selected]="isFocusedService(svc.id)"
+          [class.card--selected]="isFocusedService(svc.id) || isServiceSelected(svc.id)"
           [id]="isFocusedService(svc.id) ? 'focused-service' : null"
           [style.opacity]="svc.isActive ? '1' : '0.65'"
+          [disabled]="!svc.isActive"
+          (click)="selectService(svc.id)"
         >
           <span class="ico">🛠</span>
           <span class="grow">
@@ -69,7 +72,7 @@
             <span class="s">{{ svc.categoryName ?? 'บริการ' }}</span>
           </span>
           <span class="price" style="font-size: 16px">{{ svc.basePriceText ? formatPrice(svc.basePriceText) : 'ติดต่อสอบถาม' }}</span>
-        </div>
+        </button>
       } @empty {
         <div class="state">
           <div class="em">🧰</div>
@@ -109,7 +112,12 @@
       @if (p.contactUrl) {
         <a class="btn btn-primary" [href]="p.contactUrl" target="_blank" rel="noopener">ติดต่อผ่าน LINE</a>
       } @else {
-        <button class="btn btn-primary" type="button" (click)="bookAppointment()">นัดหมาย</button>
+        <button class="btn btn-primary" type="button" [disabled]="!canBookAppointment()" (click)="bookAppointment()">
+          นัดหมาย
+        </button>
+        @if (bookHint(); as hint) {
+          <p class="muted" style="margin: 8px 0 0; text-align: center">{{ hint }}</p>
+        }
       }
     </div>
   } @else {

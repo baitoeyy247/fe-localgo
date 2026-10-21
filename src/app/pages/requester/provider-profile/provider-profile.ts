@@ -21,6 +21,7 @@ export class ProviderProfilePage implements OnInit {
   protected readonly reviews = signal<ReviewItem[]>([]);
   protected readonly loading = signal(true);
   protected readonly preferredServiceId = signal<string | null>(null);
+  protected readonly selectedServiceId = signal<string | null>(null);
   protected readonly showAllServices = signal(false);
   protected readonly providerTypeLabel = providerTypeLabel;
   protected readonly formatPrice = formatPrice;
@@ -50,8 +51,53 @@ export class ProviderProfilePage implements OnInit {
     ]);
     this.provider.set(detail);
     this.reviews.set(reviewList);
+    this.syncSelectedService(detail);
     this.loading.set(false);
     queueMicrotask(() => this.scrollToFocusedService());
+  }
+
+  protected activeServices(): ProviderService[] {
+    return this.provider()?.services.filter((s) => s.isActive) ?? [];
+  }
+
+  protected selectService(serviceId: string): void {
+    this.selectedServiceId.set(serviceId);
+  }
+
+  protected isServiceSelected(serviceId: string): boolean {
+    return this.selectedServiceId() === serviceId;
+  }
+
+  protected canBookAppointment(): boolean {
+    const active = this.activeServices();
+    if (active.length === 0) {
+      return false;
+    }
+    if (active.length === 1) {
+      return true;
+    }
+    return !!this.selectedServiceId();
+  }
+
+  protected bookHint(): string | null {
+    if (this.activeServices().length > 1 && !this.selectedServiceId()) {
+      return 'เลือกบริการก่อน';
+    }
+    return null;
+  }
+
+  private syncSelectedService(detail: ProviderDetail): void {
+    const preferred = this.preferredServiceId();
+    const active = detail.services.filter((s) => s.isActive);
+    if (preferred && active.some((s) => s.id === preferred)) {
+      this.selectedServiceId.set(preferred);
+      return;
+    }
+    if (active.length === 1) {
+      this.selectedServiceId.set(active[0].id);
+      return;
+    }
+    this.selectedServiceId.set(null);
   }
 
   protected fromSearch(): boolean {
@@ -124,13 +170,15 @@ export class ProviderProfilePage implements OnInit {
 
   protected async bookAppointment(): Promise<void> {
     const p = this.provider();
-    if (!p) {
+    if (!p || !this.canBookAppointment()) {
       return;
     }
     this.session.currentProviderId = p.id;
-    const svc = this.primaryService();
+    const active = this.activeServices();
+    const svcId =
+      this.selectedServiceId() ?? (active.length === 1 ? active[0].id : null) ?? this.primaryService()?.id;
     await this.router.navigate(['/requester/book', p.id], {
-      queryParams: svc ? { serviceId: svc.id } : undefined,
+      queryParams: svcId ? { serviceId: svcId } : undefined,
     });
   }
 

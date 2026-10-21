@@ -23,6 +23,8 @@ export class RequesterSearchPage implements OnInit {
   protected readonly providers = signal<ProviderSummary[]>([]);
   protected readonly categories = signal<Category[]>([]);
   protected readonly loading = signal(false);
+  /** True after the first search in this visit (auto or manual). */
+  protected readonly hasSearched = signal(false);
   protected readonly keyword = signal('');
   protected readonly pickerOpen = signal(false);
   protected readonly needsLocationPick = signal(false);
@@ -71,7 +73,10 @@ export class RequesterSearchPage implements OnInit {
     }
 
     if (!area.needsPick) {
+      this.loading.set(true);
       await this.reload();
+    } else {
+      this.loading.set(false);
     }
   }
 
@@ -151,6 +156,7 @@ export class RequesterSearchPage implements OnInit {
         }),
       );
       this.providers.set(results);
+      this.hasSearched.set(true);
     } finally {
       this.loading.set(false);
     }

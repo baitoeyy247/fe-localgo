@@ -62,13 +62,28 @@
 
   <div class="sec-title">
     ผู้ให้บริการที่ตอบโจทย์ตอนนี้
-    <span class="muted">{{ providers().length }} ราย</span>
+    @if (hasSearched()) {
+      <span class="muted">{{ providers().length }} ราย</span>
+    }
   </div>
 
   <div class="search-layout">
     <div class="search-layout__list">
       @if (loading()) {
         <p class="muted" style="text-align: center">กำลังค้นหา…</p>
+      } @else if (!hasSearched()) {
+        <div class="state">
+          <div class="em">📍</div>
+          @if (needsLocationPick()) {
+            <h3>เลือกพื้นที่ค้นหาก่อน</h3>
+            <p>อนุญาต GPS หรือเลือกบนแผนที่ แล้วกดค้นหาเพื่อดูผู้ให้บริการใกล้คุณ</p>
+            <button type="button" class="btn btn-primary" (click)="openPicker()">เลือกพื้นที่</button>
+          } @else {
+            <h3>พร้อมค้นหาผู้ให้บริการ</h3>
+            <p>กดปุ่ม「ค้นหา」หรือเลือกหมวดด้านบน — ระบบจะแสดงรายชื่อในพื้นที่ {{ radiusKmLabel() }} โดยอัตโนมัติ</p>
+            <button type="button" class="btn btn-primary" (click)="search()">ค้นหาเลย</button>
+          }
+        </div>
       } @else if (providers().length === 0) {
         <div class="state">
           <div class="em">🔎</div>
