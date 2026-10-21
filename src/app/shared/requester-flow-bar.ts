@@ -6,54 +6,84 @@ export type RequesterFlowStep = 'post' | 'bids' | 'appointment' | 'review';
 @Component({
   selector: 'app-requester-flow-bar',
   template: `
-    <nav class="flow" aria-label="ขั้นตอนงานของฉัน">
-      <a
-        [class.on]="active() === 'post' || stepIndex('post') < stepIndex(active())"
-        [class.is-locked]="!canOpen('post')"
-        [attr.aria-disabled]="!canOpen('post')"
-        [attr.tabindex]="canOpen('post') ? 0 : -1"
-        (click)="onStepClick($event, 'post')"
-        routerLink="/requester/post"
-      >
-        <b>1</b>ประกาศ
-      </a>
-      <a
-        [class.on]="active() === 'bids' || stepIndex('bids') < stepIndex(active())"
-        [class.is-locked]="!canOpen('bids')"
-        [attr.aria-disabled]="!canOpen('bids')"
-        [attr.tabindex]="canOpen('bids') ? 0 : -1"
-        (click)="onStepClick($event, 'bids')"
-        routerLink="/requester/bids"
-      >
-        <b>2</b>ข้อเสนอ
-      </a>
-      <a
-        [class.on]="active() === 'appointment' || stepIndex('appointment') < stepIndex(active())"
-        [class.is-locked]="!canOpen('appointment')"
-        [attr.aria-disabled]="!canOpen('appointment')"
-        [attr.tabindex]="canOpen('appointment') ? 0 : -1"
-        (click)="onStepClick($event, 'appointment')"
-        routerLink="/requester/appointment"
-      >
-        <b>3</b>นัดหมาย
-      </a>
-      <a
-        [class.on]="active() === 'review'"
-        [class.is-locked]="!canOpen('review')"
-        [attr.aria-disabled]="!canOpen('review')"
-        [attr.tabindex]="canOpen('review') ? 0 : -1"
-        (click)="onStepClick($event, 'review')"
-        routerLink="/requester/review"
-      >
-        <b>4</b>รีวิว
-      </a>
+    <nav
+      class="flow"
+      [class.flow--direct]="mode() === 'direct'"
+      aria-label="ขั้นตอนงานของฉัน"
+    >
+      @if (mode() === 'standard') {
+        <a
+          class="flow__link"
+          [class.on]="active() === 'post'"
+          [class.is-step]="true"
+          [class.is-locked]="!canOpen('post')"
+          [attr.aria-current]="active() === 'post' ? 'step' : null"
+          [attr.tabindex]="canOpen('post') ? 0 : -1"
+          (click)="onStepClick($event, 'post')"
+          routerLink="/requester/post"
+        >
+          <b>1</b>ประกาศ
+        </a>
+        <a
+          class="flow__link"
+          [class.on]="active() === 'bids'"
+          [class.is-step]="true"
+          [class.is-locked]="!canOpen('bids')"
+          [attr.aria-current]="active() === 'bids' ? 'step' : null"
+          [attr.tabindex]="canOpen('bids') ? 0 : -1"
+          (click)="onStepClick($event, 'bids')"
+          routerLink="/requester/bids"
+        >
+          <b>2</b>ข้อเสนอ
+        </a>
+        <a
+          class="flow__link"
+          [class.on]="active() === 'appointment'"
+          [class.is-step]="true"
+          [class.is-locked]="!canOpen('appointment')"
+          [attr.aria-current]="active() === 'appointment' ? 'step' : null"
+          [attr.tabindex]="canOpen('appointment') ? 0 : -1"
+          (click)="onStepClick($event, 'appointment')"
+          routerLink="/requester/appointment"
+        >
+          <b>3</b>นัดหมาย
+        </a>
+        <a
+          class="flow__link"
+          [class.on]="active() === 'review'"
+          [class.is-step]="true"
+          [class.is-locked]="!canOpen('review')"
+          [attr.aria-current]="active() === 'review' ? 'step' : null"
+          [attr.tabindex]="canOpen('review') ? 0 : -1"
+          (click)="onStepClick($event, 'review')"
+          routerLink="/requester/review"
+        >
+          <b>4</b>รีวิว
+        </a>
+      } @else {
+        <span class="flow__link on" aria-current="step"><b>1</b>นัดหมาย</span>
+        <a
+          class="flow__link"
+          [class.on]="active() === 'review'"
+          [class.is-locked]="!canOpen('review')"
+          routerLink="/requester/review"
+        >
+          <b>2</b>รีวิว
+        </a>
+      }
     </nav>
+    @if (mode() === 'standard') {
+      <p class="muted flow-hint" style="margin: 4px 0 0; font-size: 13px">
+        ขั้นที่ปิดอยู่จะเปิดเมื่อถึงลำดับนั้น
+      </p>
+    }
   `,
   imports: [RouterLink],
 })
 export class RequesterFlowBar {
   readonly active = input.required<RequesterFlowStep>();
   readonly unlockedThrough = input<RequesterFlowStep | null>(null);
+  readonly mode = input<'standard' | 'direct'>('standard');
 
   protected stepIndex(step: RequesterFlowStep): number {
     const order: RequesterFlowStep[] = ['post', 'bids', 'appointment', 'review'];
@@ -65,6 +95,9 @@ export class RequesterFlowBar {
   }
 
   protected canOpen(step: RequesterFlowStep): boolean {
+    if (this.mode() === 'direct') {
+      return step === 'appointment' || step === 'review';
+    }
     return this.stepIndex(step) <= this.stepIndex(this.maxUnlockedStep());
   }
 

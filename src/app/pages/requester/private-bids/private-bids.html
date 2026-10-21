@@ -60,14 +60,14 @@
     <p class="error-text">{{ error() }}</p>
   }
 
-  @if (canClearBidSelection()) {
-    <button class="btn btn-danger-o btn-block" type="button" [disabled]="clearing()" (click)="askClearBidSelection()">
-      {{ clearing() ? 'กำลังยกเลิก…' : 'ยกเลิกการเลือกข้อเสนอ' }}
-    </button>
-  }
-
   @if (!isExpired() && bids().length > 0) {
-    <button class="btn btn-primary btn-block" type="button" [disabled]="!selectedBidId() || selecting()" (click)="openSelectConfirm()">
+    <button
+      class="btn btn-primary btn-block"
+      type="button"
+      [class.is-busy]="selecting()"
+      [disabled]="!selectedBidId() || selecting()"
+      (click)="openSelectConfirm()"
+    >
       {{ selecting() ? 'กำลังบันทึก…' : 'เลือกข้อเสนอและนัดหมาย' }}
     </button>
   } @else if (isExpired()) {
@@ -77,23 +77,12 @@
   <app-confirm-sheet
     [open]="confirmSelectOpen()"
     title="เลือกข้อเสนอนี้?"
-    [message]="selectedBid() ? 'ผู้ให้บริการ: ' + selectedBid()!.providerName + ' · ราคา ' + formatPrice(selectedBid()!.priceText) + ' — ขั้นถัดไปกำหนดวันและสถานที่นัดหมาย' : 'ยืนยันการเลือกข้อเสนอ'"
+    [message]="selectConfirmMessage()"
     confirmLabel="เลือกข้อเสนอ"
     cancelLabel="ยกเลิก"
     [busy]="selecting()"
     (confirm)="confirmSelection()"
     (cancel)="confirmSelectOpen.set(false)"
-  />
-  <app-confirm-sheet
-    [open]="confirmClearOpen()"
-    title="ยกเลิกการเลือกข้อเสนอ?"
-    message="ยกเลิกการเลือกข้อเสนอและกลับไปเลือกใหม่"
-    confirmLabel="ยกเลิกการเลือก"
-    cancelLabel="ไม่ยกเลิก"
-    [danger]="true"
-    [busy]="clearing()"
-    (confirm)="clearBidSelection()"
-    (cancel)="confirmClearOpen.set(false)"
   />
   <app-requester-bottom-nav />
 </app-page-shell>

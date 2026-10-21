@@ -9,7 +9,7 @@ import { Component, input, output, signal } from '@angular/core';
         <div class="grab"></div>
         <h3>{{ title() }}</h3>
         @if (message()) {
-          <p class="muted">{{ message() }}</p>
+          <p class="muted" style="white-space: pre-line">{{ message() }}</p>
         }
         @if (reasonEnabled()) {
           <label class="field" style="margin-top: 12px">

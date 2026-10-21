@@ -1,14 +1,22 @@
 const TH_LOCALE = 'th-TH';
 const SCHEDULED_FALLBACK = 'ยังไม่ระบุเวลา';
 
-/** Display ISO datetime for Thai users. */
+/** Display ISO datetime for Thai users (พ.ศ. + 24 ชั่วโมง). */
 export function formatScheduledAt(value?: string | null): string {
   if (!value) {
     return SCHEDULED_FALLBACK;
   }
-  return new Date(value).toLocaleString(TH_LOCALE, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    return SCHEDULED_FALLBACK;
+  }
+  return d.toLocaleString(TH_LOCALE, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
   });
 }
 

@@ -147,7 +147,7 @@ export interface LocationPickerValue {
 export class LocationPickerModal {
   readonly open = input(false);
   readonly heading = input('เลือกตำแหน่ง');
-  readonly description = input('ลากแผนที่เพื่อเลื่อนดู แตะจุดที่ต้องการ แล้วเลื่อนหน้าลงมากดยืนยัน');
+  readonly description = input('แตะบนแผนที่หรือค้นหาสถานที่ แล้วกดยืนยันด้านล่าง');
   readonly locationTitle = input('พื้นที่บริการ');
   readonly locationSubtitle = input('จุดที่เลือกไว้ล่าสุด');
   readonly searchText = input('พื้นที่บริการ');

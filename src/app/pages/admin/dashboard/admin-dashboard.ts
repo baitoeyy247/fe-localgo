@@ -20,6 +20,12 @@ import {
 import { displayInitial } from '../../../shared/display-initial';
 import { AuthService } from '../../../core/auth.service';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
+import {
+  adminNotificationLine,
+  adminSystemRoleLabel,
+  adminUserStatusLabel,
+} from '../../../shared/admin-labels';
+import { formatScheduledAt } from '../../../shared/datetime.util';
 
 @Component({
   selector: 'app-admin-dashboard-page',
@@ -47,6 +53,8 @@ export class AdminDashboardPage implements OnInit {
   protected readonly notice = signal<string | null>(null);
   protected readonly suspendConfirmOpen = signal(false);
   protected readonly suspendTarget = signal<AdminUserRow | null>(null);
+  protected readonly resetConfirmOpen = signal(false);
+  protected readonly repairConfirmOpen = signal(false);
   protected readonly requestStatusLabel = requestStatusLabel;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
   protected readonly displayInitial = displayInitial;
@@ -184,13 +192,18 @@ export class AdminDashboardPage implements OnInit {
     }
   }
 
+  protected askResetTestData(): void {
+    if (this.resetting() || this.repairing()) {
+      return;
+    }
+    this.resetConfirmOpen.set(true);
+  }
+
   protected async resetTestData(): Promise<void> {
     if (this.resetting() || this.repairing()) {
       return;
     }
-    if (!confirm('ล้างงาน/นัด/รีวิวของบัญชีทดสอบ? (คงไว้ 10 บัญชีทดสอบ)')) {
-      return;
-    }
+    this.resetConfirmOpen.set(false);
     this.resetting.set(true);
     this.actionError.set(null);
     this.notice.set(null);
@@ -204,7 +217,7 @@ export class AdminDashboardPage implements OnInit {
       this.usersPage.set(1);
       await this.refreshAfterMutation();
       this.notice.set(
-        `รีเซ็ตสำเร็จ — ลบ ${deletedReq} งาน${automated ? ` (automated ${automated})` : ''}${deletedUsers ? ` · ลบผู้ใช้ค้าง ${deletedUsers}` : ''} · คงบัญชีทดสอบ ${kept} · seed รีวิว QA ผู้ให้ 01: ${seeded} รายการ`,
+        `รีเซ็ตสำเร็จ — ลบงาน ${deletedReq} รายการ · คงบัญชีทดสอบ ${kept} บัญชี · สร้างรีวิวตัวอย่าง ${seeded} รายการ`,
       );
     } catch (e) {
       this.actionError.set(apiErrorMessage(e, 'รีเซ็ตข้อมูลทดสอบไม่สำเร็จ'));
@@ -213,10 +226,18 @@ export class AdminDashboardPage implements OnInit {
     }
   }
 
+  protected askRepairTestData(): void {
+    if (this.resetting() || this.repairing()) {
+      return;
+    }
+    this.repairConfirmOpen.set(true);
+  }
+
   protected async repairTestData(): Promise<void> {
     if (this.resetting() || this.repairing()) {
       return;
     }
+    this.repairConfirmOpen.set(false);
     this.repairing.set(true);
     this.actionError.set(null);
     try {
@@ -239,10 +260,10 @@ export class AdminDashboardPage implements OnInit {
   }
 
   protected userLine(u: AdminUserRow): string {
-    const name = u.displayName ?? u.lineUserId ?? u.id;
-    const role = u.systemRole ?? '';
-    const status = (u as { status?: string }).status;
-    return status ? `${name} (${role} · ${status})` : `${name} (${role})`;
+    const name = u.displayName ?? u.lineUserId ?? 'ผู้ใช้';
+    const role = adminSystemRoleLabel(u.systemRole ?? 'User');
+    const status = adminUserStatusLabel(this.userStatus(u));
+    return `${name} · ${role} · ${status}`;
   }
 
   protected isTestUser(u: AdminUserRow): boolean {
@@ -250,10 +271,9 @@ export class AdminDashboardPage implements OnInit {
   }
 
   protected notificationLabel(row: AdminNotificationRow): string {
-    const type = String(row.eventType ?? row.type ?? 'แจ้งเตือน');
+    const type = String(row.eventType ?? row.type ?? '');
     const status = String(row.status ?? '');
-    const at = row.createdAt ? new Date(row.createdAt).toLocaleString('th-TH') : '';
-    return `${type} · ${status} ${at}`.trim();
+    return adminNotificationLine(type, status, row.createdAt);
   }
 
   protected userStatus(u: AdminUserRow): string {
@@ -261,13 +281,6 @@ export class AdminDashboardPage implements OnInit {
   }
 
   protected formatWhen(iso?: string | null): string {
-    if (!iso) {
-      return '—';
-    }
-    try {
-      return new Date(iso).toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' });
-    } catch {
-      return iso;
-    }
+    return formatScheduledAt(iso);
   }
 }

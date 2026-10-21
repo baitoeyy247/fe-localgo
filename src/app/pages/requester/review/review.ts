@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { RequesterBottomNav } from '../../../shared/requester-bottom-nav';
@@ -14,7 +14,7 @@ import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 
 @Component({
   selector: 'app-review-page',
-  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, SkeletonCard],
+  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, SkeletonCard, RouterLink],
   templateUrl: './review.html',
 })
 export class ReviewPage implements OnInit {

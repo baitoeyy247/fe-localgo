@@ -42,6 +42,7 @@
       }
     }
 
+    <p class="muted chips__hint" style="margin: 0">เลื่อนดูแท็บทั้งหมด</p>
     <div class="chips chips--scroll" role="tablist" aria-label="กรองงาน">
       @for (t of tabs; track t.key) {
         <button type="button" class="chip" [class.on]="tab() === t.key" (click)="setTab(t.key)">

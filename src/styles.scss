@@ -448,7 +448,7 @@ button:disabled,
   transform: translateX(-50%);
   bottom: 0;
   width: 100%;
-  max-width: 430px;
+  max-width: min(100%, 640px);
   z-index: 41;
   background: var(--bg);
   border-radius: var(--r-xl) var(--r-xl) 0 0;
@@ -730,8 +730,71 @@ app-offline-bar {
 /* —— Date/time pair —— */
 .datetime-pair {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--s2);
+}
+@media (max-width: 360px) {
+  .datetime-pair {
+    grid-template-columns: 1fr;
+  }
+  .datetime-pair input[type='time'] {
+    min-width: 0;
+    padding-right: 8px;
+  }
+}
+.btn.is-busy {
+  position: relative;
+  color: transparent !important;
+}
+.btn.is-busy::after {
+  content: '';
+  position: absolute;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: btn-spin 0.65s linear infinite;
+  color: #fff;
+}
+.btn-secondary.is-busy::after,
+.btn-ghost.is-busy::after {
+  color: var(--primary-dark);
+}
+@keyframes btn-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.flow a.is-step {
+  pointer-events: none;
+  cursor: default;
+}
+.flow--direct a.is-step {
+  pointer-events: auto;
+  cursor: pointer;
+}
+.chips__hint {
+  flex: none;
+  font-size: 12px;
+  white-space: nowrap;
+  align-self: center;
+}
+.admin-card-list {
+  display: none;
+}
+@media (max-width: 767px) {
+  .admin-table-wrap--desktop {
+    display: none;
+  }
+  .admin-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--s3);
+  }
+  .admin-card-list .card {
+    font-size: 14px;
+  }
 }
 .field--error .input,
 .input.err {
@@ -970,80 +1033,35 @@ app-offline-bar {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-/* —— Responsive: mobile / tablet / desktop —— */
+/* —— Responsive: G1 — same column for shell at all widths —— */
 .app {
   min-width: 0;
 }
-@media (max-width: 767px) {
-  .app,
-  .bnav,
-  .actionbar,
-  .sheet {
-    max-width: 430px;
-  }
+.app,
+.bnav,
+.actionbar,
+.sheet {
+  max-width: min(100%, 640px);
 }
-@media (min-width: 768px) and (max-width: 1023px) {
-  .app,
-  .bnav,
-  .actionbar,
-  .sheet {
-    max-width: 720px;
+.bnav {
+  left: 50%;
+  right: auto;
+  transform: translateX(-50%);
+}
+@media (min-width: 768px) {
+  body {
+    background: #daddde;
   }
   .content {
-    padding: var(--s4) var(--s6);
-    gap: var(--s6);
+    padding: var(--s4) var(--s5);
+    gap: var(--s5);
   }
 }
 @media (min-width: 1024px) {
-  .app {
-    max-width: 1200px;
-    width: min(1200px, 92vw);
-    margin-left: auto;
-    margin-right: auto;
-    padding-bottom: var(--s6);
-  }
-  .app.no-nav {
-    padding-bottom: var(--s6);
-  }
-  /* Keep bottom nav at the bottom on desktop so ← / header stay clickable (AC). */
-  .bnav {
-    position: fixed;
-    top: auto;
-    bottom: 0;
-    left: 50%;
-    right: auto;
-    transform: translateX(-50%);
-    max-width: 1200px;
-    width: min(1200px, 92vw);
-    margin: 0;
-    border-top: 1px solid var(--divider);
-    border-bottom: 0;
-    border-radius: var(--r-lg) var(--r-lg) 0 0;
-    padding-bottom: var(--safe-b);
-    padding-top: 4px;
-    z-index: 30;
-  }
-  .hdr,
-  .hero,
-  .hero__top,
-  .hero__back,
-  .hdr .icon-btn {
-    position: relative;
-    z-index: 35;
-  }
-  .content {
-    padding: var(--s6) var(--s8) calc(var(--nav-h) + var(--safe-b) + var(--s6));
-    gap: var(--s6);
-    min-width: 70%;
-  }
-  .app.no-nav .content {
-    padding-top: var(--s6);
-    padding-bottom: var(--s6);
-  }
   .search-layout {
     display: grid;
-    grid-template-columns: minmax(0, 1.2fr) minmax(280px, 1fr);
-    gap: var(--s6);
+    grid-template-columns: minmax(0, 1.2fr) minmax(240px, 1fr);
+    gap: var(--s5);
     align-items: start;
   }
   .search-layout__map {
@@ -1051,76 +1069,26 @@ app-offline-bar {
     top: 72px;
   }
   .search-layout__map .real-map {
-    min-height: 320px;
+    min-height: 280px;
     border-radius: var(--r-lg);
     overflow: hidden;
   }
   .results-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: var(--s4);
   }
-  .results-grid > .card,
-  .results-grid > a.card {
-    min-width: 280px;
-    overflow-wrap: anywhere;
-    word-break: normal;
-  }
-  @media (min-width: 1280px) {
-    .app,
-    .bnav {
-      width: min(1200px, 94vw);
-    }
-  }
   .admin-wide {
-    max-width: none;
     width: 100%;
   }
   .admin-table-wrap {
     width: 100%;
-    max-width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    border-radius: var(--r-lg);
-  }
-  .admin-table-wrap .admin-table {
-    width: 100%;
-    min-width: 0;
-  }
-  /* Forms only — do not constrain cards/grids/tables to 640px on desktop. */
-  .admin-form,
-  app-admin-dashboard-page .admin-form {
-    max-width: 640px;
-  }
-  .chips--scroll {
-    display: flex;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    gap: var(--s2);
-    padding-bottom: 4px;
-    -webkit-overflow-scrolling: touch;
-  }
-  .chips--scroll .chip {
-    flex: 0 0 auto;
-  }
-  .chips__hint {
-    flex: 0 0 auto;
-    font-size: 12px;
-    align-self: center;
-    white-space: nowrap;
   }
   .btn:hover:not([disabled]),
   a.btn:hover {
     filter: brightness(0.97);
-  }
-  .chip:hover,
-  .li:hover {
-    background: var(--bg-2);
-  }
-}
-@media (min-width: 1024px) {
-  body.has-desktop-nav .app {
-    padding-bottom: var(--s6);
   }
 }
 

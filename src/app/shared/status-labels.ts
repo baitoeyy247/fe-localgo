@@ -60,7 +60,7 @@ export function displayRequestStatusLabel(
   }
   if (status === 'Scheduled' || status === 'ProviderSelected' || status === 'Selected') {
     if (appointmentStatus === 'Confirmed') {
-      return 'นัดหมายแล้ว (ยืนยันแล้ว)';
+      return 'ยืนยันนัดแล้ว';
     }
     if (!appointmentStatus || appointmentStatus === 'Pending') {
       return 'รอผู้ให้บริการยืนยันนัด';

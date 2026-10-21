@@ -51,23 +51,10 @@
       </div>
     }
 
-    <a class="card row" routerLink="/provider/requests" style="text-decoration: none; color: inherit">
-      <span class="ico">📋</span>
-      <span class="grow"
-        ><b>งานที่ตรงกับบริการ</b><br /><span class="muted">ดูประกาศในพื้นที่และส่งข้อเสนอราคา</span></span
-      >
-      <span class="chev"></span>
-    </a>
-    <a class="card row" routerLink="/provider/my-bids" style="text-decoration: none; color: inherit">
-      <span class="ico">💬</span>
-      <span class="grow"><b>ข้อเสนอของฉัน</b><br /><span class="muted">ดูราคาและสถานะที่ส่งไปแล้ว</span></span>
-      <span class="chev"></span>
-    </a>
-    <a class="card row" routerLink="/provider/manage" style="text-decoration: none; color: inherit">
-      <span class="ico">🛠</span>
-      <span class="grow"><b>จัดการบริการ</b><br /><span class="muted">เปิด/ปิดบริการและดูรายการทั้งหมด</span></span>
-      <span class="chev"></span>
-    </a>
+    <div class="card muted" style="font-size: 14px">
+      ใช้เมนูด้านล่าง: <b>งาน</b> ดูประกาศและส่งข้อเสนอ · <b>บริการ</b> จัดการรายการบริการ ·
+      <a routerLink="/provider/my-bids" style="color: var(--primary-dark); font-weight: 700">ข้อเสนอของฉัน</a>
+    </div>
   }
 
   <div class="list">

@@ -125,6 +125,18 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
     this.confirmSelectOpen.set(true);
   }
 
+  protected selectConfirmMessage(): string {
+    const bid = this.selectedBid();
+    if (!bid) {
+      return 'ยืนยันการเลือกข้อเสนอ';
+    }
+    return (
+      `ผู้ให้บริการ: ${bid.providerName}\n` +
+      `ราคา: ${formatPrice(bid.priceText)}\n` +
+      `ขั้นถัดไป: กำหนดวัน เวลา และสถานที่นัดหมาย`
+    );
+  }
+
   protected async confirmSelection(): Promise<void> {
     const requestId = this.request()?.id ?? this.session.requesterRequestId ?? null;
     const bidId = this.selectedBidId();

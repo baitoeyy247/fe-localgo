@@ -10,6 +10,7 @@ import { ProviderSetupBar } from '../../../shared/provider-setup-bar';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
+import { ToastService } from '../../../core/toast.service';
 
 @Component({
   selector: 'app-provider-profile-setup-page',
@@ -17,6 +18,7 @@ import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
   templateUrl: './provider-profile.html',
 })
 export class ProviderProfileSetupPage implements OnInit {
+  private readonly toast = inject(ToastService);
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly provider = signal<ProviderDetail | null>(null);
@@ -111,6 +113,7 @@ export class ProviderProfileSetupPage implements OnInit {
         );
         this.provider.set(created);
       }
+      this.toast.show('บันทึกโปรไฟล์แล้ว');
       await this.router.navigateByUrl('/provider/coverage');
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'บันทึกโปรไฟล์ไม่สำเร็จ'));

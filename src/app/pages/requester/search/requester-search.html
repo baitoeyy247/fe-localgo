@@ -30,7 +30,7 @@
 
   @if (categories().length) {
     <div class="chips chips--scroll" aria-label="กรองหมวดบริการ">
-      <span class="chips__hint muted" aria-hidden="true">เลื่อนดูหมวด →</span>
+      <span class="chips__hint muted">เลื่อนดูหมวด</span>
       <button
         class="chip"
         [class.on]="selectedCategoryId() === null"
@@ -52,12 +52,8 @@
     </div>
   }
 
-  <button type="button" class="btn btn-primary btn-block" (click)="search()">
-    @if (selectedCategoryName()) {
-      ค้นหา: {{ selectedCategoryName() }}
-    } @else {
-      ค้นหา
-    }
+  <button type="button" class="btn btn-primary btn-block" [class.is-busy]="loading()" [disabled]="loading()" (click)="search()">
+    {{ loading() ? 'กำลังค้นหา…' : 'ค้นหาผู้ให้บริการ' }}
   </button>
 
   <div class="sec-title">

@@ -37,12 +37,15 @@
       </div>
     }
 
+    <p class="muted" style="margin: 0; font-size: 13px">
+      <b>ซ่อมข้อมูลทดสอบ</b> — แก้รีวิว/งานค้างโดยไม่ลบบัญชี · <b>รีเซ็ตข้อมูลทดสอบ</b> — ล้างงาน/นัด/รีวิว คง 10 บัญชีทดสอบ
+    </p>
     <div class="sec-title">
       ผู้ใช้ ({{ usersTotal() }})
-      <button type="button" class="btn btn-secondary btn-sm" [disabled]="acting() || resetting() || repairing()" (click)="repairTestData()">
+      <button type="button" class="btn btn-secondary btn-sm" [disabled]="acting() || resetting() || repairing()" (click)="askRepairTestData()">
         {{ repairing() ? 'กำลังซ่อม…' : 'ซ่อมข้อมูลทดสอบ' }}
       </button>
-      <button type="button" class="btn btn-danger-o btn-sm" [disabled]="acting() || resetting() || repairing()" (click)="resetTestData()">
+      <button type="button" class="btn btn-danger-o btn-sm" [disabled]="acting() || resetting() || repairing()" (click)="askResetTestData()">
         {{ resetting() ? 'กำลังรีเซ็ต…' : 'รีเซ็ตข้อมูลทดสอบ' }}
       </button>
     </div>
@@ -89,7 +92,17 @@
     @if (listsLoading()) {
       <p class="muted" style="text-align: center">กำลังอัปเดตรายการ…</p>
     }
-    <div class="admin-table-wrap admin-wide">
+    <div class="admin-card-list">
+      @for (r of requests(); track r.id) {
+        <article class="card">
+          <b>{{ r.title }}</b>
+          <p class="muted" style="margin: 4px 0 0">{{ adminRequestStatusLabel(r) }} · งบ {{ r.budgetText || '—' }}</p>
+        </article>
+      } @empty {
+        <p class="muted">ไม่มีงาน</p>
+      }
+    </div>
+    <div class="admin-table-wrap admin-table-wrap--desktop admin-wide">
       <table class="admin-table">
         <thead>
           <tr>
@@ -126,7 +139,18 @@
         <option value="Rejected">ผู้ให้บริการปฏิเสธ</option>
       </select>
     </div>
-    <div class="admin-table-wrap admin-wide">
+    <div class="admin-card-list">
+      @for (a of appointments(); track a.id) {
+        <article class="card">
+          <span class="badge" [class.badge--red]="a.status === 'Rejected'">{{ appointmentStatusLabel(a.status) }}</span>
+          <p style="margin: 8px 0 0"><b>{{ formatWhen(a.scheduledAt) }}</b></p>
+          <p class="muted" style="margin: 0">{{ a.addressText || '—' }}</p>
+        </article>
+      } @empty {
+        <p class="muted">ไม่มีนัด</p>
+      }
+    </div>
+    <div class="admin-table-wrap admin-table-wrap--desktop admin-wide">
       <table class="admin-table">
         <thead>
           <tr>
@@ -184,5 +208,26 @@
     [busy]="acting()"
     (confirm)="confirmSuspendUser()"
     (cancel)="suspendConfirmOpen.set(false)"
+  />
+  <app-confirm-sheet
+    [open]="resetConfirmOpen()"
+    title="รีเซ็ตข้อมูลทดสอบ?"
+    message="ล้างงาน นัดหมาย และรีวิวของบัญชีทดสอบทั้งหมด แต่คงบัญชี 10 รายไว้"
+    confirmLabel="รีเซ็ต"
+    cancelLabel="ยกเลิก"
+    [danger]="true"
+    [busy]="resetting()"
+    (confirm)="resetTestData()"
+    (cancel)="resetConfirmOpen.set(false)"
+  />
+  <app-confirm-sheet
+    [open]="repairConfirmOpen()"
+    title="ซ่อมข้อมูลทดสอบ?"
+    message="จัดรีวิวและลบงานค้างโดยไม่ลบบัญชีผู้ใช้"
+    confirmLabel="ซ่อมข้อมูล"
+    cancelLabel="ยกเลิก"
+    [busy]="repairing()"
+    (confirm)="repairTestData()"
+    (cancel)="repairConfirmOpen.set(false)"
   />
 </app-page-shell>

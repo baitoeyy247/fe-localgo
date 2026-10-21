@@ -30,6 +30,7 @@ import { resolveRequesterRequestId } from '../../../shared/requester-request-flo
 import { redirectProviderFromRequesterRoute } from '../../../shared/requester-deep-link-guard';
 import { ThaiDatetimeField } from '../../../shared/ui/thai-datetime-field';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
+import { formatPrice } from '../../../shared/format-price';
 
 @Component({
   selector: 'app-appointment-page',
@@ -60,6 +61,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
   protected readonly mapLat = signal<number | null>(null);
   protected readonly mapLng = signal<number | null>(null);
   protected readonly formatScheduledAt = formatScheduledAt;
+  protected readonly formatPrice = formatPrice;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
   protected readonly loadError = signal<string | null>(null);
   protected readonly confirmCancelOpen = signal(false);
@@ -157,9 +159,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
     }
     this.saving.set(true);
     this.error.set(null);
-    // Optimistic UI — immediate feedback within 1s AC.
-    this.success.set('กำลังบันทึกนัดหมาย…');
-    this.toast.show('กำลังบันทึกนัดหมาย…');
+    this.success.set(null);
     try {
       const detail = this.request();
       const bid = this.selectedBid();
@@ -204,8 +204,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
       );
       this.appointment.set(created);
       this.cache.invalidateAll();
-      this.success.set('บันทึกนัดหมายแล้ว ระบบจะแจ้งผู้ให้บริการให้ทราบ');
-      this.toast.show('บันทึกนัดหมายแล้ว');
+      this.toast.show('บันทึกนัดหมายแล้ว — รอผู้ให้บริการยืนยัน');
       void this.loadRequestState(requestId);
     } catch (e) {
       this.success.set(null);
@@ -357,6 +356,27 @@ export class AppointmentPage implements OnInit, OnDestroy {
       return true;
     }
     return appt?.status === 'InProgress' || appt?.status === 'Completed';
+  }
+
+  protected showCancelAction(): boolean {
+    return this.canCancelAppointment() || this.canClearBidSelection();
+  }
+
+  protected cancelActionLabel(): string {
+    if (this.canCancelAppointment()) {
+      return 'ยกเลิกนัดหมาย';
+    }
+    return 'ยกเลิกการเลือกข้อเสนอ';
+  }
+
+  protected openCancelDialog(): void {
+    if (this.canCancelAppointment()) {
+      this.confirmCancelOpen.set(true);
+      return;
+    }
+    if (this.canClearBidSelection()) {
+      this.confirmClearOpen.set(true);
+    }
   }
 
   protected canCancelAppointment(): boolean {

@@ -20,7 +20,7 @@
       </select>
     </label>
     <label class="field">
-      <span>ชื่อบริการ</span>
+      <span>ชื่อบริการ <span class="req">*</span></span>
       <input class="input" [value]="title()" (input)="title.set($any($event.target).value)" />
     </label>
     <label class="field">
@@ -45,10 +45,24 @@
         </label>
       }
     }
-    <button type="button" class="btn btn-primary btn-block" [disabled]="saving()" (click)="save()">
+    <button type="button" class="btn btn-primary btn-block" [class.is-busy]="saving()" [disabled]="saving()" (click)="save()">
       {{ saving() ? 'กำลังบันทึก…' : 'บันทึกการแก้ไข' }}
+    </button>
+    <button type="button" class="btn btn-danger-o btn-block" [disabled]="saving() || deleting()" (click)="deleteOpen.set(true)">
+      ลบบริการ
     </button>
   }
 
+  <app-confirm-sheet
+    [open]="deleteOpen()"
+    title="ลบบริการนี้?"
+    message="ลบถาวร — งานที่อ้างอิงบริการนี้อาจได้รับผลกระทบ"
+    confirmLabel="ลบบริการ"
+    cancelLabel="ไม่ลบ"
+    [danger]="true"
+    [busy]="deleting()"
+    (confirm)="deleteService()"
+    (cancel)="deleteOpen.set(false)"
+  />
   <app-provider-bottom-nav />
 </app-page-shell>

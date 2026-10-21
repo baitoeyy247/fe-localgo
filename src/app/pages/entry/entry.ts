@@ -20,6 +20,7 @@ export class EntryPage implements OnInit, OnDestroy {
   protected readonly lineHint = signal<string | null>(null);
   protected readonly personaBusy = signal(false);
   protected readonly activePersonaKey = signal<string | null>(null);
+  protected readonly roleBusy = signal<'Requester' | 'Provider' | null>(null);
   protected readonly personas = TEST_PERSONAS;
   protected readonly auth = inject(AuthService);
   protected readonly hint = new SlowLoadHint();
@@ -158,8 +159,16 @@ export class EntryPage implements OnInit, OnDestroy {
   }
 
   protected async enterAs(role: 'Requester' | 'Provider'): Promise<void> {
-    await this.auth.setActiveRole(role);
-    await this.router.navigateByUrl(role === 'Requester' ? '/requester' : '/provider');
+    if (this.roleBusy()) {
+      return;
+    }
+    this.roleBusy.set(role);
+    try {
+      await this.auth.setActiveRole(role);
+      await this.router.navigateByUrl(role === 'Requester' ? '/requester' : '/provider');
+    } finally {
+      this.roleBusy.set(null);
+    }
   }
 
   protected async goAdmin(): Promise<void> {

@@ -8,10 +8,12 @@ import { apiErrorMessage } from '../../../core/api-error.util';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { Category, ProviderDetail, ProviderService } from '../../../core/models';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
+import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
+import { ToastService } from '../../../core/toast.service';
 
 @Component({
   selector: 'app-edit-service-page',
-  imports: [PageShell, RouterLink, ProviderBottomNav],
+  imports: [PageShell, RouterLink, ProviderBottomNav, ConfirmSheet],
   templateUrl: './edit-service.html',
 })
 export class EditServicePage implements OnInit {
@@ -26,10 +28,13 @@ export class EditServicePage implements OnInit {
   protected readonly saving = signal(false);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+  protected readonly deleteOpen = signal(false);
+  protected readonly deleting = signal(false);
 
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(LocalGoApiService);
   private readonly router = inject(Router);
+  private readonly toast = inject(ToastService);
 
   async ngOnInit(): Promise<void> {
     const serviceId = this.route.snapshot.paramMap.get('serviceId');
@@ -107,12 +112,33 @@ export class EditServicePage implements OnInit {
           branchIds,
         }),
       );
+      this.toast.show('บันทึกบริการแล้ว');
       await this.router.navigateByUrl('/provider/manage');
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'บันทึกไม่สำเร็จ'));
       scrollToFirstError();
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  protected async deleteService(): Promise<void> {
+    const p = this.provider();
+    const svc = this.service();
+    if (!p || !svc || this.deleting()) {
+      return;
+    }
+    this.deleting.set(true);
+    try {
+      await firstValueFrom(this.api.deleteService(p.id, svc.id));
+      this.toast.show('ลบบริการแล้ว');
+      await this.router.navigateByUrl('/provider/manage');
+    } catch (e) {
+      this.error.set(apiErrorMessage(e, 'ลบบริการไม่สำเร็จ'));
+      scrollToFirstError();
+    } finally {
+      this.deleteOpen.set(false);
+      this.deleting.set(false);
     }
   }
 }

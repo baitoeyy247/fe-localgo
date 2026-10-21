@@ -199,6 +199,10 @@ export class LocalGoApiService {
     return this.post<void>(`/providers/${providerId}/services/${serviceId}/${action}`, {});
   }
 
+  deleteService(providerId: string, serviceId: string): Observable<void> {
+    return this.delete<void>(`/providers/${providerId}/services/${serviceId}`);
+  }
+
   setServiceBranches(
     providerId: string,
     serviceId: string,

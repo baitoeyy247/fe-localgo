@@ -91,7 +91,14 @@
     }
 
     @if (auth.isAuthenticated()) {
-      <button class="card row" type="button" style="width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer" (click)="enterAs('Requester')">
+      <button
+        class="card row"
+        type="button"
+        style="width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer"
+        [class.is-pressed]="roleBusy() === 'Requester'"
+        [disabled]="!!roleBusy()"
+        (click)="enterAs('Requester')"
+      >
         <span class="ico">🙋</span>
         <span class="grow">
           <b>ผู้รับบริการ</b><br />
@@ -100,7 +107,14 @@
         <span class="chev"></span>
       </button>
 
-      <button class="card row" type="button" style="width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer" (click)="enterAs('Provider')">
+      <button
+        class="card row"
+        type="button"
+        style="width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer"
+        [class.is-pressed]="roleBusy() === 'Provider'"
+        [disabled]="!!roleBusy()"
+        (click)="enterAs('Provider')"
+      >
         <span class="ico">🧰</span>
         <span class="grow">
           <b>ผู้ให้บริการ</b><br />
