@@ -18,7 +18,7 @@ import { toDatetimeLocal } from '../datetime.util';
           inputmode="numeric"
           autocomplete="off"
           aria-label="วันที่ วว/ดด/ปปปป"
-          placeholder="วว/ดด/ปปปป"
+          placeholder="วว/ดด/ปปปป (พ.ศ.)"
           maxlength="10"
           [value]="dateText()"
           (input)="onDateInput($any($event.target).value)"
@@ -38,7 +38,7 @@ import { toDatetimeLocal } from '../datetime.util';
       @if (displaySummary(); as summary) {
         <small class="form-field__hint muted">{{ summary }}</small>
       } @else {
-        <small class="form-field__hint muted">รูปแบบวันที่ วว/ดด/ปปปป และเวลา 24 ชม. (เช่น 14:30)</small>
+        <small class="form-field__hint muted">วันที่ วว/ดด/ปปปป ใช้ปี พ.ศ. (เช่น 24/10/2569) หรือ ค.ศ. (2026) · เวลา 24 ชม.</small>
       }
       @if (showError()) {
         <p class="error-text">{{ errorMessage() }}</p>
@@ -169,8 +169,14 @@ export class ThaiDatetimeField {
     }
     const d = Number(m[1]);
     const mo = Number(m[2]);
-    const y = Number(m[3]);
-    if (d < 1 || d > 31 || mo < 1 || mo > 12 || y < 2000 || y > 2100) {
+    let y = Number(m[3]);
+    if (d < 1 || d > 31 || mo < 1 || mo > 12) {
+      return null;
+    }
+    if (y >= 2400) {
+      y -= 543;
+    }
+    if (y < 2000 || y > 2100) {
       return null;
     }
     return { d, m: mo, y };
@@ -218,8 +224,10 @@ export class ThaiDatetimeField {
     if (!m) {
       return null;
     }
+    const y = Number(m[1]);
+    const be = y + 543;
     return {
-      date: `${m[3]}/${m[2]}/${m[1]}`,
+      date: `${m[3]}/${m[2]}/${be}`,
       time: `${m[4]}:${m[5]}`,
     };
   }

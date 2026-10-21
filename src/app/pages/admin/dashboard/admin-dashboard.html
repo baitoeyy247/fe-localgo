@@ -68,7 +68,7 @@
                   <span class="muted"> · ทดสอบ</span>
                 }
               </td>
-              <td>{{ adminSystemRoleLabel(u.systemRole ?? 'User') }}</td>
+              <td>{{ adminAccountRoleLabel(u) }}</td>
               <td>{{ adminUserStatusLabel(userStatus(u)) }}</td>
               <td>
                 @if (canToggleUserStatus(u)) {

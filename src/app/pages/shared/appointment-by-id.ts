@@ -5,7 +5,7 @@ import { PageShell } from '../../demo/page-shell';
 import { LocalGoApiService } from '../../core/localgo-api.service';
 import { AppointmentDetail, ServiceRequestDetail } from '../../core/models';
 import { apiErrorMessage } from '../../core/api-error.util';
-import { appointmentStatusLabel, isTerminalAppointment } from '../../shared/status-labels';
+import { appointmentStatusLabel } from '../../shared/status-labels';
 import { formatScheduledAt } from '../../shared/datetime.util';
 import { formatPrice } from '../../shared/format-price';
 import { ErrorState } from '../../shared/ui/error-state';
@@ -49,11 +49,16 @@ export class AppointmentByIdPage implements OnInit {
   }
 
   protected providerName(): string | null {
+    const a = this.appointment();
+    if (a?.providerName?.trim()) {
+      return a.providerName.trim();
+    }
     const r = this.request();
     if (!r) {
       return null;
     }
     const bid =
+      r.bids?.find((b) => b.providerId === a?.providerId) ??
       r.bids?.find((b) => b.id === r.selectedBidId) ??
       r.bids?.find((b) => b.status === 'Selected') ??
       r.bids?.[0];
@@ -64,23 +69,6 @@ export class AppointmentByIdPage implements OnInit {
     const r = this.request();
     const bid = r?.bids?.find((b) => b.id === r.selectedBidId) ?? r?.bids?.find((b) => b.status === 'Selected');
     return bid?.priceText ? formatPrice(bid.priceText) : r?.budgetText ? formatPrice(r.budgetText) : null;
-  }
-
-  protected statusHint(): string | null {
-    const st = this.appointment()?.status;
-    if (!st || isTerminalAppointment(st)) {
-      return null;
-    }
-    if (st === 'Pending') {
-      return 'รอผู้ให้บริการยืนยันนัด';
-    }
-    if (st === 'Confirmed') {
-      return 'ผู้ให้บริการยืนยันนัดแล้ว';
-    }
-    if (st === 'InProgress') {
-      return 'ผู้ให้บริการกำลังดำเนินงาน';
-    }
-    return null;
   }
 
   protected canCancel(): boolean {

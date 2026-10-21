@@ -9,6 +9,7 @@ const SYSTEM_ROLE: Record<string, string> = {
 };
 
 const NOTIFICATION_EVENT: Record<string, string> = {
+  NewMatchingRequest: 'งานใหม่ตรงบริการของคุณ',
   NewBidReceived: 'มีข้อเสนอราคาใหม่',
   BidSelected: 'ลูกค้าเลือกข้อเสนอ',
   AppointmentCreated: 'มีนัดหมายใหม่',
@@ -33,6 +34,24 @@ export function adminUserStatusLabel(status: string): string {
 
 export function adminSystemRoleLabel(role: string): string {
   return SYSTEM_ROLE[role] ?? 'ผู้ใช้';
+}
+
+/** Account role for admin user table (not JWT system role). */
+export function adminAccountRoleLabel(user: {
+  systemRole?: string;
+  activeRole?: string | null;
+  hasProviderProfile?: boolean;
+}): string {
+  if (user.systemRole === 'Admin') {
+    return 'ผู้ดูแลระบบ';
+  }
+  if (user.activeRole === 'Provider' || user.hasProviderProfile) {
+    return 'ผู้ให้บริการ';
+  }
+  if (user.activeRole === 'Requester') {
+    return 'ผู้รับบริการ';
+  }
+  return 'ผู้รับบริการ';
 }
 
 export function adminNotificationEventLabel(eventType: string): string {

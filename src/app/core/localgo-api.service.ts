@@ -225,6 +225,11 @@ export class LocalGoApiService {
     return this.get(`/service-requests/${requestId}/bid-form`);
   }
 
+  /** Warm Render / DNS before first API call after cold start. */
+  pingHealth(): Observable<{ status?: string }> {
+    return this.get<{ status?: string }>('/health');
+  }
+
   getRequest(requestId: string): Observable<ServiceRequestDetail> {
     return this.get<ServiceRequestDetail>(`/service-requests/${requestId}`);
   }

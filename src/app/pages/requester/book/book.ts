@@ -171,7 +171,6 @@ export class RequesterBookPage implements OnInit, OnDestroy {
 
     // Allow typed address alone — geocode when map pin is missing.
     if ((lat === null || lng === null) && address) {
-      this.toast.show('กำลังค้นหาพิกัดจากที่อยู่…');
       try {
         const place = await this.geo.searchPlace(address);
         if (!place) {

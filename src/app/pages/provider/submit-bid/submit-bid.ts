@@ -89,7 +89,12 @@ export class SubmitBidPage implements OnInit, OnDestroy {
         firstValueFrom(this.api.getBidFormAccess(requestId)),
       ]);
       if (!bidAccess.allowed) {
-        this.categoryBlocked.set(bidAccess.reason?.trim() || 'งานนี้ไม่ตรงกับบริการของคุณ');
+        const reason = bidAccess.reason?.trim();
+        const blocked =
+          bidAccess.reasonCode === 'CATEGORY_MISMATCH' || reason?.includes('ไม่ตรง')
+            ? 'งานนี้ไม่ตรงกับบริการของคุณ'
+            : reason || 'ไม่สามารถเสนอราคางานนี้ได้ — กลับไปเลือกงานจากกล่องงานหรือตรวจสอบบริการของคุณ';
+        this.categoryBlocked.set(blocked);
         this.loading.set(false);
         this.hint.end();
         return;
@@ -105,7 +110,12 @@ export class SubmitBidPage implements OnInit, OnDestroy {
         this.description.set((existing.description ?? '').slice(0, BID_DESCRIPTION_MAX));
       }
     } catch (e) {
-      this.loadError.set(apiErrorMessage(e, 'โหลดงานไม่สำเร็จ'));
+      const msg = apiErrorMessage(e, 'โหลดงานไม่สำเร็จ');
+      this.loadError.set(
+        msg === 'ไม่พบข้อมูล'
+          ? 'โหลดฟอร์มเสนอราคาไม่สำเร็จ — กลับไปเลือกงานจากรายการหรือลองใหม่'
+          : msg,
+      );
     } finally {
       this.hint.end();
       this.loading.set(false);

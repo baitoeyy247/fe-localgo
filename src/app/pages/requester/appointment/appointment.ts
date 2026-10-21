@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, inject, signal, viewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import {
@@ -44,6 +44,7 @@ import { GLOSSARY } from '../../../shared/glossary';
     SkeletonCard,
     ConfirmSheet,
     ThaiDatetimeField,
+    RouterLink,
   ],
   templateUrl: './appointment.html',
 })
@@ -66,6 +67,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
   protected readonly formatPrice = formatPrice;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
   protected readonly loadError = signal<string | null>(null);
+  protected readonly noWork = signal(false);
   protected readonly confirmCancelOpen = signal(false);
   protected readonly confirmClearOpen = signal(false);
   protected readonly hint = new SlowLoadHint();
@@ -117,7 +119,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
       strategy: 'appointment',
     });
     if (!requestId) {
-      this.error.set('ยังไม่มีงานที่จะนัดหมาย โปรดประกาศงานก่อน');
+      this.noWork.set(true);
       this.loading.set(false);
       return;
     }

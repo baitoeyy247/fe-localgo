@@ -40,8 +40,10 @@ export class MarketplaceCacheService {
 
   /** Warm home data after login / persona switch. */
   preloadHome(): void {
+    this.api.pingHealth().subscribe({ error: () => undefined });
     this.refreshMyRequests().subscribe({ error: () => undefined });
     this.refreshMatching().subscribe({ error: () => undefined });
+    this.getMyProvider().subscribe({ error: () => undefined });
   }
 
   invalidateMyRequests(): void {

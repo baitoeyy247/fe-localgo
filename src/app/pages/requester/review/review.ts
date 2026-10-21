@@ -121,7 +121,6 @@ export class ReviewPage implements OnInit {
     }
     this.submitting.set(true);
     this.error.set(null);
-    this.toast.show('กำลังส่งรีวิว…');
     try {
       await firstValueFrom(
         this.api.createReview(providerId, {

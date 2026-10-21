@@ -9,7 +9,14 @@
     <app-skeleton-card [slow]="hint.slow()" [timedOut]="hint.timedOut()" [count]="2" (retry)="retryLoad()" />
   } @else if (loadError()) {
     <app-error-state [message]="loadError()!" (retry)="retryLoad()" />
-  } @else {
+  } @else if (noWork()) {
+    <div class="state">
+      <div class="em">📋</div>
+      <h3>ยังไม่มีงานที่จะนัดหมาย</h3>
+      <p class="muted">ประกาศงานก่อน แล้วเลือกข้อเสนอจากผู้ให้บริการ</p>
+      <a class="btn btn-primary" routerLink="/requester/post">ประกาศงาน</a>
+    </div>
+  } @else if (request()) {
     <div class="card">
       <div class="row between">
         <b>{{ selectedBid()?.providerName ?? 'ผู้ให้บริการ' }}</b>
@@ -135,6 +142,8 @@
         {{ saving() ? GLOSSARY.savingAppointment : GLOSSARY.confirmAppointment }}
       </button>
     }
+  } @else {
+    <app-error-state message="โหลดงานไม่สำเร็จ" (retry)="retryLoad()" />
   }
 
   <app-location-picker-modal

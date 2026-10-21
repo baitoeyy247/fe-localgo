@@ -191,6 +191,11 @@ export class AuthService {
     this.cache.preloadHome();
   }
 
+  /** Ping API after role switch to reduce cold-start wait on first screen. */
+  warmApi(): void {
+    this.cache.preloadHome();
+  }
+
   /** Dev/SIT personas — may skip appointment start-window UX for playtesting. */
   isTestPersona(): boolean {
     if (this.authMode() !== 'dev') {

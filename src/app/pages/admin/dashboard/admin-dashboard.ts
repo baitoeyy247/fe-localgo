@@ -24,6 +24,7 @@ import {
   adminNotificationEventLabel,
   adminNotificationLine,
   adminNotificationStatusLabel,
+  adminAccountRoleLabel,
   adminSystemRoleLabel,
   adminUserStatusLabel,
 } from '../../../shared/admin-labels';
@@ -62,6 +63,7 @@ export class AdminDashboardPage implements OnInit {
   protected readonly requestStatusLabel = requestStatusLabel;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
   protected readonly displayInitial = displayInitial;
+  protected readonly adminAccountRoleLabel = adminAccountRoleLabel;
   protected readonly adminSystemRoleLabel = adminSystemRoleLabel;
   protected readonly adminUserStatusLabel = adminUserStatusLabel;
 
@@ -91,10 +93,6 @@ export class AdminDashboardPage implements OnInit {
   /** Refresh KPI + lists after reset/repair without hiding the whole page. */
   private async refreshAfterMutation(): Promise<void> {
     this.listsLoading.set(true);
-    this.dashboard.set(null);
-    this.requests.set([]);
-    this.appointments.set([]);
-    this.notifications.set([]);
     try {
       await this.fetchAllAdminData();
     } catch (e) {
@@ -279,7 +277,7 @@ export class AdminDashboardPage implements OnInit {
 
   protected userLine(u: AdminUserRow): string {
     const name = u.displayName ?? u.lineUserId ?? 'ผู้ใช้';
-    const role = adminSystemRoleLabel(u.systemRole ?? 'User');
+    const role = adminAccountRoleLabel(u);
     const status = adminUserStatusLabel(this.userStatus(u));
     return `${name} · ${role} · ${status}`;
   }

@@ -147,13 +147,15 @@ export interface LocationPickerValue {
 export class LocationPickerModal {
   readonly open = input(false);
   readonly heading = input('เลือกตำแหน่ง');
-  readonly description = input('แตะบนแผนที่หรือค้นหาสถานที่ แล้วกดยืนยันด้านล่าง');
-  readonly locationTitle = input('พื้นที่บริการ');
-  readonly locationSubtitle = input('จุดที่เลือกไว้ล่าสุด');
-  readonly searchText = input('พื้นที่บริการ');
+  readonly description = input(
+    'ค่าเริ่มต้น: ถนนผดุงวิถี เทศบาลเมืองมหาสารคาม · รัศมี 5 กม. (ปรับได้) — แตะแผนที่หรือค้นหาแล้วกดยืนยัน',
+  );
+  readonly locationTitle = input('ถนนผดุงวิถี, เทศบาลเมืองมหาสารคาม');
+  readonly locationSubtitle = input('ตำแหน่งเริ่มต้น (ค่าเริ่มต้น)');
+  readonly searchText = input('ถนนผดุงวิถี, เทศบาลเมืองมหาสารคาม');
   readonly radiusKm = input(5);
-  readonly lat = input(13.7563);
-  readonly lng = input(100.5018);
+  readonly lat = input(16.185);
+  readonly lng = input(103.302);
   readonly radiusOptions = input<number[]>([1, 3, 5, 8, 10, 15]);
   /** Hide radius controls (e.g. booking pin picker). */
   readonly showRadius = input(true);
@@ -167,8 +169,8 @@ export class LocationPickerModal {
 
   @ViewChild('mapRef') private mapRef?: MapView;
 
-  protected readonly draftLat = signal(13.7563);
-  protected readonly draftLng = signal(100.5018);
+  protected readonly draftLat = signal(16.185);
+  protected readonly draftLng = signal(103.302);
   protected readonly draftRadiusKm = signal(5);
   protected readonly draftSearchQuery = signal('');
   protected readonly placeTitle = signal('พื้นที่ที่เลือก');

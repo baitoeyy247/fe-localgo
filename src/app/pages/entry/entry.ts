@@ -6,6 +6,8 @@ import { AuthService } from '../../core/auth.service';
 import { LocalGoApiService } from '../../core/localgo-api.service';
 import { Category } from '../../core/models';
 import { TEST_PERSONAS, TestPersona } from '../../core/test-personas';
+import { apiErrorMessage } from '../../core/api-error.util';
+import { HttpErrorResponse } from '@angular/common/http';
 import { SlowLoadHint } from '../../shared/load-state';
 
 @Component({
@@ -88,7 +90,7 @@ export class EntryPage implements OnInit, OnDestroy {
       });
       await this.loadCategories();
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'เข้าบัญชีทดสอบไม่สำเร็จ');
+      this.error.set(apiErrorMessage(e, 'เข้าบัญชีทดสอบไม่สำเร็จ'));
     } finally {
       this.hint.end();
       this.personaBusy.set(false);
@@ -165,6 +167,7 @@ export class EntryPage implements OnInit, OnDestroy {
     this.roleBusy.set(role);
     try {
       await this.auth.setActiveRole(role);
+      this.auth.warmApi();
       await this.router.navigateByUrl(role === 'Requester' ? '/requester' : '/provider');
     } finally {
       this.roleBusy.set(null);
@@ -209,6 +212,9 @@ export class EntryPage implements OnInit, OnDestroy {
   }
 
   private toAuthErrorMessage(error: unknown): string {
+    if (error instanceof HttpErrorResponse || (error && typeof error === 'object' && 'status' in error)) {
+      return apiErrorMessage(error, EntryPage.DEFAULT_AUTH_ERROR);
+    }
     const raw = error instanceof Error ? error.message : EntryPage.DEFAULT_AUTH_ERROR;
     const normalized = raw.toLowerCase();
     if (normalized.includes('idtoken expired') || normalized.includes('invalid line token')) {

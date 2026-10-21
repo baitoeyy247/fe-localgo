@@ -26,6 +26,8 @@ import { MarketplaceCacheService } from '../../../core/marketplace-cache.service
 import { ToastService } from '../../../core/toast.service';
 import { formatDistanceMeters, haversineMeters } from '../../../shared/geo-distance';
 import { UserLocationService } from '../../../core/user-location.service';
+import { canStartJobAt } from '../../../shared/appointment-start-window';
+import { GLOSSARY } from '../../../shared/glossary';
 
 @Component({
   selector: 'app-provider-request-detail-page',
@@ -40,6 +42,7 @@ import { UserLocationService } from '../../../core/user-location.service';
   templateUrl: './request-detail.html',
 })
 export class ProviderRequestDetailPage implements OnInit, OnDestroy {
+  protected readonly GLOSSARY = GLOSSARY;
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly myBid = signal<BidItem | null>(null);
   protected readonly myProvider = signal<ProviderDetail | null>(null);
@@ -157,26 +160,39 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.categoryBlocked.set(null);
     this.hint.begin();
     try {
-      const [detail, myProvider, bidAccess] = await Promise.all([
+      const [detail, myProvider] = await Promise.all([
         firstValueFrom(this.api.getRequest(id)),
         firstValueFrom(
           this.cache
             .getMyProvider()
             .pipe(catchError((err) => (isNotFoundError(err) ? of(null as ProviderDetail | null) : Promise.reject(err)))),
         ),
-        firstValueFrom(
-          this.api
-            .getBidFormAccess(id)
-            .pipe(catchError(() => of({ allowed: true, reason: null, reasonCode: null }))),
-        ),
       ]);
-      if (!bidAccess.allowed) {
-        const msg = bidAccess.reason?.trim() || 'งานนี้ไม่ตรงกับบริการของคุณ';
-        this.categoryBlocked.set(
-          msg.includes('ไม่ตรง') ? 'งานนี้ไม่ตรงกับบริการของคุณ' : msg,
-        );
-      }
       this.request.set(detail);
+      const needsBidAccess =
+        (detail.status === 'Open' || detail.status === 'HasOffers') &&
+        detail.source !== 'DirectBooking' &&
+        !detail.bids?.some(
+          (b) => b.providerId === myProvider?.id && b.status !== 'Withdrawn',
+        ) &&
+        detail.selectedProviderId !== myProvider?.id;
+      if (needsBidAccess) {
+        try {
+          const bidAccess = await firstValueFrom(this.api.getBidFormAccess(id));
+          if (!bidAccess.allowed) {
+            const msg = bidAccess.reason?.trim() || 'งานนี้ไม่ตรงกับบริการของคุณ';
+            this.categoryBlocked.set(
+              bidAccess.reasonCode === 'CATEGORY_MISMATCH' || msg.includes('ไม่ตรง')
+                ? 'งานนี้ไม่ตรงกับบริการของคุณ'
+                : msg,
+            );
+          }
+        } catch (e) {
+          if (isNotFoundError(e)) {
+            this.categoryBlocked.set('งานนี้ไม่ตรงกับบริการของคุณ');
+          }
+        }
+      }
       this.myProvider.set(myProvider);
       let appt = detail.appointment ?? null;
       if (!appt && (detail.appointmentStatus || this.needsAppointmentFetch(detail, myProvider))) {
@@ -374,20 +390,9 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     );
   }
 
-  /** Matches backend: start/complete allowed from 1 hour before scheduledAt (skipped for test personas). */
+  /** Matches backend: start/complete allowed from 30 minutes before scheduledAt. */
   protected isWithinAppointmentWindow(): boolean {
-    if (this.auth.isTestPersona()) {
-      return true;
-    }
-    const at = this.appointment()?.scheduledAt;
-    if (!at) {
-      return false;
-    }
-    const scheduled = new Date(at).getTime();
-    if (Number.isNaN(scheduled)) {
-      return false;
-    }
-    return Date.now() >= scheduled - 60 * 60 * 1000;
+    return canStartJobAt(this.appointment()?.scheduledAt);
   }
 
   protected startWindowHint(): string | null {
@@ -396,7 +401,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       return null;
     }
     const when = formatScheduledAt(appt.scheduledAt);
-    return `เริ่มได้เมื่อถึงเวลานัด (${when})`;
+    return `เริ่มงานได้ตั้งแต่ ${when}`;
   }
 
   protected locationLine(r: ServiceRequestDetail): string {
@@ -589,6 +594,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.advanceConfirmOpen.set(false);
     try {
       const updated = await firstValueFrom(this.api.updateAppointmentStatus(appt.id, status));
+      this.acting.set(false);
       this.appointment.set(updated);
       this.cache.invalidateAll();
       const current = this.request();

@@ -136,6 +136,7 @@ export interface AppointmentDetail {
   id: string;
   serviceRequestId: string;
   providerId: string;
+  providerName?: string | null;
   requesterUserId: string;
   scheduledAt?: string | null;
   addressText?: string | null;
@@ -187,6 +188,8 @@ export interface AdminUserRow {
   displayName?: string;
   lineUserId?: string;
   systemRole?: string;
+  activeRole?: string | null;
+  hasProviderProfile?: boolean;
   status?: string;
   isTestUser?: boolean;
 }

@@ -14,7 +14,9 @@
       <div class="row between" style="align-items: flex-start">
         <div>
           @if (providerName(); as name) {
-            <b style="font-size: 18px">{{ name }}</b>
+            <b style="font-size: 18px">ผู้ให้บริการ: {{ name }}</b>
+          } @else {
+            <b style="font-size: 18px">รายละเอียดนัดหมาย</b>
           }
           @if (request(); as r) {
             <p class="muted" style="margin: 4px 0 0">{{ r.title }}</p>
@@ -22,9 +24,6 @@
         </div>
         <span class="badge b-blue">{{ statusLabel(a.status) }}</span>
       </div>
-      @if (statusHint(); as hint) {
-        <p class="muted" style="margin: 8px 0 0">{{ hint }}</p>
-      }
     </div>
 
     <div class="card">
@@ -39,20 +38,35 @@
     </div>
 
     @if (role() === 'requester') {
-      @if (canReschedule()) {
+      @if (a.status === 'Rejected') {
+        <div class="state">
+          <p class="muted">ผู้ให้บริการปฏิเสธนัด — คุณสามารถจองใหม่หรือหาผู้ให้บริการรายอื่น</p>
+          <a class="btn btn-primary btn-block" routerLink="/requester/search">หาผู้ให้บริการอื่น</a>
+          <a class="btn btn-secondary btn-block" routerLink="/requester/post">จองใหม่ / ประกาศงาน</a>
+        </div>
+      } @else if (a.status === 'Completed') {
         <a
           class="btn btn-primary btn-block"
-          [routerLink]="['/requester/appointment']"
+          [routerLink]="['/requester/review']"
           [queryParams]="{ requestId: a.serviceRequestId }"
-          >{{ GLOSSARY.rescheduleAppointment }}</a
+          >{{ GLOSSARY.reviewAction }}</a
         >
+      } @else {
+        @if (canReschedule()) {
+          <a
+            class="btn btn-primary btn-block"
+            [routerLink]="['/requester/appointment']"
+            [queryParams]="{ requestId: a.serviceRequestId }"
+            >{{ GLOSSARY.rescheduleAppointment }}</a
+          >
+        }
+        @if (canCancel()) {
+          <button type="button" class="btn btn-danger-o btn-block" [class.is-busy]="acting()" [disabled]="acting()" (click)="cancelOpen.set(true)">
+            {{ GLOSSARY.cancelAppointment }}
+          </button>
+        }
       }
-      @if (canCancel()) {
-        <button type="button" class="btn btn-danger-o btn-block" [class.is-busy]="acting()" [disabled]="acting()" (click)="cancelOpen.set(true)">
-          {{ GLOSSARY.cancelAppointment }}
-        </button>
-      }
-      <a class="btn btn-ghost btn-block" routerLink="/requester">กลับหน้าหลักผู้รับบริการ</a>
+      <a class="btn btn-ghost btn-block" routerLink="/requester">{{ GLOSSARY.backHome }}</a>
     } @else {
       <a class="btn btn-primary btn-block" [routerLink]="['/provider/requests', a.serviceRequestId]">เปิดรายละเอียดงาน</a>
     }
