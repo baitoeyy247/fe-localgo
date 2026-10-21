@@ -183,6 +183,7 @@ export class AuthService {
       sessionStorage.removeItem(PERSONA_KEY);
     }
     this.setSession(response.accessToken, response.user, 'dev');
+    this.cache.preloadHome();
   }
 
   /** Dev/SIT personas — may skip appointment start-window UX for playtesting. */

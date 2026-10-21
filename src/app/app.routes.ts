@@ -73,6 +73,11 @@ export const routes: Routes = [
       import('./pages/requester/appointment/appointment').then((m) => m.AppointmentPage),
   },
   {
+    path: 'requester/appointments',
+    pathMatch: 'full',
+    redirectTo: 'requester',
+  },
+  {
     path: 'requester/appointments/:id',
     title: 'นัดหมาย | LocalGo',
     canActivate: [authGuard],

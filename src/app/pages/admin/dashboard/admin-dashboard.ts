@@ -32,6 +32,7 @@ export class AdminDashboardPage implements OnInit {
   protected readonly requestStatusFilter = signal('');
   protected readonly appointmentStatusFilter = signal('');
   protected readonly loading = signal(true);
+  protected readonly listsLoading = signal(true);
   protected readonly acting = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly actionError = signal<string | null>(null);
@@ -48,25 +49,40 @@ export class AdminDashboardPage implements OnInit {
 
   protected async load(): Promise<void> {
     this.loading.set(true);
+    this.listsLoading.set(true);
     this.error.set(null);
     try {
-      const [dashboard, usersPage, notifications, requests, appointments] = await Promise.all([
+      const [dashboard, usersPage] = await Promise.all([
         firstValueFrom(this.api.getAdminDashboard()),
         firstValueFrom(this.api.listAdminUsers(this.usersPage(), this.pageSize)),
-        firstValueFrom(this.api.listAdminNotifications()),
-        firstValueFrom(this.api.listAdminServiceRequests(this.requestStatusFilter() || undefined)),
-        firstValueFrom(this.api.listAdminAppointments(this.appointmentStatusFilter() || undefined)),
       ]);
       this.dashboard.set(dashboard);
       this.users.set(usersPage.items);
       this.usersTotal.set(usersPage.total);
+    } catch (e) {
+      this.error.set(apiErrorMessage(e, 'โหลดหลังบ้านไม่สำเร็จ'));
+      this.listsLoading.set(false);
+    } finally {
+      this.loading.set(false);
+    }
+
+    if (this.error()) {
+      return;
+    }
+
+    try {
+      const [notifications, requests, appointments] = await Promise.all([
+        firstValueFrom(this.api.listAdminNotifications()),
+        firstValueFrom(this.api.listAdminServiceRequests(this.requestStatusFilter() || undefined)),
+        firstValueFrom(this.api.listAdminAppointments(this.appointmentStatusFilter() || undefined)),
+      ]);
       this.notifications.set(notifications);
       this.requests.set(requests);
       this.appointments.set(appointments);
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'โหลดหลังบ้านไม่สำเร็จ'));
+      this.actionError.set(apiErrorMessage(e, 'โหลดรายการบางส่วนไม่สำเร็จ'));
     } finally {
-      this.loading.set(false);
+      this.listsLoading.set(false);
     }
   }
 

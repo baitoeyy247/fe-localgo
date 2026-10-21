@@ -93,6 +93,11 @@ export class EntryPage implements OnInit, OnDestroy {
   }
 
   private async bootstrapEntry(): Promise<void> {
+    if (this.showTestMode() && !this.auth.isAuthenticated()) {
+      void this.loadLineHint();
+      return;
+    }
+
     this.hint.begin();
     try {
       this.auth.resetBootstrap();

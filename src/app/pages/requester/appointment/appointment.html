@@ -152,6 +152,7 @@
     [lat]="pickerLat()"
     [lng]="pickerLng()"
     [autoLocateOnOpen]="false"
+    [savedLocationReady]="mapLat() !== null && mapLng() !== null"
     (confirm)="applyPickedLocation($event)"
     (cancel)="closePicker()"
   />

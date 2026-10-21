@@ -50,7 +50,9 @@
           </div>
         }
       </dl>
-      <p class="muted" style="margin: 8px 0 0">รัศมีค้นหาจากจุดประกาศ {{ searchRadiusKm(r) }} กม.</p>
+      @if (r.source !== 'DirectBooking') {
+        <p class="muted" style="margin: 8px 0 0">รัศมีค้นหาจากจุดประกาศ {{ searchRadiusKm(r) }} กม.</p>
+      }
     </div>
 
     @if (showAppointmentSection()) {

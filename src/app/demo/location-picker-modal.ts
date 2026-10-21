@@ -159,6 +159,8 @@ export class LocationPickerModal {
   readonly showRadius = input(true);
   /** เมื่อเปิด modal ครั้งแรก ให้พยายามโฟกัสตำแหน่งปัจจุบันอัตโนมัติ */
   readonly autoLocateOnOpen = input(true);
+  /** Parent already has a confirmed pin — allow confirm after radius-only edits. */
+  readonly savedLocationReady = input(false);
 
   readonly confirm = output<LocationPickerValue>();
   readonly cancel = output<void>();
@@ -188,11 +190,14 @@ export class LocationPickerModal {
       const isOpen = this.open();
       if (isOpen && !this.wasOpen) {
         this.syncDraft();
-        this.pinConfirmed.set(false);
+        const hasSaved = this.savedLocationReady();
+        this.pinConfirmed.set(hasSaved);
         this.draftSearchQuery.set(this.searchText() || this.locationTitle());
         this.geoError.set(null);
         queueMicrotask(() => this.refreshMapSoon());
-        if (this.autoLocateOnOpen() && !this.autoLocateAttempted) {
+        if (hasSaved) {
+          this.autoLocateAttempted = true;
+        } else if (this.autoLocateOnOpen() && !this.autoLocateAttempted) {
           this.autoLocateAttempted = true;
           void this.useCurrentLocation(true);
         }
