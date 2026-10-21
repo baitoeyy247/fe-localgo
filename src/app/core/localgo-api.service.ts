@@ -222,7 +222,7 @@ export class LocalGoApiService {
     reason?: string | null;
     reasonCode?: string | null;
   }> {
-    return this.get(`/service-requests/${requestId}/bid-form`);
+    return this.get(`/provider/service-requests/${requestId}/bid-form`);
   }
 
   /** Warm Render / DNS before first API call after cold start. */
