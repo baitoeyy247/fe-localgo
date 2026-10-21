@@ -7,6 +7,8 @@ import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderDetail, ProviderService, ReviewItem } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
+import { providerTypeLabel } from '../../../shared/status-labels';
+import { formatPrice } from '../../../shared/format-price';
 
 @Component({
   selector: 'app-provider-profile-page',
@@ -19,6 +21,8 @@ export class ProviderProfilePage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly preferredServiceId = signal<string | null>(null);
   protected readonly showAllServices = signal(false);
+  protected readonly providerTypeLabel = providerTypeLabel;
+  protected readonly formatPrice = formatPrice;
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);

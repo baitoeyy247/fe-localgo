@@ -7,7 +7,7 @@
     <div class="card">
       <div class="row between">
         <b>{{ p.name }}</b>
-        <span class="badge b-green">{{ p.status === 'Active' ? 'พร้อมรับงาน' : p.status }}</span>
+        <span class="badge b-green">{{ p.status === 'Active' ? 'พร้อมรับงาน' : p.status === 'Draft' ? 'ฉบับร่าง' : p.status === 'Suspended' ? 'ระงับ' : 'พร้อมรับงาน' }}</span>
       </div>
       <p class="muted" style="margin: 4px 0 0">
         {{ p.services.length }} บริการ · {{ p.branches.length }} จุดให้บริการ ·

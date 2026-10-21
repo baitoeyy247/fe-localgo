@@ -7,7 +7,7 @@
         <span
           ><b>{{ focused.title }}</b><br /><span class="muted"
             >{{ focused.categoryName ?? 'บริการทั่วไป' }} · {{ p.name }} ·
-            {{ focused.basePriceText ?? 'ติดต่อสอบถามราคา' }}</span
+            {{ formatPrice(focused.basePriceText) }}</span
           ></span
         >
       </div>
@@ -17,18 +17,24 @@
       <span class="avatar lg" style="margin: 0 auto">{{ p.name[0] ?? '?' }}</span>
       <h2 style="margin: 8px 0 0">{{ p.name }}</h2>
       <p class="muted" style="margin: 0">
-        {{ p.providerType }}
+        {{ providerTypeLabel(p.providerType) }}
         @if (primaryService()?.isActive !== false) {
           · <span class="badge b-green">เปิดรับงาน</span>
         }
       </p>
       <p style="margin: 8px 0 0">
-        <span class="stars">★★★★★</span> <b>{{ p.averageVerifiedRating }}</b>
-        <span class="muted">({{ p.verifiedReviewCount }} รีวิว) · คะแนนจากงานจริง</span>
+        @if (p.verifiedReviewCount > 0) {
+          <span class="stars">★</span> <b>{{ p.averageVerifiedRating }}</b>
+          <span class="muted">({{ p.verifiedReviewCount }} รีวิว) · คะแนนจากงานจริง</span>
+        } @else {
+          <span class="muted">ยังไม่มีรีวิว</span>
+        }
       </p>
-      <p class="muted" style="margin: 4px 0 0; font-size: 14px">
-        คะแนนสาธารณะ {{ p.averagePublicRating }} · {{ p.publicReviewCount }} รีวิว
-      </p>
+      @if (p.publicReviewCount > 0) {
+        <p class="muted" style="margin: 4px 0 0; font-size: 14px">
+          คะแนนสาธารณะ {{ p.averagePublicRating }} · {{ p.publicReviewCount }} รีวิว
+        </p>
+      }
     </div>
 
     @if (primaryBranch(); as branch) {
@@ -39,10 +45,12 @@
           label="จุดให้บริการ"
           [lat]="branch.latitude"
           [lng]="branch.longitude"
+          [radiusKm]="branch.serviceRadiusMeters / 1000"
           [radiusLabel]="'รัศมี ' + branch.serviceRadiusMeters / 1000 + ' กม.'"
           [selectable]="false"
+          [showOverlay]="false"
         />
-        <p class="muted" style="margin: 8px 0 0">{{ branchLabels() }} · รัศมี {{ branch.serviceRadiusMeters / 1000 }} กม.</p>
+        <p class="muted" style="margin: 8px 0 0">{{ branchLabels() }}</p>
       </div>
     }
 
