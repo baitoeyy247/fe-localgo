@@ -25,9 +25,12 @@ echo "==> Generating SIT environment (api=$NG_APP_API_BASE_URL)"
 node scripts/generate-fe-environment.mjs
 
 echo "==> Building SIT"
-if [[ -x /usr/local/bin/node ]] && /usr/local/bin/node -e 'process.exit(process.arch==="x64"?0:1)' 2>/dev/null; then
-  # Prefer x64 node when local node_modules were installed under Rosetta.
+# Match node arch to installed esbuild native binary (avoid Rosetta mismatch).
+if [[ -d node_modules/@esbuild/darwin-arm64 ]] && command -v arch >/dev/null; then
+  arch -arm64 npm run build:sit
+elif [[ -d node_modules/@esbuild/darwin-x64 ]] && [[ -x /usr/local/bin/node ]]; then
   arch -x86_64 /usr/local/bin/node node_modules/@angular/cli/bin/ng.js build --configuration sit
+  node scripts/absolutize-assets.mjs
 else
   npm run build:sit
 fi
