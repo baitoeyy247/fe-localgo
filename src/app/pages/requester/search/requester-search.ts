@@ -24,11 +24,12 @@ export class RequesterSearchPage implements OnInit {
   protected readonly loading = signal(false);
   protected readonly keyword = signal('');
   protected readonly pickerOpen = signal(false);
+  protected readonly needsLocationPick = signal(false);
   protected readonly selectedCategoryId = signal<string | null>(null);
   protected readonly selectedCategoryName = signal<string | null>(null);
   protected readonly selectedArea = signal({
-    title: 'พื้นที่ค้นหาปัจจุบัน',
-    subtitle: 'พิกัดเริ่มต้นของพื้นที่ค้นหา',
+    title: 'ยังไม่ได้เลือกตำแหน่ง',
+    subtitle: 'อนุญาต GPS หรือเลือกบนแผนที่',
     radiusKm: 5,
     lat: 0,
     lng: 0,
@@ -42,7 +43,6 @@ export class RequesterSearchPage implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    // AC12: clear stale keyword when opening search fresh.
     this.keyword.set('');
 
     const area = await this.userLocation.resolveSearchArea();
@@ -53,6 +53,10 @@ export class RequesterSearchPage implements OnInit {
       lat: area.lat,
       lng: area.lng,
     });
+    this.needsLocationPick.set(!!area.needsPick);
+    if (area.needsPick) {
+      this.pickerOpen.set(true);
+    }
 
     const cats = await firstValueFrom(this.api.listCategories());
     this.categories.set(cats);
@@ -65,7 +69,9 @@ export class RequesterSearchPage implements OnInit {
       this.selectedCategoryName.set(catName);
     }
 
-    await this.reload();
+    if (!area.needsPick) {
+      await this.reload();
+    }
   }
 
   protected openPicker(): void {
@@ -79,18 +85,20 @@ export class RequesterSearchPage implements OnInit {
   protected async applyLocation(value: LocationPickerValue): Promise<void> {
     const area = {
       title: value.title,
-      subtitle: value.subtitle,
+      subtitle: value.subtitle.replace(/\s*·\s*รัศมี\s+\d+\s*กม\./gu, '').replace(/^รัศมี\s+\d+\s*กม\.?$/u, '').trim()
+        || 'ตำแหน่งที่เลือก',
       radiusKm: value.radiusKm,
       lat: value.lat,
       lng: value.lng,
     };
     this.selectedArea.set(area);
     this.userLocation.remember(area);
+    this.needsLocationPick.set(false);
     this.pickerOpen.set(false);
     await this.reload();
   }
 
-  /** Single source of truth for radius display (AC7). */
+  /** Single source of truth for radius display (card text + map). */
   protected radiusKmLabel(): string {
     return `${this.selectedArea().radiusKm} กม.`;
   }
@@ -113,6 +121,10 @@ export class RequesterSearchPage implements OnInit {
   }
 
   protected async search(): Promise<void> {
+    if (this.needsLocationPick()) {
+      this.pickerOpen.set(true);
+      return;
+    }
     await this.reload();
   }
 

@@ -10,11 +10,19 @@
     />
   </label>
 
+  @if (needsLocationPick()) {
+    <div class="banner warn" role="status">
+      <span
+        ><b>ยังไม่มีตำแหน่งค้นหา</b><br />อนุญาต GPS หรือเลือกบนแผนที่ก่อน — ไม่ใช้กรุงเทพเป็นค่าเริ่มต้นโดยอัตโนมัติ</span
+      >
+    </div>
+  }
+
   <div class="card row">
     <span class="ico">📍</span>
     <span class="grow">
       <b>{{ selectedArea().title }}</b><br />
-      <span class="muted">{{ selectedArea().subtitle }}</span>
+      <span class="muted">{{ selectedArea().subtitle }} · รัศมี {{ radiusKmLabel() }}</span>
     </span>
     <button type="button" class="btn btn-secondary btn-sm" (click)="openPicker()">เลือกบนแผนที่</button>
   </div>
@@ -84,8 +92,12 @@
                 >{{ provider.categoryName ?? 'บริการทั่วไป' }} · {{ formatDistance(provider.distanceMeters) }}</span
               ><br />
               @if (provider.verifiedReviewCount > 0) {
-                <span class="stars">★</span>
-                <span class="muted">{{ provider.averageVerifiedRating }} ({{ provider.verifiedReviewCount }} รีวิว)</span>
+                <span class="muted"
+                  ><span class="stars">★</span> {{ provider.averageVerifiedRating }} ({{
+                    provider.verifiedReviewCount
+                  }}
+                  รีวิว)</span
+                >
               } @else {
                 <span class="muted">ยังไม่มีรีวิว</span>
               }
@@ -130,7 +142,7 @@
     [lat]="selectedArea().lat"
     [lng]="selectedArea().lng"
     [radiusOptions]="[1, 3, 5, 8, 10, 15]"
-    [autoLocateOnOpen]="false"
+    [autoLocateOnOpen]="needsLocationPick()"
     (cancel)="closePicker()"
     (confirm)="applyLocation($event)"
   />

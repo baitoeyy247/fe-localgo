@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -17,13 +17,14 @@ import { ThaiDatetimeField } from '../../../shared/ui/thai-datetime-field';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { formatPrice } from '../../../shared/format-price';
 import { ToastService } from '../../../core/toast.service';
+import { SlowLoadHint } from '../../../shared/load-state';
 
 @Component({
   selector: 'app-requester-book-page',
   imports: [PageShell, LocationPickerModal, RequesterBottomNav, ThaiDatetimeField],
   templateUrl: './book.html',
 })
-export class RequesterBookPage implements OnInit {
+export class RequesterBookPage implements OnInit, OnDestroy {
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly serviceId = signal<string | null>(null);
   /** Empty until user picks — avoids display/value mismatch. */
@@ -38,6 +39,7 @@ export class RequesterBookPage implements OnInit {
   protected readonly mapLat = signal<number | null>(null);
   protected readonly mapLng = signal<number | null>(null);
   protected readonly formatPrice = formatPrice;
+  protected readonly hint = new SlowLoadHint();
 
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
@@ -60,7 +62,7 @@ export class RequesterBookPage implements OnInit {
     this.session.currentProviderId = providerId;
 
     try {
-      // Prefer last search area — never silent Bangkok default (AC5).
+      // Prefer last search area — never silent Bangkok default.
       const last = this.userLocation.getLastArea();
       if (last) {
         this.mapLat.set(last.lat);
@@ -88,6 +90,10 @@ export class RequesterBookPage implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.hint.end();
+  }
+
   protected selectedService() {
     const p = this.provider();
     const id = this.serviceId();
@@ -106,6 +112,11 @@ export class RequesterBookPage implements OnInit {
 
   protected openPicker(): void {
     this.pickerOpen.set(true);
+  }
+
+  /** Ask for GPS when the user has no remembered pin yet. */
+  protected autoLocateOnOpen(): boolean {
+    return this.mapLat() === null || this.mapLng() === null;
   }
 
   protected closePicker(): void {
@@ -180,6 +191,7 @@ export class RequesterBookPage implements OnInit {
     this.error.set(null);
     this.success.set('กำลังบันทึกนัดหมาย…');
     this.toast.show('กำลังบันทึกนัดหมาย…');
+    this.hint.begin();
     try {
       const result = await firstValueFrom(
         this.api.bookProviderService(providerId, serviceId, {
@@ -201,6 +213,7 @@ export class RequesterBookPage implements OnInit {
       this.error.set(apiErrorMessage(e, 'จองนัดหมายไม่สำเร็จ'));
       scrollToFirstError();
     } finally {
+      this.hint.end();
       this.saving.set(false);
     }
   }

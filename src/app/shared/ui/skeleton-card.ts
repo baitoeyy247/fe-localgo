@@ -12,9 +12,7 @@ import { Component, input, output } from '@angular/core';
       </div>
     } @else {
       @if (slow()) {
-        <p class="muted" style="text-align: center" role="status">
-          เซิร์ฟเวอร์กำลังตื่น — รอสักครู่หรือกดลองใหม่หากค้างนาน
-        </p>
+        <p class="muted" style="text-align: center" role="status">กำลังเชื่อมต่อเซิร์ฟเวอร์…</p>
       }
       @for (i of items(); track i) {
         <div class="card" aria-hidden="true">
@@ -27,7 +25,7 @@ import { Component, input, output } from '@angular/core';
   `,
 })
 export class SkeletonCard {
-  /** Show the "connecting to server" hint (set after ~4s of loading). */
+  /** Show the "connecting to server" hint (set after ~3s of loading). */
   readonly slow = input(false);
   /** After ~10s — show retry instead of skeleton. */
   readonly timedOut = input(false);

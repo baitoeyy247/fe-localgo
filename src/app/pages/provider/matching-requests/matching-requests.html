@@ -16,24 +16,16 @@
       <a class="btn btn-primary" [routerLink]="setupLink()">{{ setupActionLabel() }}</a>
     </div>
   } @else {
-    @if (pendingConfirmCount() > 0 && tab() === 'active') {
+    @if (pendingConfirmCount() > 0 && tab() === 'pending') {
       <div class="banner warn" role="status">
         <span
-          ><b>มีงานรอยืนยันนัด {{ pendingConfirmCount() }} รายการ</b><br />กดยืนยันรับนัดในงานของฉัน</span
+          ><b>มีงานรอยืนยันนัด {{ pendingConfirmCount() }} รายการ</b><br />กดยืนยันรับนัดในแท็บรอยืนยัน</span
         >
       </div>
     }
 
-    <div class="chips chips--scroll" role="tablist" aria-label="กรองงาน">
-      @for (t of tabs; track t.key) {
-        <button type="button" class="chip" [class.on]="tab() === t.key" (click)="setTab(t.key)">
-          {{ t.label }} ({{ tabCount(t.key) }})
-        </button>
-      }
-    </div>
-
-    @if (tab() === 'open') {
-      <div class="sec-title">งานที่เปิดรับราคา</div>
+    @if (openJobs().length > 0) {
+      <div class="sec-title">งานเปิดรับราคา ({{ openJobs().length }})</div>
       @for (request of openJobs(); track request.id) {
         <article class="card">
           <div class="row between" style="align-items: flex-start">
@@ -47,37 +39,43 @@
             {{ actionLabel(request) }}
           </button>
         </article>
-      } @empty {
-        <p class="muted">ยังไม่มีงานที่เปิดรับราคาในตอนนี้</p>
       }
-    } @else {
-      <div class="sec-title">{{ currentTabLabel() }}</div>
-      @for (request of filteredMyJobs(); track request.id) {
-        <article class="card">
-          <div class="row between" style="align-items: flex-start">
-            <b>{{ request.title }}</b>
-            <span class="badge" [ngClass]="chipClass(request)">{{ chipLabel(request) }}</span>
-          </div>
-          <p class="muted" style="margin: 4px 0 0">
-            {{ request.categoryName ?? 'ทั่วไป' }} · {{ formatDistance(request.distanceMeters) }}
-          </p>
-          <p class="muted" style="margin: 4px 0 12px; font-size: 13px">
-            โพสต์ {{ formatWhen(request.createdAt) }}
-            @if (request.budgetText) {
-              · {{ formatPrice(request.budgetText) }}
-            }
-          </p>
-          @if (!isTerminalJob(request)) {
-            <button type="button" class="btn btn-primary btn-sm btn-block" (click)="openRequest(request)">
-              {{ actionLabel(request) }}
-            </button>
-          } @else {
-            <button type="button" class="btn btn-ghost btn-sm btn-block" (click)="openRequest(request)">ดูรายละเอียด</button>
+    }
+
+    <div class="chips chips--scroll" role="tablist" aria-label="กรองงาน">
+      @for (t of tabs; track t.key) {
+        <button type="button" class="chip" [class.on]="tab() === t.key" (click)="setTab(t.key)">
+          {{ t.label }} ({{ tabCount(t.key) }})
+        </button>
+      }
+    </div>
+
+    <div class="sec-title">{{ currentTabLabel() }}</div>
+    @for (request of filteredMyJobs(); track request.id) {
+      <article class="card">
+        <div class="row between" style="align-items: flex-start">
+          <b>{{ request.title }}</b>
+          <span class="badge" [ngClass]="chipClass(request)">{{ chipLabel(request) }}</span>
+        </div>
+        <p class="muted" style="margin: 4px 0 0">
+          {{ request.categoryName ?? 'ทั่วไป' }} · {{ formatDistance(request.distanceMeters) }}
+        </p>
+        <p class="muted" style="margin: 4px 0 12px; font-size: 13px">
+          โพสต์ {{ formatWhen(request.createdAt) }}
+          @if (request.budgetText) {
+            · {{ formatPrice(request.budgetText) }}
           }
-        </article>
-      } @empty {
-        <p class="muted">ยังไม่มีงานในหมวดนี้</p>
-      }
+        </p>
+        @if (!isTerminalJob(request)) {
+          <button type="button" class="btn btn-primary btn-sm btn-block" (click)="openRequest(request)">
+            {{ actionLabel(request) }}
+          </button>
+        } @else {
+          <button type="button" class="btn btn-ghost btn-sm btn-block" (click)="openRequest(request)">ดูรายละเอียด</button>
+        }
+      </article>
+    } @empty {
+      <p class="muted">ยังไม่มีงานในหมวดนี้</p>
     }
   }
 

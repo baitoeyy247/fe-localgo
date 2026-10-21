@@ -12,7 +12,9 @@
       <div class="skel" style="height: 20px; width: 60%"></div>
       <div class="skel" style="height: 14px; margin-top: 12px"></div>
       <div class="skel" style="height: 14px; width: 80%; margin-top: 8px"></div>
-      <p class="muted" style="text-align: center; margin-top: 12px">กำลังโหลด…</p>
+      <p class="muted" style="text-align: center; margin-top: 12px">
+        {{ hint.slow() ? 'กำลังเชื่อมต่อเซิร์ฟเวอร์…' : 'กำลังโหลด…' }}
+      </p>
     </div>
   } @else if (error() && !showTestMode()) {
     <div class="state" role="alert">
@@ -64,7 +66,9 @@
         }
       </div>
       @if (personaBusy()) {
-        <p class="muted" style="text-align: center">กำลังเข้าสู่ระบบ…</p>
+        <p class="muted" style="text-align: center" role="status">
+          {{ hint.slow() ? 'กำลังเชื่อมต่อเซิร์ฟเวอร์…' : 'กำลังเข้าสู่ระบบ…' }}
+        </p>
       }
     }
 

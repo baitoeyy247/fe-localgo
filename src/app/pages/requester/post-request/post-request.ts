@@ -56,6 +56,9 @@ export class PostRequestPage implements OnInit {
       lat: area.lat,
       lng: area.lng,
     });
+    if (area.needsPick) {
+      this.pickerOpen.set(true);
+    }
 
     const categories = await firstValueFrom(this.api.listCategories());
     this.categories.set(categories);

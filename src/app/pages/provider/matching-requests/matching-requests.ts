@@ -22,7 +22,7 @@ import { formatPrice } from '../../../shared/format-price';
 import { normalizeList } from '../../../shared/normalize-list';
 
 type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
-type JobTab = 'active' | 'completed' | 'cancelled' | 'rejected' | 'open';
+type JobTab = 'pending' | 'active' | 'completed' | 'cancelled' | 'rejected';
 
 @Component({
   selector: 'app-matching-requests-page',
@@ -72,26 +72,26 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   protected readonly error = signal<string | null>(null);
   protected readonly setupIssue = signal<SetupIssue | null>(null);
   protected readonly pendingConfirmCount = signal(0);
-  protected readonly tab = signal<JobTab>('active');
+  protected readonly tab = signal<JobTab>('pending');
   protected readonly statusLabel = displayRequestStatusLabel;
   protected readonly statusBadgeClass = displayRequestStatusBadgeClass;
   protected readonly hint = new SlowLoadHint();
 
   protected readonly formatPrice = formatPrice;
   protected readonly tabs: { key: JobTab; label: string }[] = [
+    { key: 'pending', label: 'รอยืนยัน' },
     { key: 'active', label: 'กำลังทำ' },
-    { key: 'open', label: 'เปิดรับราคา' },
     { key: 'completed', label: 'เสร็จสิ้น' },
     { key: 'cancelled', label: 'ยกเลิก' },
     { key: 'rejected', label: 'ปฏิเสธ' },
   ];
 
-  /** Jobs open for bidding (not yet mine). */
+  /** Jobs open for bidding (not yet mine) — shown above tabs. */
   protected readonly openJobs = computed(() => {
     const list = normalizeList<ServiceRequestSummary>(this.matchingRequests());
     return list.filter((r) => !this.isMine(r) && this.isBiddable(r));
   });
-  /** Jobs I already bid on / engaged / terminal history. */
+  /** All engaged / terminal jobs for this provider. */
   protected readonly myJobs = computed(() => {
     const list = normalizeList<ServiceRequestSummary>(this.matchingRequests());
     return list.filter((r) => this.isMine(r));
@@ -139,9 +139,6 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   }
 
   protected tabCount(key: JobTab): number {
-    if (key === 'open') {
-      return this.openJobs().length;
-    }
     return this.myJobs().filter((r) => this.matchesTab(r, key)).length;
   }
 
@@ -150,9 +147,6 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   }
 
   private matchesTab(request: ServiceRequestSummary, tab: JobTab): boolean {
-    if (tab === 'open') {
-      return false;
-    }
     if (tab === 'completed') {
       return request.status === 'Completed' || request.appointmentStatus === 'Completed';
     }
@@ -165,11 +159,22 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
     if (tab === 'rejected') {
       return request.appointmentStatus === 'Rejected';
     }
-    // active
+    if (tab === 'pending') {
+      return this.isPendingConfirm(request);
+    }
+    // กำลังทำ — engaged work that is not pending confirm / terminal / completed
     return (
+      !this.isPendingConfirm(request) &&
       !this.isTerminalJob(request) &&
       request.status !== 'Completed' &&
       request.appointmentStatus !== 'Completed'
+    );
+  }
+
+  private isPendingConfirm(request: ServiceRequestSummary): boolean {
+    return (
+      !!request.needsAppointmentConfirm ||
+      request.appointmentStatus === 'Pending'
     );
   }
 
@@ -206,7 +211,10 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
       const items = await firstValueFrom(this.cache.listMatchingRequests(true));
       this.matchingRequests.set(items);
 
-      this.pendingConfirmCount.set(items.filter((r) => r.needsAppointmentConfirm).length);
+      this.pendingConfirmCount.set(
+        items.filter((r) => this.isMine(r) && this.isPendingConfirm(r)).length,
+      );
+      this.tab.set(this.pendingConfirmCount() > 0 ? 'pending' : 'active');
 
       const missingBranches = mine.branches.filter((b) => b.isActive).length === 0;
       const missingServices = mine.services.filter((s) => s.isActive).length === 0;

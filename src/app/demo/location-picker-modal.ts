@@ -190,6 +190,10 @@ export class LocationPickerModal {
 
   protected setRadius(km: number): void {
     this.draftRadiusKm.set(km);
+    // Keep selection card / map label on the same draft radius (AC).
+    if (this.showRadius()) {
+      this.placeSubtitle.set(this.radiusText());
+    }
     this.mapRef?.refreshSize();
   }
 

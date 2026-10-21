@@ -50,6 +50,9 @@
     @if (error()) {
       <p class="error-text">{{ error() }}</p>
     }
+    @if (saving() && hint.slow()) {
+      <p class="muted" style="text-align: center" role="status">กำลังเชื่อมต่อเซิร์ฟเวอร์…</p>
+    }
     @if (success()) {
       <div class="banner ok">{{ success() }}</div>
     }
@@ -62,11 +65,11 @@
   <app-location-picker-modal
     [open]="pickerOpen()"
     heading="ปักหมุดจุดนัดหมาย"
-    description="เลือกจุดที่ต้องการให้ผู้ให้บริการเข้าให้บริการ"
+    description="เลือกจุดที่ต้องการให้ผู้ให้บริการเข้าให้บริการ — อนุญาต GPS หรือเลือกเอง"
     locationTitle="จุดนัดหมาย"
     [lat]="pickerLat()"
     [lng]="pickerLng()"
-    [autoLocateOnOpen]="false"
+    [autoLocateOnOpen]="autoLocateOnOpen()"
     [showRadius]="false"
     (confirm)="applyPickedLocation($event)"
     (cancel)="closePicker()"

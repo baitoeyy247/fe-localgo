@@ -8,6 +8,8 @@ export interface UserLocationArea {
   lat: number;
   lng: number;
   radiusKm?: number;
+  /** True when we have no remembered/GPS fix — caller must prompt GPS or map pick. */
+  needsPick?: boolean;
 }
 
 const STORAGE_KEY = 'localgo.lastLocation';
@@ -22,7 +24,7 @@ export class UserLocationService {
 
   /** Last area the user searched/picked — preferred for booking defaults. */
   getLastArea(): (UserLocationArea & { radiusKm: number }) | null {
-    if (!this.cached) {
+    if (!this.cached || this.cached.needsPick) {
       return null;
     }
     return {
@@ -32,17 +34,18 @@ export class UserLocationService {
   }
 
   /**
-   * Prefer last remembered search area (so Mahasarakham stays Mahasarakham).
+   * Prefer last remembered search area.
    * Then GPS. Never silently treat Bangkok map defaults as "current location".
    */
   async resolveSearchArea(): Promise<UserLocationArea & { radiusKm: number }> {
-    if (this.cached) {
+    if (this.cached && !this.cached.needsPick) {
       return {
         ...this.cached,
         subtitle: this.cached.subtitle.includes('ปัจจุบัน')
           ? 'ตำแหน่งที่บันทึกไว้ล่าสุด'
           : this.cached.subtitle,
         radiusKm: this.cached.radiusKm ?? 5,
+        needsPick: false,
       };
     }
 
@@ -57,15 +60,16 @@ export class UserLocationService {
           lat: pos.lat,
           lng: pos.lng,
           radiusKm: 5,
+          needsPick: false,
         };
         this.remember(area);
         return { ...area, radiusKm: 5 };
       } catch {
-        // fall through
+        // fall through — ask user to pick
       }
     }
 
-    return this.defaultArea();
+    return this.needsPickArea();
   }
 
   remember(area: UserLocationArea & { radiusKm?: number }): void {
@@ -75,6 +79,7 @@ export class UserLocationService {
       lat: area.lat,
       lng: area.lng,
       radiusKm: area.radiusKm ?? this.cached?.radiusKm ?? 5,
+      needsPick: false,
     };
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(this.cached));
@@ -103,7 +108,8 @@ export class UserLocationService {
       if (
         typeof parsed?.lat === 'number' &&
         typeof parsed?.lng === 'number' &&
-        typeof parsed?.title === 'string'
+        typeof parsed?.title === 'string' &&
+        !parsed.needsPick
       ) {
         return parsed;
       }
@@ -113,13 +119,18 @@ export class UserLocationService {
     return null;
   }
 
-  private defaultArea(): UserLocationArea & { radiusKm: number } {
+  /**
+   * Placeholder until the user grants GPS or picks on the map.
+   * Map may center near the env default for panning only — never treat as a real search fix.
+   */
+  private needsPickArea(): UserLocationArea & { radiusKm: number } {
     return {
-      title: 'พื้นที่ค้นหาเริ่มต้น',
-      subtitle: 'อนุญาตตำแหน่งเพื่อค้นหาใกล้คุณ — หรือเลือกบนแผนที่',
+      title: 'ยังไม่ได้เลือกตำแหน่ง',
+      subtitle: 'อนุญาต GPS หรือเลือกบนแผนที่ — ยังไม่ใช้ตำแหน่งเริ่มต้นค้นหา',
       lat: environment.mapDefaultLat,
       lng: environment.mapDefaultLng,
       radiusKm: 5,
+      needsPick: true,
     };
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../demo/page-shell';
@@ -6,14 +6,14 @@ import { AuthService } from '../../core/auth.service';
 import { LocalGoApiService } from '../../core/localgo-api.service';
 import { Category } from '../../core/models';
 import { TEST_PERSONAS, TestPersona } from '../../core/test-personas';
-import { environment } from '../../../environments/environment';
+import { SlowLoadHint } from '../../shared/load-state';
 
 @Component({
   selector: 'app-entry-page',
   imports: [PageShell],
   templateUrl: './entry.html',
 })
-export class EntryPage implements OnInit {
+export class EntryPage implements OnInit, OnDestroy {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly categories = signal<Category[]>([]);
@@ -21,6 +21,7 @@ export class EntryPage implements OnInit {
   protected readonly personaBusy = signal(false);
   protected readonly personas = TEST_PERSONAS;
   protected readonly auth = inject(AuthService);
+  protected readonly hint = new SlowLoadHint();
   private readonly api = inject(LocalGoApiService);
   private readonly router = inject(Router);
   private static readonly DEFAULT_AUTH_ERROR = 'เข้าสู่ระบบไม่สำเร็จ กรุณาลองใหม่อีกครั้ง';
@@ -37,9 +38,14 @@ export class EntryPage implements OnInit {
     await this.bootstrapEntry();
   }
 
+  ngOnDestroy(): void {
+    this.hint.end();
+  }
+
   protected async retryLogin(): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
+    this.hint.begin();
     try {
       this.auth.clearSession();
       this.auth.resetBootstrap();
@@ -50,6 +56,7 @@ export class EntryPage implements OnInit {
       this.error.set(this.toAuthErrorMessage(e));
       await this.loadLineHint();
     } finally {
+      this.hint.end();
       this.loading.set(false);
     }
   }
@@ -68,6 +75,7 @@ export class EntryPage implements OnInit {
     }
     this.personaBusy.set(true);
     this.error.set(null);
+    this.hint.begin();
     try {
       await this.auth.devLogin({
         displayName: persona.displayName,
@@ -79,11 +87,13 @@ export class EntryPage implements OnInit {
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'เข้าบัญชีทดสอบไม่สำเร็จ');
     } finally {
+      this.hint.end();
       this.personaBusy.set(false);
     }
   }
 
   private async bootstrapEntry(): Promise<void> {
+    this.hint.begin();
     try {
       this.auth.resetBootstrap();
       await this.auth.ensureSession();
@@ -99,6 +109,7 @@ export class EntryPage implements OnInit {
       console.error('[LocalGo auth]', e);
       await this.loadLineHint();
     } finally {
+      this.hint.end();
       this.loading.set(false);
     }
   }

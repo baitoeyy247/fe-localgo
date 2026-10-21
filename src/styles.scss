@@ -999,31 +999,38 @@ app-offline-bar {
   .app.no-nav {
     padding-bottom: var(--s6);
   }
-  /* Fixed top nav (replaces bottom bar on desktop) */
+  /* Keep bottom nav at the bottom on desktop so ← / header stay clickable (AC). */
   .bnav {
     position: fixed;
-    top: 0;
-    bottom: auto;
+    top: auto;
+    bottom: 0;
     left: 50%;
     right: auto;
     transform: translateX(-50%);
     max-width: 1200px;
     width: min(1200px, 92vw);
     margin: 0;
-    border-top: 0;
-    border-bottom: 1px solid var(--divider);
-    border-radius: 0 0 var(--r-lg) var(--r-lg);
-    padding-bottom: 0;
+    border-top: 1px solid var(--divider);
+    border-bottom: 0;
+    border-radius: var(--r-lg) var(--r-lg) 0 0;
+    padding-bottom: var(--safe-b);
     padding-top: 4px;
-    z-index: 40;
+    z-index: 30;
+  }
+  .hdr,
+  .hero__back,
+  .hdr .icon-btn {
+    position: relative;
+    z-index: 35;
   }
   .content {
-    padding: calc(var(--nav-h) + var(--s6)) var(--s8) var(--s6);
+    padding: var(--s6) var(--s8) calc(var(--nav-h) + var(--safe-b) + var(--s6));
     gap: var(--s6);
     min-width: 70%;
   }
   .app.no-nav .content {
     padding-top: var(--s6);
+    padding-bottom: var(--s6);
   }
   .search-layout {
     display: grid;

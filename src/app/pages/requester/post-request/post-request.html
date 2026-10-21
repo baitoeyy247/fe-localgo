@@ -4,6 +4,13 @@
   <div class="banner info">
     <span><b>โพสต์แล้วรอรับราคา</b><br />กำหนดจุดรับงานให้ชัด แล้วเปิดรับข้อเสนอจากผู้ให้บริการรอบพื้นที่นั้น</span>
   </div>
+  @if (requestLocation().title === 'ยังไม่ได้เลือกตำแหน่ง') {
+    <div class="banner warn" role="status">
+      <span
+        ><b>ยังไม่มีตำแหน่งงาน</b><br />อนุญาต GPS หรือเลือกบนแผนที่ก่อนโพสต์ — ไม่ใช้กรุงเทพเป็นค่าเริ่มต้นโดยอัตโนมัติ</span
+      >
+    </div>
+  }
 
   <label class="field" [class.field--error]="!!fieldErrors()['title']">
     <span>หมวดหมู่</span>
