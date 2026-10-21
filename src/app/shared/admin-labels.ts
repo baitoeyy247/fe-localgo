@@ -35,13 +35,23 @@ export function adminSystemRoleLabel(role: string): string {
   return SYSTEM_ROLE[role] ?? 'ผู้ใช้';
 }
 
+export function adminNotificationEventLabel(eventType: string): string {
+  const key = eventType?.trim() ?? '';
+  return NOTIFICATION_EVENT[key] ?? (key ? key : 'แจ้งเตือน');
+}
+
+export function adminNotificationStatusLabel(status: string): string {
+  const key = status?.trim() ?? '';
+  return NOTIFICATION_STATUS[key] ?? (key ? key : '—');
+}
+
 export function adminNotificationLine(
   eventType: string,
   status: string,
   createdAt?: string | null,
 ): string {
-  const event = NOTIFICATION_EVENT[eventType] ?? 'แจ้งเตือน';
-  const st = NOTIFICATION_STATUS[status] ?? status;
+  const event = adminNotificationEventLabel(eventType);
+  const st = adminNotificationStatusLabel(status);
   const when = createdAt
     ? new Date(createdAt).toLocaleString('th-TH', {
         day: 'numeric',

@@ -49,27 +49,44 @@
         {{ resetting() ? 'กำลังรีเซ็ต…' : 'รีเซ็ตข้อมูลทดสอบ' }}
       </button>
     </div>
-    <div class="list admin-wide">
-      @for (u of users(); track u.id ?? $index) {
-        <div class="li">
-          <span class="avatar">{{ displayInitial(u.displayName ?? u.lineUserId) }}</span>
-          <span class="grow">
-            <span class="t">{{ userLine($any(u)) }}</span>
-            @if (isTestUser(u)) {
-              <br /><span class="muted">บัญชีทดสอบ</span>
-            }
-          </span>
-          @if (canToggleUserStatus(u)) {
-            <button type="button" class="btn btn-ghost btn-sm" [disabled]="acting()" (click)="requestToggleUser(u)">
-              {{ userStatus(u) === 'Suspended' ? 'เปิดใช้งาน' : 'ระงับ' }}
-            </button>
-          } @else if (auth.user()?.id === u.id) {
-            <span class="muted" style="font-size: 13px">บัญชีของคุณ</span>
+    <div class="admin-table-wrap admin-wide">
+      <table class="admin-table admin-table--users">
+        <thead>
+          <tr>
+            <th>ชื่อ</th>
+            <th>บทบาท</th>
+            <th>สถานะ</th>
+            <th>การจัดการ</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (u of users(); track u.id ?? $index) {
+            <tr>
+              <td>
+                {{ u.displayName ?? u.lineUserId ?? 'ผู้ใช้' }}
+                @if (isTestUser(u)) {
+                  <span class="muted"> · ทดสอบ</span>
+                }
+              </td>
+              <td>{{ adminSystemRoleLabel(u.systemRole ?? 'User') }}</td>
+              <td>{{ adminUserStatusLabel(userStatus(u)) }}</td>
+              <td>
+                @if (canToggleUserStatus(u)) {
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="acting()" (click)="requestToggleUser(u)">
+                    {{ userStatus(u) === 'Suspended' ? 'เปิดใช้งาน' : 'ระงับ' }}
+                  </button>
+                } @else if (auth.user()?.id === u.id) {
+                  <span class="muted">บัญชีของคุณ</span>
+                }
+              </td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="muted">ยังไม่มีผู้ใช้</td>
+            </tr>
           }
-        </div>
-      } @empty {
-        <p class="muted" style="padding: 16px">ยังไม่มีผู้ใช้</p>
-      }
+        </tbody>
+      </table>
     </div>
     <div class="pagination">
       <button type="button" class="btn btn-ghost btn-sm" [disabled]="usersPage() <= 1" (click)="goUsersPage(-1)">ก่อนหน้า</button>
@@ -92,17 +109,7 @@
     @if (listsLoading()) {
       <p class="muted" style="text-align: center">กำลังอัปเดตรายการ…</p>
     }
-    <div class="admin-card-list">
-      @for (r of requests(); track r.id) {
-        <article class="card">
-          <b>{{ r.title }}</b>
-          <p class="muted" style="margin: 4px 0 0">{{ adminRequestStatusLabel(r) }} · งบ {{ r.budgetText || '—' }}</p>
-        </article>
-      } @empty {
-        <p class="muted">ไม่มีงาน</p>
-      }
-    </div>
-    <div class="admin-table-wrap admin-table-wrap--desktop admin-wide">
+    <div class="admin-table-wrap admin-wide">
       <table class="admin-table">
         <thead>
           <tr>
@@ -139,18 +146,7 @@
         <option value="Rejected">ผู้ให้บริการปฏิเสธ</option>
       </select>
     </div>
-    <div class="admin-card-list">
-      @for (a of appointments(); track a.id) {
-        <article class="card">
-          <span class="badge" [class.badge--red]="a.status === 'Rejected'">{{ appointmentStatusLabel(a.status) }}</span>
-          <p style="margin: 8px 0 0"><b>{{ formatWhen(a.scheduledAt) }}</b></p>
-          <p class="muted" style="margin: 0">{{ a.addressText || '—' }}</p>
-        </article>
-      } @empty {
-        <p class="muted">ไม่มีนัด</p>
-      }
-    </div>
-    <div class="admin-table-wrap admin-table-wrap--desktop admin-wide">
+    <div class="admin-table-wrap admin-wide">
       <table class="admin-table">
         <thead>
           <tr>
@@ -187,14 +183,29 @@
     </div>
 
     <div class="sec-title">บันทึกแจ้งเตือนล่าสุด</div>
-    <div class="list">
-      @for (n of notifications().slice(0, 12); track $index) {
-        <div class="li">
-          <span class="grow"><span class="t">{{ notificationLabel(n) }}</span></span>
-        </div>
-      } @empty {
-        <p class="muted" style="padding: 16px">ยังไม่มีบันทึกแจ้งเตือน</p>
-      }
+    <div class="admin-table-wrap admin-wide">
+      <table class="admin-table admin-table--notifications">
+        <thead>
+          <tr>
+            <th>เหตุการณ์</th>
+            <th>สถานะส่ง</th>
+            <th>เวลา</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (n of notifications().slice(0, 12); track $index) {
+            <tr>
+              <td>{{ notificationEventLabel(n) }}</td>
+              <td>{{ notificationDeliveryLabel(n) }}</td>
+              <td>{{ formatNotificationWhen(n) }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3" class="muted">ยังไม่มีบันทึกแจ้งเตือน</td>
+            </tr>
+          }
+        </tbody>
+      </table>
     </div>
   }
 

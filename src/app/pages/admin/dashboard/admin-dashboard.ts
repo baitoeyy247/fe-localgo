@@ -21,7 +21,9 @@ import { displayInitial } from '../../../shared/display-initial';
 import { AuthService } from '../../../core/auth.service';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 import {
+  adminNotificationEventLabel,
   adminNotificationLine,
+  adminNotificationStatusLabel,
   adminSystemRoleLabel,
   adminUserStatusLabel,
 } from '../../../shared/admin-labels';
@@ -60,6 +62,8 @@ export class AdminDashboardPage implements OnInit {
   protected readonly requestStatusLabel = requestStatusLabel;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
   protected readonly displayInitial = displayInitial;
+  protected readonly adminSystemRoleLabel = adminSystemRoleLabel;
+  protected readonly adminUserStatusLabel = adminUserStatusLabel;
 
   private readonly api = inject(LocalGoApiService);
   protected readonly auth = inject(AuthService);
@@ -87,6 +91,7 @@ export class AdminDashboardPage implements OnInit {
   /** Refresh KPI + lists after reset/repair without hiding the whole page. */
   private async refreshAfterMutation(): Promise<void> {
     this.listsLoading.set(true);
+    this.dashboard.set(null);
     this.requests.set([]);
     this.appointments.set([]);
     this.notifications.set([]);
@@ -287,6 +292,27 @@ export class AdminDashboardPage implements OnInit {
     const type = String(row.eventType ?? row.type ?? '');
     const status = String(row.status ?? '');
     return adminNotificationLine(type, status, row.createdAt);
+  }
+
+  protected notificationEventLabel(row: AdminNotificationRow): string {
+    return adminNotificationEventLabel(String(row.eventType ?? row.type ?? ''));
+  }
+
+  protected notificationDeliveryLabel(row: AdminNotificationRow): string {
+    return adminNotificationStatusLabel(String(row.status ?? ''));
+  }
+
+  protected formatNotificationWhen(row: AdminNotificationRow): string {
+    if (!row.createdAt) {
+      return '—';
+    }
+    return new Date(row.createdAt).toLocaleString('th-TH', {
+      day: 'numeric',
+      month: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
   }
 
   protected userStatus(u: AdminUserRow): string {
