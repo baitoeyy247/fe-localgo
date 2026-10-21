@@ -11,7 +11,7 @@
     </div>
   } @else {
     <label class="field">
-      <span>หมวดหมู่</span>
+      <span>หมวดหมู่ <span class="req">*</span></span>
       <select class="input" aria-label="หมวดหมู่" (change)="selectCategory($any($event.target).value)">
         @for (cat of categories(); track cat.id) {
           <option [value]="cat.id" [selected]="selectedCategoryId() === cat.id">{{ cat.name }}</option>
@@ -19,7 +19,7 @@
       </select>
     </label>
     <label class="field">
-      <span>ชื่อบริการ</span>
+      <span>ชื่อบริการ <span class="req">*</span></span>
       <input class="input" placeholder="เช่น ซักอบรีด รับส่งถึงที่" (input)="updateTitle($any($event.target).value)" />
     </label>
     <label class="field">

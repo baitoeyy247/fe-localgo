@@ -70,7 +70,7 @@
 
   <div class="field" [class.field--error]="!!fieldErrors()['budget']">
     <span>งบประมาณ</span>
-    <div class="budget-seg" role="radiogroup" aria-label="รูปแบบงบประมาณ">
+    <div class="budget-seg budget-seg--tap" role="radiogroup" aria-label="รูปแบบงบประมาณ">
       <label class="budget-seg__option" [class.is-active]="budgetMode() === 'open'">
         <input
           type="radio"
