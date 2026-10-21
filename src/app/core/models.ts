@@ -78,6 +78,11 @@ export interface ProviderMatchingInbox {
   items: ServiceRequestSummary[];
   excludesOwnRequests: boolean;
   areas: ProviderCoverageArea[];
+  myJobs?: ServiceRequestSummary[] | null;
+}
+
+export interface ProviderHomeSummary {
+  pendingConfirmCount: number;
 }
 
 export interface BidFormAccess {
@@ -99,6 +104,9 @@ export interface ServiceRequestSummary {
   alreadyBidByMe?: boolean;
   needsAppointmentConfirm?: boolean;
   isOwnRequest?: boolean;
+  hasReviewed?: boolean;
+  myReviewRating?: number | null;
+  appointmentStatus?: string | null;
 }
 
 export interface ProviderBidListItem {
@@ -108,6 +116,9 @@ export interface ProviderBidListItem {
   priceText: string;
   status: string;
   createdAt: string;
+  requestStatus?: string | null;
+  appointmentStatus?: string | null;
+  appointmentScheduledAt?: string | null;
 }
 
 export interface ServiceRequestDetail {
@@ -141,6 +152,8 @@ export interface BidItem {
   description?: string | null;
   availableAt?: string | null;
   status: string;
+  averageVerifiedRating?: number | null;
+  verifiedReviewCount?: number | null;
 }
 
 export interface AppointmentDetail {

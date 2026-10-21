@@ -17,6 +17,7 @@ import {
   BidFormAccess,
   ProviderDetail,
   ProviderBidListItem,
+  ProviderHomeSummary,
   ProviderMatchingInbox,
   ProviderService,
   ProviderSummary,
@@ -183,6 +184,11 @@ export class LocalGoApiService {
     return this.post<ProviderBranch>(`/providers/${providerId}/branches`, body);
   }
 
+  deleteBranch(providerId: string, branchId: string): Observable<void> {
+    this.forgetProvider();
+    return this.http.delete<void>(`${this.base}/providers/${providerId}/branches/${branchId}`);
+  }
+
   updateBranch(
     providerId: string,
     branchId: string,
@@ -266,6 +272,10 @@ export class LocalGoApiService {
 
   cancelRequest(requestId: string): Observable<void> {
     return this.post<void>(`/service-requests/${requestId}/cancel`, {});
+  }
+
+  startRequest(requestId: string): Observable<void> {
+    return this.post<void>(`/service-requests/${requestId}/start`, {});
   }
 
   completeRequest(requestId: string): Observable<void> {
@@ -396,6 +406,10 @@ export class LocalGoApiService {
 
   listMyBids(): Observable<ProviderBidListItem[]> {
     return this.get<ProviderBidListItem[]>('/provider/bids');
+  }
+
+  getProviderSummary(): Observable<ProviderHomeSummary> {
+    return this.get<ProviderHomeSummary>('/provider/summary');
   }
 
   // --- Provider inbox ---

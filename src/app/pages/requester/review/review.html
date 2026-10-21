@@ -24,7 +24,7 @@
               [id]="'review-star-' + star"
               class="rating-picker__star"
               role="radio"
-              [class.is-active]="rating() >= star"
+              [class.is-active]="rating() !== null && rating()! >= star"
               [attr.aria-checked]="rating() === star"
               [attr.aria-label]="'ให้ ' + star + ' ดาว'"
               (click)="setRating(star)"
@@ -34,6 +34,7 @@
             </button>
           }
         </div>
+        <p class="state-hint">เลือกจำนวนดาวก่อนส่ง ความคิดเห็นไม่บังคับ</p>
         <label class="form-area">
           <span>ความคิดเห็น ({{ comment().length }}/{{ commentMax }})</span>
           <textarea
@@ -50,7 +51,7 @@
         <button
           class="primary"
           type="button"
-          [disabled]="submitting() || !canSubmit()"
+          [disabled]="submitting() || !canSubmit() || rating() === null"
           (click)="submit()"
         >
           {{ submitting() ? 'กำลังส่ง…' : 'ส่งรีวิวและกลับหน้าหลัก' }}

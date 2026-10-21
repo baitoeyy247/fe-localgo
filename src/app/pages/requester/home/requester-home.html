@@ -28,14 +28,18 @@
       @if (loading()) {
         <app-loading-skeleton />
       } @else if (error()) {
-        <p class="error-text">{{ error() }}</p>
+        <article class="empty-state">
+          <h3>โหลดข้อมูลไม่สำเร็จ</h3>
+          <p class="error-text">{{ error() }}</p>
+          <button class="primary" type="button" (click)="reload()">ลองใหม่</button>
+        </article>
       } @else {
         @for (request of requests(); track request.id) {
           <article class="request-card">
             <div style="display: grid; gap: 0.25rem;">
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.15rem; flex-wrap: wrap;">
                 <strong style="margin: 0;">{{ request.title }}</strong>
-                <span class="badge" [ngClass]="statusBadgeClass(request.status)">{{ statusLabel(request.status) }}</span>
+                <span class="badge" [ngClass]="statusBadgeClass(request.status, request.appointmentStatus)">{{ statusLabel(request.status, request.appointmentStatus) }}</span>
               </div>
               <span>
                 @if (request.categoryName) { {{ request.categoryName }} · }
@@ -44,14 +48,18 @@
               <small>สร้างเมื่อ {{ formatWhen(request.createdAt) }}</small>
             </div>
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-              <button
-                type="button"
-                [disabled]="openingId() === request.id"
-                (pointerdown)="armOpen(request, $event)"
-                (click)="openRequest(request)"
-              >
-                {{ openingId() === request.id ? 'กำลังเปิด…' : continueLabel(request.status) }}
-              </button>
+              @if (reviewBadge(request); as reviewed) {
+                <span class="badge">{{ reviewed }}</span>
+              } @else {
+                <button
+                  type="button"
+                  [disabled]="openingId() === request.id"
+                  (pointerdown)="armOpen(request, $event)"
+                  (click)="openRequest(request)"
+                >
+                  {{ openingId() === request.id ? 'กำลังเปิด…' : 'ดูรายละเอียด' }}
+                </button>
+              }
               @if (canCancel(request.status)) {
                 <button
                   type="button"
@@ -73,9 +81,6 @@
       }
     </div>
 
-    <button type="button" class="ghost-link role-switch" [disabled]="switching()" (click)="switchToProvider()">
-      {{ switching() ? 'กำลังสลับ…' : 'สลับไปโหมดผู้ให้บริการ' }}
-    </button>
   </section>
 
   <app-requester-bottom-nav />

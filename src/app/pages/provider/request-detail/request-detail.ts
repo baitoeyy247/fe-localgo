@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -12,10 +13,12 @@ import {
   requestStatusLabel,
 } from '../../../shared/status-labels';
 import { apiErrorMessage } from '../../../core/api-error.util';
-import { formatScheduledAt } from '../../../shared/datetime.util';
+import { formatScheduledAt, isWithinAppointmentWindow } from '../../../shared/datetime.util';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
-import { formatBaht } from '../../../shared/form-rules';
+import { formatBaht, jobPlaceLabel } from '../../../shared/form-rules';
 import { ConfirmModal } from '../../../shared/confirm-modal';
+import { isGuid } from '../../../shared/ids';
+import { distanceMeters, formatDistanceMeters } from '../../../shared/coordinates';
 
 @Component({
   selector: 'app-provider-request-detail-page',
@@ -24,9 +27,12 @@ import { ConfirmModal } from '../../../shared/confirm-modal';
 })
 export class ProviderRequestDetailPage implements OnInit {
   protected readonly formatBaht = formatBaht;
+  protected readonly placeLabel = jobPlaceLabel;
   protected readonly confirmOpen = signal(false);
+  protected readonly confirmDestructive = signal(false);
   protected readonly confirmTitle = signal('');
   protected readonly confirmMessage = signal('');
+  protected readonly notFound = signal(false);
   private confirmResolver: ((accepted: boolean) => void) | null = null;
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly myBid = signal<BidItem | null>(null);
@@ -55,27 +61,57 @@ export class ProviderRequestDetailPage implements OnInit {
       this.notice.set(navState.notice);
     }
     const id = this.route.snapshot.paramMap.get('id');
-    if (!id) {
+    if (!isGuid(id)) {
+      this.notFound.set(true);
       this.loading.set(false);
       return;
     }
     this.session.providerRequestId = id;
     try {
-      const [detail, myProvider] = await Promise.all([
-        firstValueFrom(this.api.getRequest(id)),
-        firstValueFrom(this.api.getMyProvider()),
-      ]);
+      const detail = await firstValueFrom(this.api.getRequest(id));
       this.request.set(detail);
-      this.myProvider.set(myProvider);
-      this.myBid.set(detail.bids?.find((bid) => bid.providerId === myProvider.id) ?? null);
-      if (this.hasActiveEngagement(detail, myProvider.id)) {
-        await this.loadAppointment(id);
+      try {
+        const myProvider = await firstValueFrom(this.api.getMyProvider());
+        this.myProvider.set(myProvider);
+        this.myBid.set(detail.bids?.find((bid) => bid.providerId === myProvider.id) ?? null);
+        if (this.hasActiveEngagement(detail, myProvider.id)) {
+          await this.loadAppointment(id);
+        }
+      } catch (providerError) {
+        if (!(providerError instanceof HttpErrorResponse) || providerError.status !== 404) {
+          this.error.set(apiErrorMessage(providerError, 'โหลดข้อมูลไม่สำเร็จ'));
+        }
       }
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'โหลดรายละเอียดไม่สำเร็จ'));
+      if (e instanceof HttpErrorResponse && (e.status === 404 || e.status === 400)) {
+        this.notFound.set(true);
+      } else {
+        this.error.set(apiErrorMessage(e, 'โหลดข้อมูลไม่สำเร็จ'));
+      }
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected async retry(): Promise<void> {
+    this.loading.set(true);
+    this.error.set(null);
+    this.notFound.set(false);
+    await this.ngOnInit();
+  }
+
+  protected distanceLabel(): string {
+    const request = this.request();
+    const branches = this.myProvider()?.branches.filter((branch) => branch.isActive) ?? [];
+    if (!request || branches.length === 0) {
+      return '';
+    }
+    const nearest = Math.min(
+      ...branches.map((branch) =>
+        distanceMeters(branch.latitude, branch.longitude, request.latitude, request.longitude),
+      ),
+    );
+    return formatDistanceMeters(nearest);
   }
 
   private async loadAppointment(requestId: string): Promise<void> {
@@ -108,7 +144,7 @@ export class ProviderRequestDetailPage implements OnInit {
       return;
     }
     this.session.providerRequestId = id;
-    await this.router.navigateByUrl('/provider/bid');
+    await this.router.navigate(['/provider/bid'], { queryParams: { requestId: id } });
   }
 
   protected async withdrawMyBid(): Promise<void> {
@@ -119,6 +155,7 @@ export class ProviderRequestDetailPage implements OnInit {
     const accepted = await this.askConfirm(
       'ถอนข้อเสนอ',
       'ถอนข้อเสนอราคานี้แล้วผู้ประกาศจะไม่เห็นราคาของคุณ',
+      true,
     );
     if (!accepted) {
       return;
@@ -177,7 +214,12 @@ export class ProviderRequestDetailPage implements OnInit {
 
   protected canStartJob(): boolean {
     const appt = this.appointment();
-    return this.hasActiveEngagement() && appt?.status === 'Confirmed';
+    return this.hasActiveEngagement() && appt?.status === 'Confirmed' && isWithinAppointmentWindow(appt.scheduledAt);
+  }
+
+  protected startTooEarly(): boolean {
+    const appt = this.appointment();
+    return this.hasActiveEngagement() && appt?.status === 'Confirmed' && !isWithinAppointmentWindow(appt.scheduledAt);
   }
 
   protected canCompleteJob(): boolean {
@@ -197,24 +239,40 @@ export class ProviderRequestDetailPage implements OnInit {
   }
 
   protected async startJob(): Promise<void> {
-    await this.advanceAppointment('InProgress', {
-      allowed: () => this.canStartJob(),
-      confirmTitle: 'เริ่มงาน',
-      confirmText: 'เริ่มงานตามนัดหมายนี้ ลูกค้าจะเห็นสถานะกำลังดำเนินงาน',
-      busyLabel: 'กำลังเริ่มงาน…',
-      notice: 'เริ่มงานแล้ว — ลูกค้าจะเห็นสถานะกำลังดำเนินงาน',
-      errorFallback: 'เริ่มงานไม่สำเร็จ',
+    const requestId = this.request()?.id;
+    if (!requestId || !this.canStartJob() || this.acting() || this.confirmOpen()) {
+      return;
+    }
+    const accepted = await this.askConfirm(
+      'เริ่มงาน',
+      'เริ่มงานตามนัดหมายนี้ ลูกค้าจะเห็นสถานะกำลังดำเนินงาน',
+    );
+    if (!accepted) {
+      return;
+    }
+    await this.runJobAction(requestId, 'กำลังเริ่มงาน…', 'เริ่มงานไม่สำเร็จ', async () => {
+      await firstValueFrom(this.api.startRequest(requestId));
+      this.patchProgress('InProgress');
+      this.notice.set('เริ่มงานแล้ว — ลูกค้าจะเห็นสถานะกำลังดำเนินงาน');
     });
   }
 
   protected async completeJob(): Promise<void> {
-    await this.advanceAppointment('Completed', {
-      allowed: () => this.canCompleteJob(),
-      confirmTitle: 'ปิดงาน',
-      confirmText: 'เมื่องานเสร็จ ลูกค้าจะสามารถให้คะแนนและรีวิวได้',
-      busyLabel: 'กำลังปิดงาน…',
-      notice: 'ปิดงานแล้ว — ลูกค้าสามารถให้คะแนนและรีวิวได้',
-      errorFallback: 'ปิดงานไม่สำเร็จ',
+    const requestId = this.request()?.id;
+    if (!requestId || !this.canCompleteJob() || this.acting() || this.confirmOpen()) {
+      return;
+    }
+    const accepted = await this.askConfirm(
+      'ปิดงาน',
+      'เมื่องานเสร็จ ลูกค้าจะสามารถให้คะแนนและรีวิวได้',
+    );
+    if (!accepted) {
+      return;
+    }
+    await this.runJobAction(requestId, 'กำลังปิดงาน…', 'ปิดงานไม่สำเร็จ', async () => {
+      await firstValueFrom(this.api.completeRequest(requestId));
+      this.patchProgress('Completed');
+      this.notice.set('ปิดงานแล้ว — ลูกค้าสามารถให้คะแนนและรีวิวได้');
     });
   }
 
@@ -224,13 +282,44 @@ export class ProviderRequestDetailPage implements OnInit {
     this.confirmResolver = null;
   }
 
-  private askConfirm(title: string, message: string): Promise<boolean> {
+  private askConfirm(title: string, message: string, destructive = false): Promise<boolean> {
     this.confirmTitle.set(title);
     this.confirmMessage.set(message);
+    this.confirmDestructive.set(destructive);
     this.confirmOpen.set(true);
     return new Promise((resolve) => {
       this.confirmResolver = resolve;
     });
+  }
+
+  private patchProgress(status: 'InProgress' | 'Completed'): void {
+    const appointment = this.appointment();
+    if (appointment) {
+      this.appointment.set({ ...appointment, status });
+    }
+    const request = this.request();
+    if (request) {
+      this.request.set({ ...request, status });
+    }
+  }
+
+  private async runJobAction(
+    requestId: string,
+    busyLabel: string,
+    errorFallback: string,
+    action: () => Promise<void>,
+  ): Promise<void> {
+    this.acting.set(true);
+    this.actingLabel.set(busyLabel);
+    this.error.set(null);
+    try {
+      await action();
+    } catch (e) {
+      this.error.set(apiErrorMessage(e, errorFallback));
+    } finally {
+      this.acting.set(false);
+    }
+    void requestId;
   }
 
   private async advanceAppointment(
@@ -245,7 +334,7 @@ export class ProviderRequestDetailPage implements OnInit {
     },
   ): Promise<void> {
     const appt = this.appointment();
-    if (!appt || !options.allowed() || this.acting()) {
+    if (!appt || !options.allowed() || this.acting() || this.confirmOpen()) {
       return;
     }
     const accepted = await this.askConfirm(options.confirmTitle, options.confirmText);
@@ -258,16 +347,9 @@ export class ProviderRequestDetailPage implements OnInit {
     try {
       const updated = await firstValueFrom(this.api.updateAppointmentStatus(appt.id, status));
       this.appointment.set(updated);
-      const requestId = this.request()?.id;
-      if (requestId) {
-        try {
-          this.request.set(await firstValueFrom(this.api.getRequest(requestId)));
-        } catch {
-          const current = this.request();
-          if (current && status !== 'Confirmed') {
-            this.request.set({ ...current, status });
-          }
-        }
+      const current = this.request();
+      if (current) {
+        this.request.set({ ...current, status: status === 'Confirmed' ? 'Scheduled' : status });
       }
       this.notice.set(options.notice);
     } catch (e) {

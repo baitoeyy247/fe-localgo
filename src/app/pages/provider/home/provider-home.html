@@ -2,6 +2,12 @@
   <section class="screen">
     @if (loading()) {
       <app-loading-skeleton />
+    } @else if (error()) {
+      <article class="empty-state">
+        <h3>โหลดข้อมูลไม่สำเร็จ</h3>
+        <p class="error-text">{{ error() }}</p>
+        <button class="primary" type="button" (click)="reload()">ลองใหม่</button>
+      </article>
     } @else if (!hasProfile()) {
       <div class="hero-panel">
         <span class="badge badge--blue">เริ่มต้น</span>
@@ -42,6 +48,13 @@
       }
 
       <div class="stack">
+        <a class="action-card" routerLink="/provider/my-bids" [queryParams]="{ status: 'pending' }">
+          <span>
+            <strong>มีนัดรอยืนยัน {{ pendingConfirmCount() }} งาน</strong>
+            <small>เปิดรายการข้อเสนอที่รอคุณยืนยันนัด</small>
+          </span>
+          <b>→</b>
+        </a>
         <a class="action-card" routerLink="/provider/requests">
           <span>
             <strong>งานที่ตรงกับบริการ</strong>
@@ -66,9 +79,6 @@
       </div>
     }
 
-    <button type="button" class="ghost-link role-switch" [disabled]="switching()" (click)="switchToRequester()">
-      {{ switching() ? 'กำลังสลับ…' : 'สลับไปโหมดผู้รับบริการ' }}
-    </button>
   </section>
 
   <app-provider-bottom-nav />

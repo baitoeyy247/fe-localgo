@@ -4,25 +4,49 @@
       <app-loading-skeleton />
     } @else if (error()) {
       <div class="empty-state">
-        <h3>โหลดข้อเสนอไม่สำเร็จ</h3>
+        <h3>โหลดข้อมูลไม่สำเร็จ</h3>
         <p class="error-text">{{ error() }}</p>
+        <button class="primary" type="button" (click)="reload()">ลองใหม่</button>
       </div>
     } @else if (bids().length === 0) {
       <div class="empty-state">
         <h3>ยังไม่มีข้อเสนอ</h3>
-        <p>เมื่อส่งราคาแล้ว รายการจะแสดงราคาและสถานะที่นี่</p>
+        <p>เมื่อส่งราคาแล้ว รายการจะแสดงราคา สถานะ และวันนัดที่นี่</p>
         <a class="primary" routerLink="/provider/requests">ดูงานที่ตรงกับบริการ</a>
       </div>
     } @else {
       <div class="stack">
-        @for (bid of bids(); track bid.id) {
+        <div class="chip-scroll" role="tablist" aria-label="กรองสถานะข้อเสนอ">
+          @for (item of filters; track item.id) {
+            <button
+              type="button"
+              class="category-chip"
+              [class.is-active]="filter() === item.id"
+              (click)="setFilter(item.id)"
+            >
+              {{ item.label }}
+            </button>
+          }
+        </div>
+        @for (bid of visibleBids(); track bid.id) {
           <a class="bid-card" [routerLink]="['/provider/requests', bid.serviceRequestId]">
-            <span>
+            <span class="bid-card__body">
               <strong>{{ bid.requestTitle }}</strong>
-              <small>{{ bidStatusLabel(bid.status) }}</small>
+              <span class="badge">{{ requestStatusLabel(bid.requestStatus || '', bid.appointmentStatus) }}</span>
+              <small>สถานะข้อเสนอ: {{ bidStatusLabel(bid.status) }}</small>
+              <small>ส่งเมื่อ {{ formatScheduledAt(bid.createdAt) }}</small>
+              <small>วันนัด: {{ formatScheduledAt(bid.appointmentScheduledAt) }}</small>
             </span>
-            <b>{{ formatBaht(bid.priceText) }}</b>
+            <b>
+              {{ formatBaht(bid.priceText) }}
+              <small>{{ actionLabel(bid) }}</small>
+            </b>
           </a>
+        } @empty {
+          <article class="empty-state">
+            <h3>ไม่มีรายการในตัวกรองนี้</h3>
+            <button type="button" class="secondary" (click)="setFilter('all')">ดูทั้งหมด</button>
+          </article>
         }
       </div>
     }

@@ -795,7 +795,7 @@ p.field-error {
 
 .stepper a,
 .bottom-nav a {
-  min-height: 2.25rem;
+  min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -805,8 +805,8 @@ p.field-error {
   border: 1px solid #dbe4df;
   border-radius: 999px;
   background: #fff;
-  color: #63717a;
-  font-size: 0.75rem;
+  color: #1f2933;
+  font-size: 0.875rem;
   font-weight: 800;
 }
 
@@ -857,7 +857,10 @@ p.field-error {
 }
 
 .service-card--paused {
-  opacity: 0.65;
+  opacity: 1;
+  background: #f4f7f5;
+  color: #1f2933;
+  border-color: #9aa8a1;
 }
 
 .service-card--matched {
@@ -1491,12 +1494,12 @@ p.field-error {
 
 .badge--warn {
   background: #fff4e5;
-  color: #9a5b00;
+  color: #7c2d12;
 }
 
 .badge--orange {
   background: #fff4e5;
-  color: #b45309;
+  color: #7c2d12;
 }
 
 .badge--green {
@@ -1510,8 +1513,8 @@ p.field-error {
 }
 
 .badge--muted {
-  background: #f1f5f4;
-  color: #63717a;
+  background: #e8eeeb;
+  color: #1f2933;
 }
 
 .hero-panel--compact {
@@ -1880,11 +1883,12 @@ h1, h2, h3 {
 /* 8. Badge polish */
 .badge {
   padding: 0.35rem 0.8rem;
-  letter-spacing: 0.03em;
-  font-size: 0.75rem;
-  text-transform: uppercase;
+  letter-spacing: normal;
+  font-size: 0.8125rem;
+  text-transform: none;
   border: 1px solid rgba(0,0,0,0.04);
-  font-style: italic;
+  font-style: normal;
+  line-height: 1.3;
 }
 
 /* 9. Floating action/hero */
@@ -2081,7 +2085,7 @@ button.is-unavailable {
 }
 
 .page-content:has(.bottom-nav) {
-  --bottom-nav-offset: calc(4.15rem + env(safe-area-inset-bottom, 0px));
+  --bottom-nav-offset: calc(4.15rem + env(safe-area-inset-bottom, 0px) + 16px);
   padding-bottom: var(--bottom-nav-offset);
 }
 
@@ -2093,4 +2097,93 @@ button.is-unavailable {
   z-index: 30;
   height: calc(4.15rem + env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
+}
+
+.summary-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.summary-row h3,
+.summary-row strong {
+  margin: 0;
+}
+
+.bid-card__body {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  flex: 1;
+  color: inherit;
+  text-decoration: none;
+}
+
+.line-clamp-4 {
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.toast {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  background: #ecfdf3;
+  color: #07572f;
+  border: 1px solid #86efac;
+  font-weight: 800;
+}
+
+.toast--warn,
+.pending-notice,
+.state-message {
+  background: #fff7ed;
+  color: #7c2d12;
+  border: 1px solid #fdba74;
+}
+
+.status-timeline {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.status-timeline li {
+  color: #3d4a52;
+}
+
+.status-timeline li.is-done,
+.status-timeline li.is-current {
+  color: #07572f;
+  font-weight: 800;
+}
+
+.chip-scroll,
+.category-strip {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding-bottom: 0.25rem;
+}
+
+.category-chip {
+  scroll-snap-align: start;
+}
+
+.category-chip.is-active {
+  border-color: #07572f;
+  background: #d6f2e0;
+  color: #07572f;
+}
+
+.service-card--paused small {
+  background: #e7eeeb;
+  color: #1f2933;
 }

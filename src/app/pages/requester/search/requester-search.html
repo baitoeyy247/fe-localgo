@@ -3,7 +3,7 @@
     <div class="hero-panel hero-panel--search">
       <span class="badge badge--blue">ค้นหาจากพื้นที่จริง</span>
       <h3>เลือกจุดที่ต้องการ แล้วระบบจะจัดบริการรอบนั้นให้ทันที</h3>
-      <p>แตะปุ่มเลือกบนแผนที่ แล้วกดยืนยันตำแหน่งใน popup เพื่ออัปเดตพื้นที่ค้นหาหน้านี้</p>
+      <p>ค้นหาสถานที่บนแผนที่ แล้วยืนยันเพื่ออัปเดตพื้นที่ค้นหาหน้านี้</p>
     </div>
 
     <div class="stack">
@@ -48,11 +48,11 @@
           <p>{{ selectedArea().subtitle }}</p>
           <div class="chips">
             <span>รัศมี {{ selectedArea().radiusKm }} กม.</span>
-            <span>{{ coordinateText() }}</span>
+            <span>{{ selectedArea().title }}</span>
           </div>
         </div>
         <button type="button" class="secondary secondary--pill" (click)="openPicker()">
-          เลือกบนแผนที่
+          ค้นหาสถานที่บนแผนที่
         </button>
       </section>
 

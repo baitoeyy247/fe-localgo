@@ -43,14 +43,14 @@
         }
       </div>
       @if (allowDevLogin && !auth.isLineClient()) {
-        <button class="secondary" type="button" (click)="useDevLogin()">เข้าด้วย Dev login (เบราว์เซอร์)</button>
+        <button class="secondary" type="button" (click)="useDevLogin()">เข้าสู่ระบบทดลอง (เบราว์เซอร์)</button>
       }
     } @else {
       @if (auth.user(); as u) {
         <p class="badge entry-greeting">สวัสดี {{ u.displayName }}</p>
       }
       @if (!auth.user() && allowDevLogin) {
-        <p class="muted-label">LINE จริง: <a [href]="liffEntryUrl()">{{ liffEntryUrl() }}</a></p>
+        <p class="muted-label">เปิดผ่าน LINE: <a [href]="liffEntryUrl()">{{ liffEntryUrl() }}</a></p>
       }
       @if (!auth.isAuthenticated()) {
         <button class="secondary" type="button" (click)="retryLogin()">เข้าสู่ระบบใหม่</button>

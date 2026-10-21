@@ -17,17 +17,17 @@
         <div class="profile-hero">
           <div>
             @if (p.verifiedReviewCount > 0) {
-              <span class="badge">Verified {{ p.verifiedReviewCount }} รีวิว</span>
+              <span class="badge">รีวิวจากงานจริง {{ p.verifiedReviewCount }} รายการ</span>
             }
             <h3>{{ p.name }}</h3>
-            <p>{{ primaryService()?.categoryName ?? 'บริการทั่วไป' }} · {{ p.providerType }}</p>
+            <p>{{ primaryService()?.categoryName ?? 'บริการทั่วไป' }} · {{ typeLabel(p.providerType) }}</p>
           </div>
         </div>
 
         <div class="rating-row">
           <strong>{{ p.averageVerifiedRating }}</strong>
           <span>คะแนนจากงานจริง</span>
-          <small>Public {{ p.averagePublicRating }} · {{ p.publicReviewCount }} รีวิว</small>
+          <small>รีวิวทั่วไป {{ p.averagePublicRating }} · {{ p.publicReviewCount }} รายการ</small>
         </div>
 
         @if (primaryService(); as svc) {
@@ -89,7 +89,7 @@
         @for (review of reviews(); track review.id) {
           <article class="request-card">
             <strong>★ {{ review.rating }}</strong>
-            <span>{{ review.reviewType }}</span>
+            <span>{{ reviewKind(review.reviewType) }}</span>
             @if (review.comment) {
               <small>{{ review.comment }}</small>
             }

@@ -3,39 +3,128 @@
     @if (loading()) {
       <app-loading-skeleton />
     } @else if (notFound()) {
-      <div class="empty-state">
-        <h3>ไม่พบงานนี้</h3>
-        <p>ลิงก์นี้อาจไม่ถูกต้อง หรือไม่มีงานนี้อยู่แล้ว</p>
-        <a class="primary" routerLink="/">กลับหน้าหลัก</a>
-      </div>
-    } @else if (error()) {
-      <div class="empty-state">
-        <h3>โหลดรายละเอียดไม่สำเร็จ</h3>
+      <article class="empty-state">
+        <h3>ไม่พบหน้านี้</h3>
+        <p>ลิงก์นี้อาจไม่ถูกต้อง หรือหน้านี้ถูกย้ายแล้ว</p>
+        <a class="primary" routerLink="/">กลับหน้าแรก</a>
+      </article>
+    } @else if (error() && !request()) {
+      <article class="empty-state">
+        <h3>โหลดข้อมูลไม่สำเร็จ</h3>
         <p class="error-text" role="alert">{{ error() }}</p>
         <button class="primary" type="button" (click)="retry()">ลองใหม่</button>
-      </div>
+      </article>
     } @else if (request(); as r) {
       <div class="stack">
         <div class="summary-panel">
-          <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
-            <h3 style="margin: 0;">{{ r.title }}</h3>
-            <span class="badge">{{ statusLabel(r.status) }}</span>
+          <div class="summary-row">
+            <h3>{{ r.title }}</h3>
+            <span [class]="'badge ' + statusBadgeClass(r.status, appointment()?.status)">
+              {{ statusLabel(r.status, appointment()?.status) }}
+            </span>
           </div>
-          <p style="margin-top: 0.35rem;">{{ r.categoryName ?? 'ทั่วไป' }}</p>
+          <p>{{ r.categoryName ?? 'ทั่วไป' }}</p>
           <p>งบประมาณ: {{ formatBaht(r.budgetText) }}</p>
+          <p>สถานที่: {{ placeLabel(r.addressText) }}</p>
           @if (r.preferredStartAt) {
-            <p>วันที่และเวลาที่ต้องการ: {{ formatWhen(r.preferredStartAt) }}</p>
+            <p>วันที่และเวลาที่ต้องการ: {{ formatScheduledAt(r.preferredStartAt) }}</p>
           }
-          @if (isCancelled()) {
-            <p>งานนี้ถูกยกเลิกเมื่อ {{ formatWhen(r.updatedAt) }}</p>
-          }
+          <p>สร้างเมื่อ {{ formatScheduledAt(r.createdAt) }}</p>
         </div>
+
+        @if (r.status === 'Cancelled') {
+          <p class="toast toast--warn" role="status">งานนี้ถูกยกเลิกเมื่อ {{ formatScheduledAt(r.updatedAt) }}</p>
+        } @else {
+          <ol class="status-timeline">
+            @for (step of timeline(); track step.label) {
+              <li [class.is-done]="step.state === 'done'" [class.is-current]="step.state === 'current'">
+                {{ step.label }}
+              </li>
+            }
+          </ol>
+        }
+
         <div class="form-area">
           <span>รายละเอียด</span>
           <p>{{ r.description?.trim() || 'ไม่มีรายละเอียดเพิ่ม' }}</p>
         </div>
+
+        @if (appointment(); as appt) {
+          <article class="summary-panel">
+            <h3>นัดหมาย</h3>
+            <p>สถานะ: {{ appointmentStatusLabel(appt.status) }}</p>
+            <p>วันและเวลา: {{ formatScheduledAt(appt.scheduledAt) }}</p>
+            <p>สถานที่: {{ placeLabel(appt.addressText) }}</p>
+            @if (appt.note) {
+              <p>หมายเหตุ: {{ appt.note }}</p>
+            }
+            <a class="secondary" routerLink="/requester/appointment">ดูหน้านัดหมาย</a>
+          </article>
+        }
+
+        <div class="section-title">
+          <h3>ข้อเสนอ ({{ bids().length }})</h3>
+        </div>
+        @for (bid of bids(); track bid.id) {
+          <a class="bid-card" [routerLink]="['/requester/provider', bid.providerId]">
+            <span class="bid-card__body">
+              <strong>{{ bid.providerName }}</strong>
+              <small>{{ ratingLine(bid) }}</small>
+              <small [class.line-clamp-4]="!expandedBids().has(bid.id)">
+                {{ bid.description?.trim() || 'ไม่มีข้อความ' }}
+              </small>
+              @if (messageLong(bid.description)) {
+                <button type="button" class="ghost-link" (click)="toggleMessage(bid.id, $event)">
+                  {{ expandedBids().has(bid.id) ? 'ย่อข้อความ' : 'ดูเพิ่มเติม' }}
+                </button>
+              }
+              <small>สถานะข้อเสนอ: {{ bidStatusLabel(bid.status) }}</small>
+            </span>
+            <b>{{ formatBaht(bid.priceText) }}</b>
+          </a>
+        } @empty {
+          <p class="toast" role="status">
+            @if (r.status === 'Open' || r.status === 'HasOffers') {
+              ประกาศงานแล้ว กำลังรอข้อเสนอจากผู้ให้บริการในพื้นที่
+            } @else {
+              ยังไม่มีข้อเสนอ
+            }
+          </p>
+        }
+
+        @if (error()) {
+          <p class="error-text" role="alert">{{ error() }}</p>
+        }
+
+        @if (reviewBadge(); as reviewed) {
+          <p class="badge">{{ reviewed }}</p>
+        } @else if (r.status === 'Completed') {
+          <button class="primary" type="button" (click)="openReview()">ให้คะแนนและรีวิว</button>
+        } @else if (r.status === 'Open' || r.status === 'HasOffers') {
+          <a class="primary" [routerLink]="['/requester/bids']" [queryParams]="{ requestId: r.id }">ดูข้อเสนอและนัดหมาย</a>
+        } @else if (r.status === 'ProviderSelected' || r.status === 'Scheduled' || r.status === 'InProgress') {
+          <a class="primary" routerLink="/requester/appointment">ไปหน้านัดหมาย</a>
+        }
+
+        @if (canCancel()) {
+          <button class="danger" type="button" [disabled]="cancelling()" (click)="askCancel()">
+            {{ cancelling() ? 'กำลังยกเลิก…' : 'ยกเลิกงาน' }}
+          </button>
+        }
       </div>
     }
   </section>
+  <app-confirm-modal
+    [open]="confirmCancel()"
+    title="ยกเลิกงาน"
+    message="ยกเลิกงานนี้แล้วงานจะถูกปิด และผู้ที่เสนอราคาไว้จะได้รับแจ้งเตือน"
+    confirmLabel="ยืนยันยกเลิก"
+    cancelLabel="กลับ"
+    [destructive]="true"
+    [busy]="cancelling()"
+    busyLabel="กำลังยกเลิก…"
+    (confirm)="confirmCancelJob()"
+    (cancel)="dismissCancel()"
+  />
   <app-requester-bottom-nav />
 </app-page-shell>

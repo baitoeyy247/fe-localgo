@@ -13,6 +13,7 @@ import { AuthService } from '../../../core/auth.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { requestStatusLabel } from '../../../shared/status-labels';
 import { formatBaht } from '../../../shared/form-rules';
+import { formatScheduledAt } from '../../../shared/datetime.util';
 import { ConfirmModal } from '../../../shared/confirm-modal';
 import { resolveRequesterRequestId } from '../../../shared/requester-request-flow';
 import { redirectProviderFromRequesterRoute } from '../../../shared/requester-deep-link-guard';
@@ -36,6 +37,7 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
   protected readonly jobChoices = signal<ServiceRequestSummary[]>([]);
   protected readonly choosing = signal(false);
   protected readonly formatBaht = formatBaht;
+  protected readonly expandedBids = signal<ReadonlySet<string>>(new Set());
   private querySub?: Subscription;
 
   private readonly api = inject(LocalGoApiService);
@@ -98,14 +100,33 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
   }
 
   protected formatWhen(iso?: string | null): string {
-    if (!iso) {
-      return '';
+    return formatScheduledAt(iso);
+  }
+
+  protected ratingLine(bid: BidItem): string {
+    const count = bid.verifiedReviewCount ?? 0;
+    if (count <= 0) {
+      return 'ยังไม่มีรีวิว';
     }
-    try {
-      return new Date(iso).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' });
-    } catch {
-      return iso;
+    const average = Number(bid.averageVerifiedRating ?? 0);
+    const text = Number.isInteger(average) ? String(average) : average.toFixed(1);
+    return `★${text} (${count})`;
+  }
+
+  protected toggleMessage(id: string, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const next = new Set(this.expandedBids());
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
     }
+    this.expandedBids.set(next);
+  }
+
+  protected messageLong(text?: string | null): boolean {
+    return (text?.trim().length ?? 0) > 180;
   }
 
   protected selectBid(bid: BidItem): void {

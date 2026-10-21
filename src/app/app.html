@@ -1,6 +1,14 @@
 <div class="app-shell">
+  @if (slow.visible()) {
+    <p class="slow-banner" role="status">กำลังเชื่อมต่อเซิร์ฟเวอร์ อาจใช้เวลาสักครู่</p>
+  }
   @if (booting()) {
     <app-loading-skeleton />
+  } @else if (bootFailed()) {
+    <section class="boot-failure">
+      <h1>โหลดข้อมูลไม่สำเร็จ</h1>
+      <button type="button" class="primary" (click)="reload()">ลองใหม่</button>
+    </section>
   }
   <main class="app-main">
     <router-outlet />

@@ -164,6 +164,7 @@
     [open]="confirmKind() !== null"
     [title]="confirmKind() === 'appointment' ? 'ยกเลิกนัดหมาย' : 'ยกเลิกการเลือกข้อเสนอ'"
     [message]="confirmKind() === 'appointment' ? 'นัดหมายนี้จะถูกยกเลิก และคุณสามารถนัดหมายใหม่ได้' : 'ข้อเสนอที่เลือกไว้จะถูกยกเลิก และคุณสามารถกลับไปเลือกข้อเสนอใหม่ได้'"
+    [destructive]="true"
     confirmLabel="ยืนยันยกเลิก"
     cancelLabel="กลับ"
     [busy]="saving()"

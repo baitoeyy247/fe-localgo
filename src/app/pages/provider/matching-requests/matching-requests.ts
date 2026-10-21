@@ -10,6 +10,7 @@ import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderCoverageArea, ProviderDetail, ServiceRequestSummary } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { requestStatusLabel, requestStatusBadgeClass } from '../../../shared/status-labels';
+import { formatScheduledAt } from '../../../shared/datetime.util';
 import { formatDistanceMeters } from '../../../shared/coordinates';
 import { OPEN_BUDGET, formatBaht } from '../../../shared/form-rules';
 import { AuthService } from '../../../core/auth.service';
@@ -69,6 +70,7 @@ type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
 })
 export class MatchingRequestsPage implements OnInit {
   protected readonly matchingRequests = signal<ServiceRequestSummary[]>([]);
+  protected readonly myJobs = signal<ServiceRequestSummary[]>([]);
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly areas = signal<ProviderCoverageArea[]>([]);
   protected readonly excludesOwnRequests = signal(false);
@@ -122,17 +124,21 @@ export class MatchingRequestsPage implements OnInit {
       const inbox = inboxResult.value;
       const areas = inbox.areas ?? [];
       const excludesOwn = !!inbox.excludesOwnRequests;
-      const items = this.visibleItems(inbox.items ?? [], areas, excludesOwn);
-      this.matchingRequests.set(items);
+      const openStatuses = new Set(['Open', 'HasOffers']);
+      const source = inbox.items ?? [];
+      const openItems = source.filter((item) => openStatuses.has(item.status));
+      const mine = inbox.myJobs ?? source.filter((item) => !openStatuses.has(item.status));
+      this.matchingRequests.set(this.visibleItems(openItems, excludesOwn));
+      this.myJobs.set(mine.filter((item) => !(excludesOwn && item.isOwnRequest)));
       this.excludesOwnRequests.set(excludesOwn);
       this.areas.set(areas);
-      this.pendingConfirmCount.set(items.filter((r) => r.needsAppointmentConfirm).length);
+      this.pendingConfirmCount.set(mine.filter((item) => item.needsAppointmentConfirm).length);
       this.ready.set(true);
 
       if (mineResult.status === 'fulfilled') {
         const mine = mineResult.value;
         this.provider.set(mine);
-        if (items.length === 0) {
+        if (openItems.length === 0 && this.myJobs().length === 0) {
           const missingBranches = mine.branches.filter((b) => b.isActive).length === 0;
           const missingServices = mine.services.filter((s) => s.isActive).length === 0;
           if (missingBranches) {
@@ -230,14 +236,7 @@ export class MatchingRequestsPage implements OnInit {
   }
 
   protected formatWhen(iso: string): string {
-    try {
-      return new Date(iso).toLocaleString('th-TH', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      });
-    } catch {
-      return iso;
-    }
+    return formatScheduledAt(iso);
   }
 
   protected async openRequest(request: ServiceRequestSummary): Promise<void> {
@@ -252,21 +251,8 @@ export class MatchingRequestsPage implements OnInit {
     return openForBids || request.budgetText !== OPEN_BUDGET;
   }
 
-  private visibleItems(
-    items: ServiceRequestSummary[],
-    areas: ProviderCoverageArea[],
-    excludesOwn: boolean,
-  ): ServiceRequestSummary[] {
-    const maxRadius = areas.reduce((max, area) => Math.max(max, area.serviceRadiusMeters), 0);
-    return items.filter((item) => {
-      if (excludesOwn && item.isOwnRequest) {
-        return false;
-      }
-      if (maxRadius > 0 && typeof item.distanceMeters === 'number' && item.distanceMeters > maxRadius) {
-        return false;
-      }
-      return true;
-    });
+  private visibleItems(items: ServiceRequestSummary[], excludesOwn: boolean): ServiceRequestSummary[] {
+    return items.filter((item) => !(excludesOwn && item.isOwnRequest));
   }
 
   protected isMyActiveJob(request: ServiceRequestSummary): boolean {

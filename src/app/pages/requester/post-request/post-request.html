@@ -4,7 +4,7 @@
     <div class="hero-panel hero-panel--search">
       <span class="badge">โพสต์แล้วรอรับราคา</span>
       <h3>กำหนดจุดรับงานให้ชัด แล้วเปิดรับข้อเสนอจากผู้ให้บริการรอบพื้นที่นั้น</h3>
-      <p>เลือกตำแหน่งใน popup แล้วกดยืนยัน ระบบจะอัปเดตจุดรับงานของประกาศนี้ทันที</p>
+      <p>ค้นหาสถานที่บนแผนที่ แล้วกดยืนยัน ระบบจะอัปเดตจุดรับงานของประกาศนี้ทันที</p>
     </div>
 
     <div class="stack">
@@ -84,11 +84,11 @@
           <p>{{ requestLocation().subtitle }}</p>
           <div class="chips">
             <span>รัศมี {{ requestLocation().radiusKm }} กม.</span>
-            <span>{{ coordinateText() }}</span>
+            <span>{{ requestLocation().title }}</span>
           </div>
         </div>
         <button type="button" class="secondary secondary--pill" (click)="openPicker()">
-          เลือกตำแหน่ง
+          ค้นหาสถานที่บนแผนที่
         </button>
         @if (fieldErrors().location) {
           <p class="field-error">{{ fieldErrors().location }}</p>
@@ -137,7 +137,7 @@
       <div class="glass-card">
         <span class="muted-label">สิ่งที่จะเกิดขึ้นหลังโพสต์</span>
         <strong>ผู้ให้บริการในพื้นที่จะได้รับแจ้งเตือนทาง LINE</strong>
-        <p>คุณจะเห็น bid ทั้งหมดในหน้าเดียว และเลือกข้อเสนอได้เฉพาะคนที่ประกาศงานนี้</p>
+        <p>คุณจะเห็นข้อเสนอทั้งหมดในหน้าเดียว และเลือกได้เฉพาะคนที่ประกาศงานนี้</p>
       </div>
 
       @if (submitError()) {

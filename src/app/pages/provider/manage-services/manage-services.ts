@@ -8,6 +8,7 @@ import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderDetail, ProviderService } from '../../../core/models';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 import { formatBaht, priceTextError } from '../../../shared/form-rules';
+import { providerStatusLabel } from '../../../shared/status-labels';
 import { ConfirmModal } from '../../../shared/confirm-modal';
 import { apiErrorMessage } from '../../../core/api-error.util';
 
@@ -24,6 +25,7 @@ export class ManageServicesPage implements OnInit {
   protected readonly deleteTarget = signal<ProviderService | null>(null);
   protected readonly deleteError = signal<string | null>(null);
   protected readonly formatBaht = formatBaht;
+  protected readonly providerStatusLabel = providerStatusLabel;
   protected readonly priceTextError = priceTextError;
 
   constructor(private readonly api: LocalGoApiService) {}

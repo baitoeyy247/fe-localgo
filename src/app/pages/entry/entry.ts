@@ -183,7 +183,7 @@ export class EntryPage implements OnInit {
       await this.auth.devLogin();
       this.error.set(null);
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'Dev login failed');
+      this.error.set('เข้าสู่ระบบทดลองไม่สำเร็จ');
     } finally {
       this.loading.set(false);
     }

@@ -8,6 +8,7 @@ import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ServiceRequestSummary } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import { requestStatusLabel, requestStatusBadgeClass } from '../../../shared/status-labels';
+import { formatScheduledAt } from '../../../shared/datetime.util';
 import { AuthService } from '../../../core/auth.service';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 import { apiErrorMessage } from '../../../core/api-error.util';
@@ -70,9 +71,10 @@ export class RequesterHomePage implements OnInit {
   protected readonly cancelling = signal(false);
   protected readonly cancelError = signal<string | null>(null);
   protected readonly openingId = signal<string | null>(null);
-  protected readonly switching = signal(false);
   protected readonly statusLabel = requestStatusLabel;
   protected readonly statusBadgeClass = requestStatusBadgeClass;
+  protected readonly formatWhen = formatScheduledAt;
+  private readonly reviewedNow = signal<{ id: string; rating: number } | null>(null);
 
   constructor(
     private readonly api: LocalGoApiService,
@@ -82,18 +84,47 @@ export class RequesterHomePage implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
-    const state = history.state as { notice?: string } | null;
+    await this.reload();
+  }
+
+  protected async reload(): Promise<void> {
+    const state = history.state as { notice?: string; reviewedRequestId?: string; reviewedRating?: number } | null;
     if (state?.notice) {
       this.notice.set(state.notice);
     }
+    if (state?.reviewedRequestId && typeof state.reviewedRating === 'number') {
+      this.reviewedNow.set({ id: state.reviewedRequestId, rating: state.reviewedRating });
+    }
+    this.loading.set(true);
+    this.error.set(null);
     try {
       const items = await firstValueFrom(this.api.listMyRequests());
-      this.requests.set(items);
+      const reviewed = this.reviewedNow();
+      this.requests.set(
+        reviewed
+          ? items.map((item) =>
+              item.id === reviewed.id
+                ? { ...item, hasReviewed: true, myReviewRating: reviewed.rating, status: 'Completed' }
+                : item,
+            )
+          : items,
+      );
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'โหลดรายการงานไม่สำเร็จ');
+      this.error.set(apiErrorMessage(e, 'โหลดข้อมูลไม่สำเร็จ'));
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected reviewBadge(request: ServiceRequestSummary): string | null {
+    const reviewed = this.reviewedNow();
+    if (reviewed?.id === request.id) {
+      return `รีวิวแล้ว ★${reviewed.rating}`;
+    }
+    if (request.hasReviewed) {
+      return request.myReviewRating ? `รีวิวแล้ว ★${request.myReviewRating}` : 'รีวิวแล้ว';
+    }
+    return null;
   }
 
   protected canCancel(status: string): boolean {
@@ -154,49 +185,7 @@ export class RequesterHomePage implements OnInit {
     this.openingId.set(request.id);
     this.session.currentRequestId = request.id;
     void this.auth.setActiveRole('Requester');
-    const destination =
-      request.status === 'Cancelled'
-        ? this.router.navigate(['/requester/requests', request.id])
-        : request.status === 'Completed'
-          ? this.router.navigate(['/requester/review'], { queryParams: { requestId: request.id } })
-          : request.status === 'ProviderSelected' ||
-              request.status === 'Selected' ||
-              request.status === 'Scheduled' ||
-              request.status === 'InProgress'
-            ? this.router.navigateByUrl('/requester/appointment')
-            : this.router.navigate(['/requester/bids'], { queryParams: { requestId: request.id } });
-    void destination.finally(() => this.openingId.set(null));
+    void this.router.navigate(['/requester/requests', request.id]).finally(() => this.openingId.set(null));
   }
 
-  protected continueLabel(status: string): string {
-    if (status === 'Cancelled') {
-      return 'ดูรายละเอียด';
-    }
-    if (status === 'Completed') {
-      return 'ให้คะแนนและรีวิว';
-    }
-    if (status === 'InProgress') {
-      return 'ดูสถานะงาน';
-    }
-    return 'ดำเนินงานต่อ';
-  }
-
-  protected formatWhen(iso: string): string {
-    try {
-      return new Date(iso).toLocaleString('th-TH', {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-      });
-    } catch {
-      return iso;
-    }
-  }
-
-  protected switchToProvider(): void {
-    if (this.switching()) {
-      return;
-    }
-    this.switching.set(true);
-    void this.auth.setActiveRole('Provider').then(() => this.router.navigateByUrl('/provider'));
-  }
 }

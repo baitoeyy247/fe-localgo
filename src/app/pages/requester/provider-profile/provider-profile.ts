@@ -8,6 +8,7 @@ import { ProviderDetail, ProviderService, ReviewItem } from '../../../core/model
 import { SessionStateService } from '../../../core/session-state.service';
 import { LoadingSkeleton } from '../../../shared/loading-skeleton';
 import { formatBaht } from '../../../shared/form-rules';
+import { providerTypeLabel, reviewTypeLabel } from '../../../shared/status-labels';
 
 @Component({
   selector: 'app-provider-profile-page',
@@ -21,6 +22,8 @@ export class ProviderProfilePage implements OnInit {
   protected readonly preferredServiceId = signal<string | null>(null);
   protected readonly showAllServices = signal(false);
   protected readonly formatBaht = formatBaht;
+  protected readonly typeLabel = providerTypeLabel;
+  protected readonly reviewKind = reviewTypeLabel;
 
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);

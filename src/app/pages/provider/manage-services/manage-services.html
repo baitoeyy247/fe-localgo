@@ -7,7 +7,7 @@
         <div class="summary-panel">
           <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
             <h3 style="margin: 0;">{{ p.name }}</h3>
-            <span class="badge">{{ p.status === 'Active' ? 'พร้อมรับงาน' : p.status }}</span>
+            <span class="badge">{{ providerStatusLabel(p.status) }}</span>
           </div>
           <p style="margin-top: 0.35rem;">
             {{ p.services.length }} บริการ · {{ p.branches.length }} จุดให้บริการ ·
@@ -75,6 +75,7 @@
     [open]="deleteTarget() !== null"
     title="ลบบริการ"
     [message]="deleteMessage()"
+    [destructive]="true"
     confirmLabel="ยืนยันลบ"
     cancelLabel="กลับ"
     [busy]="deleting()"

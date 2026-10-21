@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { Component, inject, input } from '@angular/core';
+import { Component, effect, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 
 @Component({
@@ -53,6 +53,13 @@ export class PageShell {
 
   private readonly location = inject(Location);
   private readonly router = inject(Router);
+
+  constructor() {
+    effect(() => {
+      const title = this.title()?.trim();
+      document.title = title ? `${title} · LocalGo` : 'LocalGo';
+    });
+  }
 
   protected goBack(): void {
     if (window.history.length > 1) {

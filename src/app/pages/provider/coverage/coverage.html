@@ -13,7 +13,7 @@
     } @else {
       <div class="stack">
         @if (message()) {
-          <p class="badge badge--blue">{{ message() }}</p>
+          <p class="toast" role="status">{{ message() }}</p>
         }
         @if (error()) {
           <p class="error-text">{{ error() }}</p>
@@ -34,19 +34,26 @@
               <span>
                 รัศมี {{ branch.serviceRadiusMeters / 1000 }} กม.
                 · {{ branch.isActive ? 'ใช้งานอยู่' : 'ปิดใช้งานแล้ว' }}
+                @if (branch.addressText) { · {{ branch.addressText }} }
               </span>
             </div>
             <div class="coverage-card__actions">
               <button type="button" (click)="editBranch(branch)">แก้ไข</button>
               @if (branch.isActive) {
-                <button type="button" class="danger danger--pill" style="min-height: auto; padding: 0.45rem 0.75rem; border-radius: 0.65rem;" (click)="deactivateBranch(branch)">ปิดใช้งานพื้นที่นี้</button>
+                <button type="button" class="danger danger--pill" (click)="deactivateBranch(branch)">ปิดใช้งานพื้นที่นี้</button>
+              } @else {
+                <button type="button" [disabled]="saving()" (click)="enableBranch(branch)">เปิดใช้งาน</button>
               }
+              <button type="button" class="danger danger--pill" (click)="askDelete(branch)">ลบ</button>
             </div>
           </article>
         } @empty {
           <p class="muted-label">ยังไม่มีจุด — กด + จุดใหม่</p>
         }
 
+        @if (!formOpen()) {
+          <button type="button" class="secondary" (click)="startNewBranch()">เพิ่มจุดให้บริการ</button>
+        } @else {
         <div class="form-panel">
           <h3>{{ isEditingExisting() ? 'แก้ไขจุด' : 'จุดใหม่' }}</h3>
           <label class="form-field">
@@ -72,8 +79,8 @@
               (change)="editingActive.set($any($event.target).checked)"
             />
           </label>
-          <p class="muted-label">พิกัด {{ editingLat().toFixed(5) }}, {{ editingLng().toFixed(5) }}</p>
-          <button type="button" class="secondary secondary--pill" (click)="openPicker()">เลือกบนแผนที่</button>
+          <p class="muted-label">สถานที่: {{ editingName() || 'ยังไม่เลือกสถานที่' }}</p>
+          <button type="button" class="secondary secondary--pill" (click)="openPicker()">ค้นหาสถานที่บนแผนที่</button>
           <div class="coverage-confirm">
             <button
               type="button"
@@ -84,8 +91,10 @@
             >
               {{ saving() ? 'กำลังบันทึก…' : isEditingExisting() ? 'บันทึกการแก้ไข' : 'เพิ่มจุดนี้' }}
             </button>
+            <button type="button" class="secondary" (click)="closeForm()">ปิดฟอร์ม</button>
           </div>
         </div>
+        }
 
         <a class="secondary" routerLink="/provider/service">ต่อไป เพิ่มบริการ</a>
       </div>
@@ -107,12 +116,25 @@
     [open]="deactivateTarget() !== null"
     title="ปิดใช้งานพื้นที่นี้"
     [message]="deactivateMessage()"
+    [destructive]="true"
     confirmLabel="ปิดใช้งาน"
     cancelLabel="กลับ"
     [busy]="saving()"
     busyLabel="กำลังบันทึก…"
     (confirm)="confirmDeactivate()"
     (cancel)="dismissDeactivate()"
+  />
+  <app-confirm-modal
+    [open]="deleteTarget() !== null"
+    title="ลบจุดให้บริการ"
+    [message]="deleteMessage()"
+    confirmLabel="ยืนยันลบ"
+    cancelLabel="กลับ"
+    [destructive]="true"
+    [busy]="saving()"
+    busyLabel="กำลังลบ…"
+    (confirm)="confirmDelete()"
+    (cancel)="dismissDelete()"
   />
   <app-provider-bottom-nav />
 </app-page-shell>

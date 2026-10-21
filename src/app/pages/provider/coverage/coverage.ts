@@ -29,6 +29,8 @@ export class CoveragePage implements OnInit {
   protected readonly message = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly deactivateTarget = signal<ProviderBranch | null>(null);
+  protected readonly deleteTarget = signal<ProviderBranch | null>(null);
+  protected readonly formOpen = signal(false);
 
   protected readonly pickerOpen = signal(false);
   /** null = สร้างจุดใหม่ */
@@ -66,6 +68,7 @@ export class CoveragePage implements OnInit {
     this.pickerTitle.set(branch.name);
     this.message.set(null);
     this.error.set(null);
+    this.formOpen.set(true);
   }
 
   protected async startNewBranch(): Promise<void> {
@@ -76,7 +79,8 @@ export class CoveragePage implements OnInit {
     this.editingLng.set(environment.mapDefaultLng);
     this.editingName.set('พื้นที่ของฉัน');
     this.pickerTitle.set('พื้นที่ของฉัน');
-    this.message.set('กำลังตั้งจุดใหม่');
+    this.formOpen.set(true);
+    this.message.set(null);
     this.error.set(null);
     const area = await this.userLocation.resolveSearchArea();
     if (this.editingBranchId()) {
@@ -127,12 +131,8 @@ export class CoveragePage implements OnInit {
         await firstValueFrom(this.api.addBranch(p.id, body));
         this.message.set('เพิ่มจุดให้บริการแล้ว');
       }
+      this.formOpen.set(false);
       await this.reload();
-      const list = this.branches();
-      const saved = branchId ? list.find((b) => b.id === branchId) : list[list.length - 1];
-      if (saved) {
-        this.editBranch(saved);
-      }
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ');
     } finally {
@@ -179,6 +179,74 @@ export class CoveragePage implements OnInit {
     }
   }
 
+  protected async enableBranch(branch: ProviderBranch): Promise<void> {
+    const profile = this.provider();
+    if (!profile || this.saving()) {
+      return;
+    }
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      await firstValueFrom(
+        this.api.updateBranch(profile.id, branch.id, {
+          name: branch.name,
+          addressText: branch.addressText ?? undefined,
+          latitude: branch.latitude,
+          longitude: branch.longitude,
+          serviceRadiusMeters: branch.serviceRadiusMeters,
+          isActive: true,
+        }),
+      );
+      this.message.set('เปิดจุดให้บริการแล้ว');
+      await this.reload();
+    } catch (e) {
+      this.error.set(e instanceof Error ? e.message : 'เปิดจุดให้บริการไม่สำเร็จ');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected askDelete(branch: ProviderBranch): void {
+    if (!this.saving()) {
+      this.deleteTarget.set(branch);
+    }
+  }
+
+  protected dismissDelete(): void {
+    if (!this.saving()) {
+      this.deleteTarget.set(null);
+    }
+  }
+
+  protected deleteMessage(): string {
+    const branch = this.deleteTarget();
+    return branch ? `ลบจุด "${branch.name}" ออกจากพื้นที่ให้บริการ` : '';
+  }
+
+  protected async confirmDelete(): Promise<void> {
+    const branch = this.deleteTarget();
+    const profile = this.provider();
+    if (!branch || !profile || this.saving()) {
+      return;
+    }
+    this.saving.set(true);
+    try {
+      await firstValueFrom(this.api.deleteBranch(profile.id, branch.id));
+      this.deleteTarget.set(null);
+      this.formOpen.set(false);
+      this.message.set('ลบจุดให้บริการแล้ว');
+      await this.reload();
+    } catch (e) {
+      this.error.set(e instanceof Error ? e.message : 'ลบจุดให้บริการไม่สำเร็จ');
+    } finally {
+      this.saving.set(false);
+    }
+  }
+
+  protected closeForm(): void {
+    this.formOpen.set(false);
+  }
+
   protected deactivateMessage(): string {
     const branch = this.deactivateTarget();
     return branch
@@ -214,9 +282,6 @@ export class CoveragePage implements OnInit {
       const mine = await firstValueFrom(this.api.getMyProvider());
       this.provider.set(mine);
       this.branches.set(mine.branches);
-      if (mine.branches[0] && !this.editingBranchId()) {
-        this.editBranch(mine.branches[0]);
-      }
     } catch (e) {
       if (e instanceof HttpErrorResponse && e.status === 404) {
         this.provider.set(null);

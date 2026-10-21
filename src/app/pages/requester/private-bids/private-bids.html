@@ -4,6 +4,9 @@
   }
   <section class="screen">
     <div class="stack">
+      @if (justPosted()) {
+        <p class="toast" role="status">ประกาศงานแล้ว กำลังโหลดข้อเสนอ</p>
+      }
       @if (request(); as r) {
         <div class="summary-panel" [class.summary-panel--success]="justPosted()">
           <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; flex-wrap: wrap;">
@@ -25,9 +28,9 @@
         <app-loading-skeleton />
       } @else if (error() && !request() && jobChoices().length === 0) {
         <div class="empty-state">
-          <h3>โหลดข้อเสนอไม่สำเร็จ</h3>
+          <h3>โหลดข้อมูลไม่สำเร็จ</h3>
           <p class="error-text">{{ error() }}</p>
-          <button class="secondary" type="button" (click)="retry()">ลองใหม่</button>
+          <button class="primary" type="button" (click)="retry()">ลองใหม่</button>
         </div>
       } @else if (!request()) {
         @if (jobChoices().length === 0) {
@@ -54,24 +57,23 @@
         </div>
       } @else {
         @for (bid of bids(); track bid.id) {
-          <button
-            class="bid-card"
-            [class.bid-card--selected]="selectedBidId() === bid.id || openedBidId() === bid.id"
-            type="button"
-            (click)="openBid(bid)"
-          >
-            <span>
+          <article class="bid-card" [class.bid-card--selected]="selectedBidId() === bid.id">
+            <a class="bid-card__body" [routerLink]="['/requester/provider', bid.providerId]">
               <strong>{{ bid.providerName }}</strong>
-              <small>{{ bid.description ?? 'ไม่มีรายละเอียดเพิ่ม' }}</small>
-            </span>
+              <small>{{ ratingLine(bid) }}</small>
+              <small [class.line-clamp-4]="!expandedBids().has(bid.id)">{{ bid.description ?? 'ไม่มีรายละเอียดเพิ่ม' }}</small>
+            </a>
             <b>{{ formatBaht(bid.priceText) }}</b>
-          </button>
-        }
-        @if (focusedBid(); as detail) {
-          <article class="summary-panel">
-            <h3 style="margin: 0;">ผู้ให้บริการ: {{ detail.providerName }}</h3>
-            <p>ราคา: {{ formatBaht(detail.priceText) }}</p>
-            <p>ข้อความ: {{ detail.description?.trim() || 'ไม่มีข้อความ' }}</p>
+            @if (messageLong(bid.description)) {
+              <button type="button" class="ghost-link" (click)="toggleMessage(bid.id, $event)">
+                {{ expandedBids().has(bid.id) ? 'ย่อข้อความ' : 'ดูเพิ่มเติม' }}
+              </button>
+            }
+            @if (canSchedule()) {
+              <button type="button" (click)="selectBid(bid)">
+                {{ selectedBidId() === bid.id ? 'เลือกแล้ว' : 'เลือกข้อเสนอนี้' }}
+              </button>
+            }
           </article>
         }
       }
@@ -119,6 +121,7 @@
     [open]="confirmClear()"
     title="ยกเลิกการเลือกข้อเสนอ"
     message="ข้อเสนอที่เลือกไว้จะถูกยกเลิก และคุณสามารถกลับไปเลือกข้อเสนอใหม่ได้"
+    [destructive]="true"
     confirmLabel="ยืนยันยกเลิก"
     cancelLabel="กลับ"
     [busy]="clearing()"

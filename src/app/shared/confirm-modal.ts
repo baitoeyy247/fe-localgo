@@ -10,7 +10,13 @@ import { Component, input, output } from '@angular/core';
           <p>{{ message() }}</p>
           <div class="confirm-modal__actions">
             <button type="button" (click)="cancel.emit()" [disabled]="busy()">{{ cancelLabel() }}</button>
-            <button type="button" class="confirm-modal__confirm" (click)="confirm.emit()" [disabled]="busy()">
+            <button
+              type="button"
+              class="confirm-modal__confirm"
+              [class.confirm-modal__confirm--danger]="destructive()"
+              (click)="confirm.emit()"
+              [disabled]="busy()"
+            >
               {{ busy() ? busyLabel() : confirmLabel() }}
             </button>
           </div>
@@ -57,8 +63,11 @@ import { Component, input, output } from '@angular/core';
     }
     .confirm-modal__confirm {
       border: 0;
-      background: #9a3412;
+      background: #0a9f50;
       color: #fff;
+    }
+    .confirm-modal__confirm--danger {
+      background: #9a3412;
     }
   `,
 })
@@ -70,6 +79,7 @@ export class ConfirmModal {
   readonly cancelLabel = input('กลับ');
   readonly busy = input(false);
   readonly busyLabel = input('กำลังบันทึก…');
+  readonly destructive = input(false);
   readonly confirm = output<void>();
   readonly cancel = output<void>();
 
