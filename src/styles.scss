@@ -448,7 +448,7 @@ button:disabled,
   transform: translateX(-50%);
   bottom: 0;
   width: 100%;
-  max-width: min(100%, 640px);
+  max-width: min(100%, 520px);
   z-index: 41;
   background: var(--bg);
   border-radius: var(--r-xl) var(--r-xl) 0 0;
@@ -607,6 +607,10 @@ app-offline-bar {
   z-index: 1;
 }
 
+.search {
+  min-height: var(--tap);
+  align-items: center;
+}
 .search input {
   flex: 1;
   border: 0;
@@ -615,6 +619,30 @@ app-offline-bar {
   font-size: 16px;
   color: var(--text);
   min-width: 0;
+  min-height: 44px;
+}
+.budget-seg__option {
+  min-height: 44px;
+}
+.budget-seg__option input {
+  width: 44px;
+  height: 44px;
+}
+.btn-sm {
+  min-height: var(--tap);
+  min-width: var(--tap);
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.leaflet-control-zoom a {
+  width: 44px !important;
+  height: 44px !important;
+  line-height: 44px !important;
+  font-size: 20px !important;
+}
+.bnav a,
+.bnav button {
+  min-height: var(--tap);
 }
 .search input:focus {
   outline: none;
@@ -1039,14 +1067,24 @@ app-offline-bar {
 }
 .app,
 .bnav,
-.actionbar,
+.actionbar {
+  max-width: none;
+  width: 100%;
+}
 .sheet {
-  max-width: min(100%, 640px);
+  max-width: min(100%, 520px);
 }
 .bnav {
-  left: 50%;
-  right: auto;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  transform: none;
+}
+.content,
+.page-content {
+  max-width: min(1100px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
 }
 @media (min-width: 768px) {
   body {

@@ -22,7 +22,7 @@ import { formatPrice } from '../../../shared/format-price';
 import { normalizeList } from '../../../shared/normalize-list';
 
 type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
-type JobTab = 'pending' | 'active' | 'completed' | 'cancelled' | 'rejected';
+type JobTab = 'pending' | 'bidWaiting' | 'active' | 'completed' | 'cancelled' | 'rejected';
 
 @Component({
   selector: 'app-matching-requests-page',
@@ -80,6 +80,7 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   protected readonly formatPrice = formatPrice;
   protected readonly tabs: { key: JobTab; label: string }[] = [
     { key: 'pending', label: 'รอยืนยัน' },
+    { key: 'bidWaiting', label: 'รอผลข้อเสนอ' },
     { key: 'active', label: 'กำลังทำ' },
     { key: 'completed', label: 'เสร็จสิ้น' },
     { key: 'cancelled', label: 'ยกเลิก' },
@@ -121,9 +122,13 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
     return request.status === 'Open' || request.status === 'HasOffers';
   }
 
+  protected isBidWaiting(request: ServiceRequestSummary): boolean {
+    return !!request.alreadyBidByMe && this.isBiddable(request);
+  }
+
   protected isMine(request: ServiceRequestSummary): boolean {
     return (
-      !!request.alreadyBidByMe ||
+      this.isBidWaiting(request) ||
       !!request.needsAppointmentConfirm ||
       this.isMyActiveJob(request) ||
       request.status === 'Completed' ||
@@ -162,8 +167,12 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
     if (tab === 'pending') {
       return this.isPendingConfirm(request);
     }
-    // กำลังทำ — engaged work that is not pending confirm / terminal / completed
+    if (tab === 'bidWaiting') {
+      return this.isBidWaiting(request);
+    }
+    // กำลังทำ — engaged work that is not pending confirm / bid waiting / terminal / completed
     return (
+      !this.isBidWaiting(request) &&
       !this.isPendingConfirm(request) &&
       !this.isTerminalJob(request) &&
       request.status !== 'Completed' &&
@@ -286,7 +295,7 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
       return;
     }
     const jobs = this.myJobs();
-    const order: JobTab[] = ['rejected', 'pending', 'active', 'completed', 'cancelled'];
+    const order: JobTab[] = ['rejected', 'pending', 'bidWaiting', 'active', 'completed', 'cancelled'];
     for (const key of order) {
       if (jobs.some((r) => this.matchesTab(r, key))) {
         this.tab.set(key);
@@ -309,6 +318,14 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
 
   protected async openRequest(request: ServiceRequestSummary): Promise<void> {
     await this.router.navigate(['/provider/requests', request.id]);
+  }
+
+  protected async primaryAction(request: ServiceRequestSummary): Promise<void> {
+    if (!request.alreadyBidByMe && this.isBiddable(request) && !this.isMyActiveJob(request)) {
+      await this.router.navigate(['/provider/bid'], { queryParams: { requestId: request.id } });
+      return;
+    }
+    await this.openRequest(request);
   }
 
   protected isMyActiveJob(request: ServiceRequestSummary): boolean {
@@ -347,6 +364,12 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
     if (this.isMyActiveJob(request)) {
       return 'ดำเนินงานต่อ';
     }
-    return request.alreadyBidByMe ? 'ดูงาน' : 'ดูรายละเอียด';
+    if (request.alreadyBidByMe && this.isBiddable(request)) {
+      return 'ดูข้อเสนอ';
+    }
+    if (this.isBiddable(request) && !this.isMine(request)) {
+      return 'เสนอราคา';
+    }
+    return 'ดูรายละเอียด';
   }
 }

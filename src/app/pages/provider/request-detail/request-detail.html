@@ -11,6 +11,14 @@
   } @else if (error() && !request()) {
     <app-error-state [message]="error()!" (retry)="load()" />
   } @else if (request(); as r) {
+    @if (categoryBlocked()) {
+      <div class="state">
+        <div class="em">🚫</div>
+        <h3>งานนี้ไม่ตรงกับบริการของคุณ</h3>
+        <p class="muted">{{ categoryBlocked() }}</p>
+        <button type="button" class="btn btn-primary" (click)="goBackToJobs()">กลับไปรายการงาน</button>
+      </div>
+    } @else {
     @if (notice()) {
       <div class="banner info">{{ notice() }}</div>
     }
@@ -54,6 +62,12 @@
         <p class="muted" style="margin: 8px 0 0">รัศมีค้นหาจากจุดประกาศ {{ searchRadiusKm(r) }} กม.</p>
       }
     </div>
+
+    @if (canOfferNewBid()) {
+      <button class="btn btn-primary btn-block" type="button" [class.is-busy]="acting()" [disabled]="acting()" (click)="submitBid()">
+        เสนอราคา
+      </button>
+    }
 
     @if (showAppointmentSection()) {
       <article class="card">
@@ -111,12 +125,8 @@
           } @else if (appt.status === 'Completed') {
             <p class="muted">งานเสร็จแล้ว — ลูกค้าสามารถให้คะแนนและรีวิวได้</p>
           }
-        } @else {
-          @if (appointmentError()) {
-            <p class="error-text">{{ appointmentError() }}</p>
-          } @else {
-            <p class="muted">ยังไม่มีรายละเอียดนัด</p>
-          }
+        } @else if (appointmentError()) {
+          <p class="error-text">{{ appointmentError() }}</p>
           <button type="button" class="btn btn-secondary btn-block" style="margin-top: 8px" (click)="reloadAppointment()">
             โหลดนัดหมายอีกครั้ง
           </button>
@@ -148,8 +158,7 @@
           <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" (click)="submitBid()">เสนอราคาใหม่</button>
         }
       </article>
-    } @else if (canOfferNewBid()) {
-      <button class="btn btn-primary btn-block" type="button" [disabled]="acting()" (click)="submitBid()">เสนอราคา</button>
+    }
     }
   }
 

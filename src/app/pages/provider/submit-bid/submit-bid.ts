@@ -29,6 +29,7 @@ export class SubmitBidPage implements OnInit, OnDestroy {
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
   protected readonly loadError = signal<string | null>(null);
+  protected readonly categoryBlocked = signal<string | null>(null);
   protected readonly truncated = signal(false);
   protected readonly maxLength = BID_DESCRIPTION_MAX;
   protected readonly hint = new SlowLoadHint();
@@ -82,10 +83,17 @@ export class SubmitBidPage implements OnInit, OnDestroy {
     this.loadError.set(null);
     this.hint.begin();
     try {
-      const [detail, myProvider] = await Promise.all([
+      const [detail, myProvider, bidAccess] = await Promise.all([
         firstValueFrom(this.api.getRequest(requestId)),
         firstValueFrom(this.api.getMyProvider()),
+        firstValueFrom(this.api.getBidFormAccess(requestId)),
       ]);
+      if (!bidAccess.allowed) {
+        this.categoryBlocked.set(bidAccess.reason?.trim() || 'งานนี้ไม่ตรงกับบริการของคุณ');
+        this.loading.set(false);
+        this.hint.end();
+        return;
+      }
       this.providerId.set(myProvider.id);
       this.request.set(detail);
       const existing = detail.bids?.find(

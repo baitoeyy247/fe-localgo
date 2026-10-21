@@ -53,6 +53,8 @@ export class AdminDashboardPage implements OnInit {
   protected readonly notice = signal<string | null>(null);
   protected readonly suspendConfirmOpen = signal(false);
   protected readonly suspendTarget = signal<AdminUserRow | null>(null);
+  protected readonly activateConfirmOpen = signal(false);
+  protected readonly activateTarget = signal<AdminUserRow | null>(null);
   protected readonly resetConfirmOpen = signal(false);
   protected readonly repairConfirmOpen = signal(false);
   protected readonly requestStatusLabel = requestStatusLabel;
@@ -157,7 +159,18 @@ export class AdminDashboardPage implements OnInit {
       this.suspendConfirmOpen.set(true);
       return;
     }
-    void this.toggleUser(u);
+    this.activateTarget.set(u);
+    this.activateConfirmOpen.set(true);
+  }
+
+  protected async confirmActivateUser(): Promise<void> {
+    const u = this.activateTarget();
+    if (!u) {
+      return;
+    }
+    this.activateConfirmOpen.set(false);
+    await this.toggleUser(u);
+    this.activateTarget.set(null);
   }
 
   protected async confirmSuspendUser(): Promise<void> {

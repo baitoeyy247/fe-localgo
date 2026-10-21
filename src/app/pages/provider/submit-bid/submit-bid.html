@@ -3,6 +3,13 @@
     <app-skeleton-card [slow]="hint.slow()" [count]="1" />
   } @else if (loadError()) {
     <app-error-state [message]="loadError()!" (retry)="ngOnInit()" />
+  } @else if (categoryBlocked()) {
+    <div class="state">
+      <div class="em">🚫</div>
+      <h3>งานนี้ไม่ตรงกับบริการของคุณ</h3>
+      <p class="muted">{{ categoryBlocked() }}</p>
+      <a class="btn btn-primary" routerLink="/provider/requests">กลับไปรายการงาน</a>
+    </div>
   } @else if (request(); as r) {
     @if (error()) {
       <p class="error-text">{{ error() }}</p>

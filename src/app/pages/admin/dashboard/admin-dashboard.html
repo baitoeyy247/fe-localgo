@@ -201,13 +201,24 @@
   <app-confirm-sheet
     [open]="suspendConfirmOpen()"
     title="ระงับบัญชีผู้ใช้?"
-    message="ผู้ใช้จะไม่สามารถเข้าสู่ระบบหรือใช้งานได้จนกว่าจะเปิดใช้งานอีกครั้ง"
+    [message]="suspendTarget() ? 'ระงับบัญชี ' + (suspendTarget()!.displayName || suspendTarget()!.lineUserId || 'ผู้ใช้') + ' — ผู้ใช้จะไม่สามารถเข้าสู่ระบบได้จนกว่าจะเปิดใช้งานอีกครั้ง' : ''"
     confirmLabel="ระงับบัญชี"
     cancelLabel="ยกเลิก"
     [danger]="true"
     [busy]="acting()"
     (confirm)="confirmSuspendUser()"
     (cancel)="suspendConfirmOpen.set(false)"
+  />
+  <app-confirm-sheet
+    [open]="activateConfirmOpen()"
+    title="เปิดใช้งานบัญชีอีกครั้ง?"
+    [message]="activateTarget() ? 'เปิดใช้งานบัญชี ' + (activateTarget()!.displayName || activateTarget()!.lineUserId || 'ผู้ใช้') + ' อีกครั้ง' : ''"
+    confirmLabel="เปิดใช้งาน"
+    cancelLabel="ยกเลิก"
+    [danger]="false"
+    [busy]="acting()"
+    (confirm)="confirmActivateUser()"
+    (cancel)="activateConfirmOpen.set(false)"
   />
   <app-confirm-sheet
     [open]="resetConfirmOpen()"

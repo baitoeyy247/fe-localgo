@@ -502,8 +502,16 @@ export class AppointmentPage implements OnInit, OnDestroy {
   }
 
   protected statusHeadline(): string | null {
-    const st = this.request()?.status;
-    return st ? displayRequestStatusLabel(st, this.appointment()?.status) : null;
+    const appt = this.appointment();
+    const detail = this.request();
+    if (!detail) {
+      return null;
+    }
+    if (!appt && !this.hasActiveAppointment() && this.canCreateAppointment(detail)) {
+      return 'ยังไม่ได้กำหนดนัด';
+    }
+    const st = detail.status;
+    return st ? displayRequestStatusLabel(st, appt?.status) : null;
   }
 
   protected get locationFromPost(): boolean {

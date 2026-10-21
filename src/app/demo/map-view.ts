@@ -124,7 +124,7 @@ export class MapView implements AfterViewInit, OnChanges, OnDestroy {
     this.map = L.map(this.mapContainer.nativeElement, {
       center,
       zoom: this.zoom(),
-      zoomControl: this.size() !== 'hero',
+      zoomControl: false,
       attributionControl: false,
       dragging: this.isDraggingEnabled(),
       scrollWheelZoom: this.isDraggingEnabled(),
@@ -137,6 +137,12 @@ export class MapView implements AfterViewInit, OnChanges, OnDestroy {
       maxZoom: 19,
       attribution: '© OpenStreetMap',
     }).addTo(this.map);
+
+    if (this.size() !== 'hero') {
+      L.control
+        .zoom({ zoomInTitle: 'ขยายแผนที่', zoomOutTitle: 'ย่อแผนที่' })
+        .addTo(this.map);
+    }
 
     this.placeMarker(center);
 

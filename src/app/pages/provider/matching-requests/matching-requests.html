@@ -35,7 +35,7 @@
           <p class="muted" style="margin: 4px 0 0">
             {{ request.categoryName ?? 'ทั่วไป' }} · {{ formatDistance(request.distanceMeters) }}
           </p>
-          <button type="button" class="btn btn-primary btn-sm btn-block" style="margin-top: 8px" (click)="openRequest(request)">
+          <button type="button" class="btn btn-primary btn-block" style="margin-top: 8px" (click)="primaryAction(request)">
             {{ actionLabel(request) }}
           </button>
         </article>

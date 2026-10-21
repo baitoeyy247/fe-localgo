@@ -65,6 +65,7 @@
             type="button"
             class="li chev"
             [class.is-pressed]="activePersonaKey() === p.key"
+            [class.is-busy]="personaBusy() && activePersonaKey() === p.key"
             [disabled]="personaBusy()"
             (click)="loginAsPersona(p)"
           >
@@ -73,8 +74,8 @@
               <span class="t">{{ p.displayName }}</span><br />
               <span class="muted role-card-blurb">{{ p.blurb }}</span>
             </span>
-            @if (activePersonaKey() === p.key) {
-              <span class="muted" aria-hidden="true">…</span>
+            @if (personaBusy() && activePersonaKey() === p.key) {
+              <span class="muted" role="status">กำลังเข้าสู่ระบบ…</span>
             }
           </button>
         }
@@ -96,12 +97,13 @@
         type="button"
         style="width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer"
         [class.is-pressed]="roleBusy() === 'Requester'"
+        [class.is-busy]="roleBusy() === 'Requester'"
         [disabled]="!!roleBusy()"
         (click)="enterAs('Requester')"
       >
         <span class="ico">🙋</span>
         <span class="grow">
-          <b>ผู้รับบริการ</b><br />
+          <b>{{ roleBusy() === 'Requester' ? 'กำลังเปิด…' : 'ผู้รับบริการ' }}</b><br />
           <span class="muted role-card-blurb">ค้นหา · ประกาศงาน · รับข้อเสนอ · รีวิว</span>
         </span>
         <span class="chev"></span>
@@ -112,12 +114,13 @@
         type="button"
         style="width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer"
         [class.is-pressed]="roleBusy() === 'Provider'"
+        [class.is-busy]="roleBusy() === 'Provider'"
         [disabled]="!!roleBusy()"
         (click)="enterAs('Provider')"
       >
         <span class="ico">🧰</span>
         <span class="grow">
-          <b>ผู้ให้บริการ</b><br />
+          <b>{{ roleBusy() === 'Provider' ? 'กำลังเปิด…' : 'ผู้ให้บริการ' }}</b><br />
           <span class="muted role-card-blurb">โปรไฟล์ · บริการ · พื้นที่ · เสนอราคา</span>
         </span>
         <span class="chev"></span>

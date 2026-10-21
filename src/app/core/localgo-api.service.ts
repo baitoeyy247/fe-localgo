@@ -217,6 +217,14 @@ export class LocalGoApiService {
     return this.get<ServiceRequestSummary[]>('/service-requests/me');
   }
 
+  getBidFormAccess(requestId: string): Observable<{
+    allowed: boolean;
+    reason?: string | null;
+    reasonCode?: string | null;
+  }> {
+    return this.get(`/service-requests/${requestId}/bid-form`);
+  }
+
   getRequest(requestId: string): Observable<ServiceRequestDetail> {
     return this.get<ServiceRequestDetail>(`/service-requests/${requestId}`);
   }

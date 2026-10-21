@@ -41,11 +41,15 @@ function firstValidationMessage(errors: Record<string, string[]>): string | null
 }
 
 function normalizeDetail(detail: string, status: number, fallback: string): string {
-  const normalized = detail.trim().toLowerCase();
+  const trimmed = detail.trim();
+  if (trimmed.includes('ถูกระงับ') || trimmed.includes('บัญชีนี้ถูกระงับ')) {
+    return 'บัญชีนี้ถูกระงับ';
+  }
+  const normalized = trimmed.toLowerCase();
   if (GENERIC_SERVER_DETAILS.has(normalized)) {
     return STATUS_MESSAGES[status] ?? fallback;
   }
-  return detail.trim();
+  return trimmed;
 }
 
 function messageFromBody(body: ProblemBody | null, status: number, fallback: string): string | null {

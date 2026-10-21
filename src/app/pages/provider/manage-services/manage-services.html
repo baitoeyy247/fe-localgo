@@ -37,7 +37,13 @@
         </p>
         <div class="row">
           <a class="btn btn-secondary btn-sm grow" [routerLink]="['/provider/service', service.id, 'edit']">แก้ไข</a>
-          <button type="button" class="btn btn-ghost btn-sm grow" (click)="toggleService(service.id, !service.isActive)">
+          <button
+            type="button"
+            class="btn btn-ghost grow"
+            [class.is-busy]="acting() && toggleTarget()?.serviceId === service.id"
+            [disabled]="acting()"
+            (click)="requestToggleService(service.id, !service.isActive, service.title)"
+          >
             {{ service.isActive ? '⏸ หยุดชั่วคราว' : '▶ เปิดอีกครั้ง' }}
           </button>
         </div>
@@ -62,6 +68,18 @@
       <a class="btn btn-primary" routerLink="/provider/profile">สร้างโปรไฟล์ก่อน</a>
     </div>
   }
+
+  <app-confirm-sheet
+    [open]="toggleConfirmOpen()"
+    [title]="toggleConfirmTitle()"
+    [message]="toggleConfirmMessage()"
+    confirmLabel="ยืนยัน"
+    cancelLabel="ยกเลิก"
+    [danger]="!toggleTarget()?.active"
+    [busy]="acting()"
+    (confirm)="confirmToggleService()"
+    (cancel)="cancelToggle()"
+  />
 
   <app-provider-bottom-nav />
 </app-page-shell>

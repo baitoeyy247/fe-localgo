@@ -189,7 +189,6 @@ export class RequesterBookPage implements OnInit, OnDestroy {
 
     this.error.set(null);
     this.success.set('กำลังบันทึกนัดหมาย…');
-    this.toast.show('กำลังบันทึกนัดหมาย…');
     this.hint.begin();
     try {
       const result = await firstValueFrom(
