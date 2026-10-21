@@ -419,6 +419,14 @@ export class LocalGoApiService {
     return this.post<{ deletedUsers: number }>('/admin/test-data/reset', {});
   }
 
+  repairTestData(): Observable<{
+    reviewReassigned?: boolean;
+    targetProviderId?: string | null;
+    staleRequestsRemoved?: number;
+  }> {
+    return this.post('/admin/test-data/repair', {});
+  }
+
   private get<T>(path: string, options?: { params?: HttpParams }): Observable<T> {
     return this.http.get<T>(`${this.base}${path}`, options);
   }

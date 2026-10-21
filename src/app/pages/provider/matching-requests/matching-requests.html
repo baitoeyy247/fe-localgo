@@ -46,7 +46,13 @@
             · {{ formatPrice(request.budgetText) }}
           }
         </p>
-        <button type="button" class="btn btn-primary btn-sm btn-block" (click)="openRequest(request)">
+        <button
+          type="button"
+          class="btn btn-sm btn-block"
+          [class.btn-primary]="!isTerminalJob(request)"
+          [class.btn-ghost]="isTerminalJob(request)"
+          (click)="openRequest(request)"
+        >
           {{ actionLabel(request) }}
         </button>
       </article>

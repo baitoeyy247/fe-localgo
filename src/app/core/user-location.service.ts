@@ -83,6 +83,16 @@ export class UserLocationService {
     }
   }
 
+  /** Clear remembered search area / radius (logout or account switch). */
+  clear(): void {
+    this.cached = null;
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }
+
   private readStored(): UserLocationArea | null {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);

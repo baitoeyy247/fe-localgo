@@ -22,6 +22,8 @@ import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 import { formatPrice } from '../../../shared/format-price';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { AuthService } from '../../../core/auth.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
+import { ToastService } from '../../../core/toast.service';
 import { formatDistanceMeters, haversineMeters } from '../../../shared/geo-distance';
 import { UserLocationService } from '../../../core/user-location.service';
 
@@ -79,6 +81,8 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly auth = inject(AuthService);
   private readonly userLocation = inject(UserLocationService);
+  private readonly cache = inject(MarketplaceCacheService);
+  private readonly toast = inject(ToastService);
 
   async ngOnInit(): Promise<void> {
     const navState = this.router.getCurrentNavigation()?.extras.state as { notice?: string } | undefined;
@@ -122,10 +126,20 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
         const matching = await firstValueFrom(this.api.listMatchingRequests());
         const hit = matching.find((item) => item.id === id);
         let meters = hit?.distanceMeters ?? null;
-        if ((meters == null || meters === 0) && detail.latitude != null && detail.longitude != null) {
-          const area = this.userLocation.getLastArea();
-          if (area) {
-            const computed = haversineMeters(area.lat, area.lng, detail.latitude, detail.longitude);
+        if (
+          (meters == null || meters < 0.5) &&
+          detail.latitude != null &&
+          detail.longitude != null
+        ) {
+          const branch =
+            myProvider?.branches.find((b) => b.isActive) ?? myProvider?.branches[0] ?? null;
+          if (branch) {
+            const computed = haversineMeters(
+              branch.latitude,
+              branch.longitude,
+              detail.latitude,
+              detail.longitude,
+            );
             if (computed > 0.5 || meters == null) {
               meters = computed;
             }
@@ -320,6 +334,19 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     return (r.searchRadiusMeters / 1000).toFixed(0);
   }
 
+  protected rejectReason(appt: AppointmentDetail): string | null {
+    const note = appt.note?.trim();
+    if (!note) {
+      return null;
+    }
+    const marker = 'เหตุผลที่ปฏิเสธ:';
+    const idx = note.lastIndexOf(marker);
+    if (idx >= 0) {
+      return note.slice(idx + marker.length).trim() || null;
+    }
+    return appt.status === 'Rejected' ? note : null;
+  }
+
   protected async rejectAppointment(reason: string): Promise<void> {
     const appt = this.appointment();
     if (!appt || !this.canRejectAppointment() || this.acting()) {
@@ -328,11 +355,15 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.acting.set(true);
     this.actingLabel.set('กำลังปฏิเสธนัด…');
     this.error.set(null);
+    this.rejectOpen.set(false);
+    this.appointment.set({ ...appt, status: 'Rejected' });
+    this.toast.show('ปฏิเสธนัดแล้ว');
     try {
       const updated = await firstValueFrom(
         this.api.updateAppointmentStatus(appt.id, 'Rejected', reason || undefined),
       );
       this.appointment.set(updated);
+      this.cache.invalidateAll();
       this.notice.set('ปฏิเสธนัดแล้ว — ลูกค้าจะเห็นสถานะผู้ให้บริการปฏิเสธ');
       const requestId = this.request()?.id;
       if (requestId) {
@@ -343,10 +374,10 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
         }
       }
     } catch (e) {
+      this.appointment.set(appt);
       this.error.set(apiErrorMessage(e, 'ปฏิเสธนัดไม่สำเร็จ'));
       scrollToFirstError();
     } finally {
-      this.rejectOpen.set(false);
       this.acting.set(false);
     }
   }
@@ -453,9 +484,13 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.acting.set(true);
     this.actingLabel.set(options.busyLabel);
     this.error.set(null);
+    this.advanceConfirmOpen.set(false);
+    this.appointment.set({ ...appt, status });
+    this.toast.show(options.notice);
     try {
       const updated = await firstValueFrom(this.api.updateAppointmentStatus(appt.id, status));
       this.appointment.set(updated);
+      this.cache.invalidateAll();
       const requestId = this.request()?.id;
       if (requestId) {
         try {
@@ -469,6 +504,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       }
       this.notice.set(options.notice);
     } catch (e) {
+      this.appointment.set(appt);
       this.error.set(apiErrorMessage(e, options.errorFallback));
       scrollToFirstError();
     } finally {

@@ -12,6 +12,8 @@ import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { AppointmentDetail, BidItem, ServiceRequestDetail } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import { AuthService } from '../../../core/auth.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
+import { ToastService } from '../../../core/toast.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import {
   appointmentStatusLabel,
@@ -71,6 +73,8 @@ export class AppointmentPage implements OnInit, OnDestroy {
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
   private readonly auth = inject(AuthService);
+  private readonly cache = inject(MarketplaceCacheService);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly datetimeField = viewChild(ThaiDatetimeField);
@@ -155,6 +159,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
     this.error.set(null);
     // Optimistic UI — immediate feedback within 1s AC.
     this.success.set('กำลังบันทึกนัดหมาย…');
+    this.toast.show('กำลังบันทึกนัดหมาย…');
     try {
       const detail = this.request();
       const bid = this.selectedBid();
@@ -198,7 +203,9 @@ export class AppointmentPage implements OnInit, OnDestroy {
         }),
       );
       this.appointment.set(created);
+      this.cache.invalidateAll();
       this.success.set('บันทึกนัดหมายแล้ว ระบบจะแจ้งผู้ให้บริการให้ทราบ');
+      this.toast.show('บันทึกนัดหมายแล้ว');
       void this.loadRequestState(requestId);
     } catch (e) {
       this.success.set(null);
@@ -216,14 +223,17 @@ export class AppointmentPage implements OnInit, OnDestroy {
     }
     this.saving.set(true);
     this.error.set(null);
+    this.confirmCancelOpen.set(false);
     // Optimistic: reflect cancelled immediately so all labels update on refresh path.
     this.appointment.set({ ...existing, status: 'Cancelled' });
     const req = this.request();
     if (req) {
       this.request.set({ ...req, status: 'Cancelled' });
     }
+    this.toast.show('ยกเลิกนัดหมายแล้ว');
     try {
       await firstValueFrom(this.api.updateAppointmentStatus(existing.id, 'Cancelled'));
+      this.cache.invalidateAll();
       const requestId = this.request()?.id ?? this.session.requesterRequestId;
       if (requestId) {
         await this.loadRequestState(requestId);
@@ -236,7 +246,6 @@ export class AppointmentPage implements OnInit, OnDestroy {
       this.error.set(apiErrorMessage(e, 'ยกเลิกนัดหมายไม่สำเร็จ'));
       scrollToFirstError();
     } finally {
-      this.confirmCancelOpen.set(false);
       this.saving.set(false);
     }
   }
@@ -415,17 +424,40 @@ export class AppointmentPage implements OnInit, OnDestroy {
     return this.appointment()?.status === 'Rejected';
   }
 
-  protected async goRebook(): Promise<void> {
+  /** Prefer explicit reject reason; strip the BE prefix when present. */
+  protected rejectReason(): string | null {
+    const note = this.appointment()?.note?.trim();
+    if (!note || this.appointment()?.status !== 'Rejected') {
+      return null;
+    }
+    const marker = 'เหตุผลที่ปฏิเสธ:';
+    const idx = note.lastIndexOf(marker);
+    if (idx >= 0) {
+      return note.slice(idx + marker.length).trim() || null;
+    }
+    return note;
+  }
+
+  protected async goBookOtherProvider(): Promise<void> {
+    this.session.clearRequesterFlow();
     if (this.isDirectBooking()) {
-      const providerId = this.request()?.selectedProviderId ?? this.session.currentProviderId;
-      if (providerId) {
-        await this.router.navigate(['/requester/book', providerId]);
-        return;
-      }
       await this.router.navigateByUrl('/requester/search');
       return;
     }
     await this.router.navigateByUrl('/requester/bids');
+  }
+
+  protected async goNewAppointment(): Promise<void> {
+    this.session.clearRequesterFlow();
+    if (this.isDirectBooking()) {
+      await this.router.navigateByUrl('/requester/search');
+      return;
+    }
+    await this.router.navigateByUrl('/requester/post');
+  }
+
+  protected async goRebook(): Promise<void> {
+    await this.goBookOtherProvider();
   }
 
   protected statusHeadline(): string | null {

@@ -83,7 +83,7 @@ export function displayRequestStatusBadgeClass(
     return 'badge--muted';
   }
   if (appointmentStatus === 'Rejected') {
-    return 'badge--warn';
+    return 'badge--red';
   }
   if (status === 'Scheduled' || status === 'ProviderSelected' || status === 'Selected') {
     if (appointmentStatus === 'Confirmed') {
@@ -128,7 +128,7 @@ export function providerBidRowStatus(item: {
     return { key: 'withdrawn', label: 'ยกเลิกแล้ว', badgeClass: 'badge--muted' };
   }
   if (item.appointmentStatus === 'Rejected') {
-    return { key: 'rejected', label: 'ผู้ให้บริการปฏิเสธ', badgeClass: 'badge--warn' };
+    return { key: 'rejected', label: 'ผู้ให้บริการปฏิเสธ', badgeClass: 'badge--red' };
   }
   if (item.status === 'Withdrawn') {
     return { key: 'withdrawn', label: 'ถอนแล้ว', badgeClass: 'badge--muted' };

@@ -1,11 +1,14 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import liff from '@line/liff';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 import { apiErrorMessage } from './api-error.util';
 import { UserProfile } from './models';
 import { LocalGoApiService } from './localgo-api.service';
+import { MarketplaceCacheService } from './marketplace-cache.service';
+import { UserLocationService } from './user-location.service';
+import { SessionStateService } from './session-state.service';
 
 const TOKEN_KEY = 'localgo_access_token';
 const USER_KEY = 'localgo_user';
@@ -30,7 +33,10 @@ export class AuthService {
     (sessionStorage.getItem(AUTH_MODE_KEY) as 'line' | 'dev' | null) ?? 'none',
   );
 
-  constructor(private readonly api: LocalGoApiService) {}
+  private readonly api = inject(LocalGoApiService);
+  private readonly locations = inject(UserLocationService);
+  private readonly cache = inject(MarketplaceCacheService);
+  private readonly session = inject(SessionStateService);
 
   ensureSession(): Promise<void> {
     this.bootstrapPromise ??= this.bootstrap();
@@ -158,6 +164,11 @@ export class AuthService {
     asAdmin?: boolean;
     personaKey?: string;
   }): Promise<void> {
+    // Switching playtest accounts must not carry over search area / flow ids.
+    this.locations.clear();
+    this.session.clearRequesterFlow();
+    this.session.clearProviderRequest();
+    this.cache.invalidateAll();
     const response = await firstValueFrom(
       this.api.devLogin({
         displayName: options?.displayName ?? (environment.devLoginDisplayName || 'Dev User'),
@@ -234,6 +245,8 @@ export class AuthService {
     sessionStorage.setItem(TOKEN_KEY, token);
     sessionStorage.setItem(USER_KEY, JSON.stringify(user));
     sessionStorage.setItem(AUTH_MODE_KEY, mode);
+    // Warm home lists so first paint after wake is under ~3s when API is up.
+    this.cache.preloadHome();
   }
 
   async loginAsAdmin(): Promise<void> {
@@ -253,6 +266,10 @@ export class AuthService {
     sessionStorage.removeItem(USER_KEY);
     sessionStorage.removeItem(PERSONA_KEY);
     sessionStorage.removeItem(AUTH_MODE_KEY);
+    this.locations.clear();
+    this.session.clearRequesterFlow();
+    this.session.clearProviderRequest();
+    this.cache.invalidateAll();
   }
 
   private isLocalDevHost(): boolean {

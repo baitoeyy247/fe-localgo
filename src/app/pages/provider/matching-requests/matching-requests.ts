@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { ProviderDetail, ServiceRequestSummary } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import {
@@ -89,6 +90,7 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
 
   constructor(
     private readonly api: LocalGoApiService,
+    private readonly cache: MarketplaceCacheService,
     private readonly router: Router,
     protected readonly auth: AuthService,
   ) {}
@@ -141,7 +143,7 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
     try {
       const mine = await firstValueFrom(this.api.getMyProvider());
       this.provider.set(mine);
-      const items = await firstValueFrom(this.api.listMatchingRequests(true));
+      const items = await firstValueFrom(this.cache.listMatchingRequests(true));
       this.matchingRequests.set(items);
 
       this.pendingConfirmCount.set(items.filter((r) => r.needsAppointmentConfirm).length);
@@ -231,12 +233,20 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
     );
   }
 
+  protected isTerminalJob(request: ServiceRequestSummary): boolean {
+    return (
+      request.status === 'Cancelled' ||
+      request.appointmentStatus === 'Cancelled' ||
+      request.appointmentStatus === 'Rejected'
+    );
+  }
+
   protected actionLabel(request: ServiceRequestSummary): string {
     if (request.appointmentStatus === 'Cancelled' || request.status === 'Cancelled') {
-      return 'ยกเลิกแล้ว';
+      return 'ดูรายละเอียด';
     }
     if (request.appointmentStatus === 'Rejected') {
-      return 'ผู้ให้บริการปฏิเสธ';
+      return 'ดูรายละเอียด';
     }
     if (request.needsAppointmentConfirm || request.appointmentStatus === 'Pending') {
       return 'ยืนยันรับนัด';

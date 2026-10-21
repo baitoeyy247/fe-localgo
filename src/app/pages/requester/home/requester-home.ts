@@ -5,6 +5,8 @@ import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { RequesterBottomNav } from '../../../shared/requester-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
+import { ToastService } from '../../../core/toast.service';
 import { ServiceRequestSummary } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import {
@@ -35,6 +37,8 @@ export class RequesterHomePage implements OnInit, OnDestroy {
   protected readonly statusBadgeClass = displayRequestStatusBadgeClass;
 
   private readonly api = inject(LocalGoApiService);
+  private readonly cache = inject(MarketplaceCacheService);
+  private readonly toast = inject(ToastService);
   private readonly session = inject(SessionStateService);
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
@@ -47,12 +51,12 @@ export class RequesterHomePage implements OnInit, OnDestroy {
     this.hint.end();
   }
 
-  protected async load(): Promise<void> {
+  protected async load(force = false): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
     this.hint.begin();
     try {
-      const items = await firstValueFrom(this.api.listMyRequests());
+      const items = await firstValueFrom(this.cache.listMyRequests(force));
       this.requests.set(items);
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'โหลดรายการงานไม่สำเร็จ'));
@@ -60,6 +64,14 @@ export class RequesterHomePage implements OnInit, OnDestroy {
       this.hint.end();
       this.loading.set(false);
     }
+  }
+
+  protected isTerminalCard(request: ServiceRequestSummary): boolean {
+    return (
+      request.status === 'Cancelled' ||
+      request.appointmentStatus === 'Cancelled' ||
+      request.appointmentStatus === 'Rejected'
+    );
   }
 
   protected canCancel(status: string): boolean {
@@ -85,14 +97,23 @@ export class RequesterHomePage implements OnInit, OnDestroy {
     }
     this.busy.set(true);
     this.actionError.set(null);
+    // Optimistic + close dialog immediately.
+    this.requests.set(
+      this.requests().map((r) =>
+        r.id === target.id ? { ...r, status: 'Cancelled', appointmentStatus: 'Cancelled' } : r,
+      ),
+    );
+    this.cancelTarget.set(null);
+    this.toast.show('ยกเลิกงานแล้ว');
     try {
       await firstValueFrom(this.api.cancelRequest(target.id));
-      const items = await firstValueFrom(this.api.listMyRequests());
+      this.cache.invalidateMyRequests();
+      const items = await firstValueFrom(this.cache.listMyRequests(true));
       this.requests.set(items);
-      this.cancelTarget.set(null);
     } catch (e) {
-      this.cancelTarget.set(null);
       this.actionError.set(apiErrorMessage(e, 'ยกเลิกงานไม่สำเร็จ'));
+      this.cache.invalidateMyRequests();
+      await this.load(true);
     } finally {
       this.busy.set(false);
     }

@@ -1042,21 +1042,34 @@ app-offline-bar {
   }
   .results-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: var(--s4);
+  }
+  .results-grid > .card,
+  .results-grid > a.card {
+    min-width: 280px;
+    overflow-wrap: anywhere;
+    word-break: normal;
   }
   @media (min-width: 1280px) {
     .app,
     .bnav {
       width: min(1200px, 94vw);
     }
-    .results-grid {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
   }
   .admin-wide {
     max-width: none;
     width: 100%;
+  }
+  .admin-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--r-lg);
+  }
+  .admin-table-wrap .admin-table {
+    min-width: 640px;
   }
   .admin-form,
   .field,

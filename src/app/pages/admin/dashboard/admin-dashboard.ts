@@ -133,6 +133,25 @@ export class AdminDashboardPage implements OnInit {
     }
   }
 
+  protected async repairTestData(): Promise<void> {
+    if (this.acting()) {
+      return;
+    }
+    this.acting.set(true);
+    try {
+      const result = await firstValueFrom(this.api.repairTestData());
+      const moved = result.reviewReassigned ? 'ย้ายรีวิวแล้ว' : 'รีวิวตรงอยู่แล้วหรือไม่พบ';
+      this.notice.set(
+        `ซ่อมข้อมูลทดสอบ: ${moved} · ลบงานเก่า ${result.staleRequestsRemoved ?? 0} รายการ`,
+      );
+      await this.load();
+    } catch (e) {
+      this.error.set(apiErrorMessage(e, 'ซ่อมข้อมูลทดสอบไม่สำเร็จ'));
+    } finally {
+      this.acting.set(false);
+    }
+  }
+
   protected userLine(u: AdminUserRow): string {
     const name = u.displayName ?? u.lineUserId ?? u.id;
     const role = u.systemRole ?? '';

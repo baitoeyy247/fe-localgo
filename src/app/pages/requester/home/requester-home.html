@@ -46,14 +46,20 @@
           ข้อเสนอ {{ request.bidCount }}
         </p>
         <div class="row">
-          <button type="button" class="btn btn-primary btn-sm grow" (click)="openRequest(request)">
-            {{ continueLabel(request) }}
-          </button>
-          @if (!isReviewed(request) && request.status !== 'Completed') {
-            <button type="button" class="btn btn-ghost btn-sm" (click)="openDetail(request)">ดูรายละเอียด</button>
-          }
-          @if (request.status !== 'Cancelled' && request.appointmentStatus !== 'Cancelled' && request.appointmentStatus !== 'Rejected' && canCancel(request.status)) {
-            <button type="button" class="btn btn-danger-o btn-sm" (click)="askCancel(request, $event)">ยกเลิก</button>
+          @if (isTerminalCard(request)) {
+            <button type="button" class="btn btn-ghost btn-sm grow" (click)="openDetail(request)">
+              ดูรายละเอียด
+            </button>
+          } @else {
+            <button type="button" class="btn btn-primary btn-sm grow" (click)="openRequest(request)">
+              {{ continueLabel(request) }}
+            </button>
+            @if (!isReviewed(request) && request.status !== 'Completed') {
+              <button type="button" class="btn btn-ghost btn-sm" (click)="openDetail(request)">ดูรายละเอียด</button>
+            }
+            @if (canCancel(request.status)) {
+              <button type="button" class="btn btn-danger-o btn-sm" (click)="askCancel(request, $event)">ยกเลิก</button>
+            }
           }
         </div>
       </div>

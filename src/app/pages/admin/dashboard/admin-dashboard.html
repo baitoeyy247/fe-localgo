@@ -36,6 +36,9 @@
 
     <div class="sec-title">
       ผู้ใช้ ({{ usersTotal() }})
+      <button type="button" class="btn btn-secondary btn-sm" [disabled]="acting()" (click)="repairTestData()">
+        ซ่อมข้อมูลทดสอบ
+      </button>
       <button type="button" class="btn btn-danger-o btn-sm" [disabled]="acting()" (click)="resetTestData()">
         รีเซ็ตข้อมูลทดสอบ
       </button>
@@ -76,28 +79,30 @@
         <option value="Cancelled">ยกเลิกแล้ว</option>
       </select>
     </div>
-    <table class="admin-table admin-wide">
-      <thead>
-        <tr>
-          <th>หัวข้อ</th>
-          <th>สถานะ</th>
-          <th>งบ</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (r of requests(); track r.id) {
+    <div class="admin-table-wrap admin-wide">
+      <table class="admin-table">
+        <thead>
           <tr>
-            <td>{{ r.title }}</td>
-            <td>{{ requestStatusLabel(r.status) }}</td>
-            <td>{{ r.budgetText || '—' }}</td>
+            <th>หัวข้อ</th>
+            <th>สถานะ</th>
+            <th>งบ</th>
           </tr>
-        } @empty {
-          <tr>
-            <td colspan="3" class="muted">ไม่มีงาน</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (r of requests(); track r.id) {
+            <tr>
+              <td>{{ r.title }}</td>
+              <td>{{ requestStatusLabel(r.status) }}</td>
+              <td>{{ r.budgetText || '—' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="3" class="muted">ไม่มีงาน</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
 
     <div class="sec-title">
       นัดหมาย
@@ -111,28 +116,39 @@
         <option value="Rejected">ผู้ให้บริการปฏิเสธ</option>
       </select>
     </div>
-    <table class="admin-table admin-wide">
-      <thead>
-        <tr>
-          <th>สถานะ</th>
-          <th>เวลานัด</th>
-          <th>สถานที่</th>
-        </tr>
-      </thead>
-      <tbody>
-        @for (a of appointments(); track a.id) {
+    <div class="admin-table-wrap admin-wide">
+      <table class="admin-table">
+        <thead>
           <tr>
-            <td>{{ appointmentStatusLabel(a.status) }}</td>
-            <td>{{ formatWhen(a.scheduledAt) }}</td>
-            <td>{{ a.addressText || '—' }}</td>
+            <th>สถานะ</th>
+            <th>เวลานัด</th>
+            <th>สถานที่</th>
+            <th>หมายเหตุ / เหตุผล</th>
           </tr>
-        } @empty {
-          <tr>
-            <td colspan="3" class="muted">ไม่มีนัด</td>
-          </tr>
-        }
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          @for (a of appointments(); track a.id) {
+            <tr>
+              <td>
+                <span
+                  class="badge"
+                  [class.badge--muted]="a.status === 'Cancelled'"
+                  [class.badge--red]="a.status === 'Rejected'"
+                  >{{ appointmentStatusLabel(a.status) }}</span
+                >
+              </td>
+              <td>{{ formatWhen(a.scheduledAt) }}</td>
+              <td>{{ a.addressText || '—' }}</td>
+              <td>{{ a.note || '—' }}</td>
+            </tr>
+          } @empty {
+            <tr>
+              <td colspan="4" class="muted">ไม่มีนัด</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
 
     <div class="sec-title">บันทึกแจ้งเตือนล่าสุด</div>
     <div class="list">

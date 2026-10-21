@@ -6,6 +6,8 @@ import { RequesterBottomNav } from '../../../shared/requester-bottom-nav';
 import { RequesterFlowBar, RequesterFlowStep } from '../../../shared/requester-flow-bar';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { SessionStateService } from '../../../core/session-state.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
+import { ToastService } from '../../../core/toast.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
@@ -18,7 +20,9 @@ import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 export class ReviewPage implements OnInit {
   protected readonly rating = signal(0);
   protected readonly comment = signal('');
-  protected readonly providerName = signal('ผู้ให้บริการ');
+  protected readonly providerName = signal('กำลังโหลดผู้ให้บริการ…');
+  protected readonly providerId = signal<string | null>(null);
+  protected readonly requestId = signal<string | null>(null);
   protected readonly submitting = signal(false);
   protected readonly canSubmit = signal(false);
   protected readonly statusHint = signal<string | null>(null);
@@ -27,6 +31,8 @@ export class ReviewPage implements OnInit {
 
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
+  private readonly cache = inject(MarketplaceCacheService);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
@@ -37,35 +43,52 @@ export class ReviewPage implements OnInit {
     if (queryRequestId) {
       this.session.requesterRequestId = queryRequestId;
     }
-    const providerId = this.session.currentProviderId;
-    if (requestId) {
-      try {
-        const detail = await firstValueFrom(this.api.getRequest(requestId));
-        const ready = detail.status === 'Completed';
-        this.canSubmit.set(ready);
-        if (!ready) {
-          this.statusHint.set('รอให้งานเสร็จก่อนรีวิว');
-        }
-        if (!providerId && detail.selectedProviderId) {
-          this.session.currentProviderId = detail.selectedProviderId;
-        }
-      } catch {
-        this.statusHint.set('โหลดสถานะงานไม่สำเร็จ — ลองกลับมาอีกครั้ง');
-      }
-    } else {
+    this.requestId.set(requestId);
+
+    if (!requestId) {
       this.statusHint.set('ไม่พบงานที่จะรีวิว');
+      this.providerName.set('ไม่พบผู้ให้บริการ');
+      this.loading.set(false);
+      return;
     }
 
-    const resolvedProviderId = this.session.currentProviderId;
-    if (resolvedProviderId) {
-      try {
-        const p = await firstValueFrom(this.api.getProvider(resolvedProviderId));
-        this.providerName.set(p.name);
-      } catch {
-        /* keep default */
+    try {
+      const [detail, appointment] = await Promise.all([
+        firstValueFrom(this.api.getRequest(requestId)),
+        firstValueFrom(this.api.getAppointment(requestId)),
+      ]);
+
+      const ready = detail.status === 'Completed';
+      this.canSubmit.set(ready);
+      if (!ready) {
+        this.statusHint.set('รอให้งานเสร็จก่อนรีวิว');
       }
+
+      // Always resolve from the job — never session/cache provider id.
+      const resolved =
+        appointment?.providerId ??
+        detail.selectedProviderId ??
+        detail.bids?.find((b) => b.status === 'Selected')?.providerId ??
+        null;
+
+      if (!resolved) {
+        this.statusHint.set('ไม่พบผู้ให้บริการของงานนี้');
+        this.providerName.set('ไม่พบผู้ให้บริการ');
+        this.loading.set(false);
+        return;
+      }
+
+      this.providerId.set(resolved);
+      this.session.currentProviderId = resolved;
+
+      const p = await firstValueFrom(this.api.getProvider(resolved));
+      this.providerName.set(p.name);
+    } catch (e) {
+      this.statusHint.set(apiErrorMessage(e, 'โหลดสถานะงานไม่สำเร็จ — ลองกลับมาอีกครั้ง'));
+      this.providerName.set('โหลดชื่อไม่สำเร็จ');
+    } finally {
+      this.loading.set(false);
     }
-    this.loading.set(false);
   }
 
   protected flowUnlockedThrough(): RequesterFlowStep {
@@ -78,9 +101,9 @@ export class ReviewPage implements OnInit {
   }
 
   protected async submit(): Promise<void> {
-    const providerId = this.session.currentProviderId;
-    const requestId = this.session.requesterRequestId;
-    if (!providerId || this.submitting()) {
+    const providerId = this.providerId();
+    const requestId = this.requestId() ?? this.session.requesterRequestId;
+    if (!providerId || !requestId || this.submitting()) {
       await this.router.navigateByUrl('/requester');
       return;
     }
@@ -96,16 +119,19 @@ export class ReviewPage implements OnInit {
     }
     this.submitting.set(true);
     this.error.set(null);
+    this.toast.show('กำลังส่งรีวิว…');
     try {
       await firstValueFrom(
         this.api.createReview(providerId, {
-          serviceRequestId: requestId ?? undefined,
+          serviceRequestId: requestId,
           reviewType: 'Verified',
           rating: this.rating(),
           comment: this.comment().trim() || undefined,
         }),
       );
+      this.cache.invalidateAll();
       this.session.clearRequesterFlow();
+      this.toast.show('ส่งรีวิวแล้ว');
       await this.router.navigateByUrl('/requester');
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'ส่งรีวิวไม่สำเร็จ'));

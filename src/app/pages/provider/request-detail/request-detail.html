@@ -64,10 +64,21 @@
         } @else if (appointment(); as appt) {
           <p style="margin-top: 8px"><b>วันและเวลา:</b> {{ formatScheduledAt(appt.scheduledAt) }}</p>
           <p><b>สถานที่:</b> {{ appt.addressText?.trim() || 'ยังไม่ระบุสถานที่' }}</p>
-          @if (appt.note) {
+          @if (appt.status === 'Rejected' && rejectReason(appt); as reason) {
+            <p><b>เหตุผลที่ปฏิเสธ:</b> {{ reason }}</p>
+          } @else if (appt.note) {
             <p><b>หมายเหตุ:</b> {{ appt.note }}</p>
           }
-          <p><b>สถานะ:</b> {{ appointmentStatusLabel(appt.status) }}</p>
+          <p>
+            <b>สถานะ:</b>
+            <span
+              class="badge"
+              [class.badge--muted]="appt.status === 'Cancelled'"
+              [class.badge--red]="appt.status === 'Rejected'"
+              [class.badge--green]="appt.status !== 'Cancelled' && appt.status !== 'Rejected'"
+              >{{ appointmentStatusLabel(appt.status) }}</span
+            >
+          </p>
 
           @if (isTerminal()) {
             <p class="muted">นัดนี้สิ้นสุดแล้ว — ไม่มีปุ่มดำเนินการ</p>
