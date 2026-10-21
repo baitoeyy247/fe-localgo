@@ -27,7 +27,7 @@
     />
 
     <label class="field">
-      <span>สถานที่นัดหมาย</span>
+      <span>สถานที่นัดหมาย <span class="req">*</span></span>
       <input
         class="input"
         placeholder="พิมพ์ที่อยู่ หรือเลือกจากแผนที่"
@@ -50,14 +50,13 @@
     @if (error()) {
       <p class="error-text">{{ error() }}</p>
     }
-    @if (saving() && hint.slow()) {
-      <p class="muted" style="text-align: center" role="status">กำลังเชื่อมต่อเซิร์ฟเวอร์…</p>
-    }
-    @if (success()) {
-      <div class="banner ok">{{ success() }}</div>
-    }
-
-    <button class="btn btn-primary btn-block sticky-cta" type="button" [disabled]="saving()" (click)="confirm()">
+    <button
+      class="btn btn-primary btn-block sticky-cta"
+      type="button"
+      [class.is-busy]="saving()"
+      [disabled]="saving()"
+      (click)="confirm()"
+    >
       {{ saving() ? 'กำลังจอง…' : 'ยืนยันการจอง' }}
     </button>
   }
