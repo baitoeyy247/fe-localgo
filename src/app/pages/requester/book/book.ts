@@ -144,12 +144,6 @@ export class RequesterBookPage implements OnInit, OnDestroy {
     this.error.set(null);
 
     if (dt && !dt.isValid()) {
-      this.error.set(dt.errorMessage());
-      scrollToFirstError();
-      return;
-    }
-    if (!this.scheduledAt()) {
-      this.error.set('กรุณาเลือกวันที่และเวลา');
       scrollToFirstError();
       return;
     }

@@ -282,7 +282,11 @@ export class LocationPickerModal {
     this.draftLng.set(this.lng());
     this.draftRadiusKm.set(this.radiusKm());
     this.placeTitle.set(this.locationTitle());
-    this.placeSubtitle.set(this.locationSubtitle());
+    if (this.showRadius()) {
+      this.placeSubtitle.set(this.radiusText());
+    } else {
+      this.placeSubtitle.set(this.locationSubtitle());
+    }
   }
 
   private refreshMapSoon(): void {
