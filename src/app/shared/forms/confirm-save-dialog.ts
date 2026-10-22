@@ -1,4 +1,5 @@
 import { Component, input, output } from '@angular/core';
+import { GLOSSARY } from '../glossary';
 import { ConfirmSheet } from '../ui/confirm-sheet';
 
 /** Shared save / discard confirmation sheets (N-3). */
@@ -8,10 +9,10 @@ import { ConfirmSheet } from '../ui/confirm-sheet';
   template: `
     <app-confirm-sheet
       [open]="saveOpen()"
-      title="บันทึกการเปลี่ยนแปลง?"
+      [title]="saveTitle()"
       [message]="saveMessage()"
-      confirmLabel="บันทึก"
-      cancelLabel="ยกเลิก"
+      [confirmLabel]="saveConfirmLabel()"
+      [cancelLabel]="saveCancelLabel()"
       [busy]="saveBusy()"
       (confirm)="saveConfirm.emit()"
       (cancel)="saveCancel.emit()"
@@ -30,7 +31,10 @@ import { ConfirmSheet } from '../ui/confirm-sheet';
 })
 export class ConfirmSaveDialog {
   readonly saveOpen = input(false);
+  readonly saveTitle = input<string>(GLOSSARY.saveChangesTitle);
   readonly saveMessage = input('');
+  readonly saveConfirmLabel = input<string>(GLOSSARY.saveChangesConfirm);
+  readonly saveCancelLabel = input<string>(GLOSSARY.saveChangesCancel);
   readonly saveBusy = input(false);
   readonly discardOpen = input(false);
 

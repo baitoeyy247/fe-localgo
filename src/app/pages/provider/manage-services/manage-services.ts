@@ -12,6 +12,7 @@ import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 import { ToastService } from '../../../core/toast.service';
 import { formatPrice } from '../../../shared/format-price';
 import { formatVerifiedRatingLine } from '../../../shared/format-verified-rating';
+import { GLOSSARY } from '../../../shared/glossary';
 
 @Component({
   selector: 'app-manage-services-page',
@@ -19,6 +20,7 @@ import { formatVerifiedRatingLine } from '../../../shared/format-verified-rating
   templateUrl: './manage-services.html',
 })
 export class ManageServicesPage implements OnInit {
+  protected readonly GLOSSARY = GLOSSARY;
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);

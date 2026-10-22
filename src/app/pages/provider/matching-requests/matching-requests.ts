@@ -258,7 +258,7 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
       case 'no-profile':
         return 'สร้างโปรไฟล์ผู้ให้บริการก่อน จึงจะเห็นงานที่ตรงกับพื้นที่และหมวดบริการ';
       case 'missing-branches':
-        return 'เพิ่มจุดให้บริการก่อนรับงานใหม่';
+        return GLOSSARY.addCoverageBeforeMatching;
       case 'missing-services':
         return 'เปิดบริการอย่างน้อย 1 รายการ';
       default:
@@ -280,7 +280,7 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   protected setupActionLabel(): string {
     switch (this.setupIssue()) {
       case 'missing-branches':
-        return 'เพิ่มจุดให้บริการ';
+        return GLOSSARY.addCoverageCta;
       case 'missing-services':
         return 'เปิดบริการ';
       default:

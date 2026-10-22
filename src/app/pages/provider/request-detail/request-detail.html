@@ -3,9 +3,7 @@
     <app-skeleton-card
       [slow]="hint.slow()"
       [timedOut]="hint.timedOut()"
-      variant="detail"
-      [count]="2"
-      [topOffset]="true"
+      preset="provider-request-detail"
       (retry)="load()"
     />
   } @else if (notFound()) {

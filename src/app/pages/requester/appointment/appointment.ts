@@ -230,6 +230,18 @@ export class AppointmentPage implements OnInit, OnDestroy {
     this.discardConfirmOpen.set(false);
   }
 
+  protected saveDialogTitle(): string {
+    return this.rescheduleMode() ? GLOSSARY.saveChangesTitle : GLOSSARY.confirmBookAppointmentTitle;
+  }
+
+  protected saveDialogConfirmLabel(): string {
+    return this.rescheduleMode() ? GLOSSARY.saveChangesConfirm : GLOSSARY.confirmBookAppointmentConfirm;
+  }
+
+  protected saveDialogCancelLabel(): string {
+    return this.rescheduleMode() ? GLOSSARY.saveChangesCancel : GLOSSARY.confirmBookAppointmentCancel;
+  }
+
   protected onScheduledAtChange(value: string): void {
     this.scheduledAt.set(value);
     this.touchForm();

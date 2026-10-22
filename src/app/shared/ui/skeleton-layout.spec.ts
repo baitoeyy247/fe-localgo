@@ -23,9 +23,31 @@ class SkeletonPresetHost {
 }
 
 function injectSkeletonLayoutStyles(): void {
-  const rules = PRESET_KEYS.map((key) => {
+  const cardRules = PRESET_KEYS.flatMap((key) => {
     const spec = SKELETON_PAGE_PRESETS[key];
-    return `.skeleton-stack--${spec.stackModifier} .skeleton-card { min-height: ${spec.firstCardHeightPx}px; }`;
+    const heights = spec.cardHeightsPx ?? [spec.firstCardHeightPx];
+    if (spec.variant === 'form') {
+      return [
+        `.skeleton-stack--${spec.stackModifier} { padding-top: ${spec.stackOffsetPx}px; }`,
+        `.skeleton-stack--${spec.stackModifier} .skeleton-form-field__input { height: ${spec.firstCardHeightPx}px; }`,
+      ];
+    }
+    const rules: string[] = [];
+    if (spec.stackOffsetPx) {
+      rules.push(`.skeleton-stack--${spec.stackModifier} { padding-top: ${spec.stackOffsetPx}px; }`);
+    }
+    heights.forEach((heightPx, index) => {
+      const childIndex =
+        index +
+        1 +
+        (spec.sectionChrome ? 1 : 0) +
+        (spec.headerChrome ? 1 : 0) +
+        (spec.filterChrome ? 1 : 0);
+      rules.push(
+        `.skeleton-stack--${spec.stackModifier} .skeleton-card:nth-child(${childIndex}) { min-height: ${heightPx}px; }`,
+      );
+    });
+    return rules;
   }).join('\n');
 
   const css = `
@@ -38,12 +60,9 @@ function injectSkeletonLayoutStyles(): void {
     .skeleton-stack--detail .skeleton-card { min-height: 180px; }
     .skeleton-header-chrome { min-height: 61px; height: 61px; box-sizing: border-box; flex-shrink: 0; }
     .skeleton-stack--bids .skeleton-header-chrome { min-height: 61px; height: 61px; }
-    ${PRESET_KEYS.map((key) => {
-      const spec = SKELETON_PAGE_PRESETS[key];
-      if (!spec.stackOffsetPx) return '';
-      return `.skeleton-stack--${spec.stackModifier} { padding-top: ${spec.stackOffsetPx}px; }`;
-    }).join('\n')}
-    ${rules}
+    .skeleton-section-chrome { min-height: 44px; height: 44px; box-sizing: border-box; flex-shrink: 0; }
+    .skeleton-filter-chrome { min-height: 206px; box-sizing: border-box; flex-shrink: 0; }
+    ${cardRules}
   `;
 
   const style = document.createElement('style');
@@ -52,7 +71,13 @@ function injectSkeletonLayoutStyles(): void {
   document.head.appendChild(style);
 }
 
-function firstSkeletonCard(root: HTMLElement): HTMLElement {
+function firstSkeletonBlock(root: HTMLElement, preset: SkeletonPagePreset): HTMLElement {
+  const spec = SKELETON_PAGE_PRESETS[preset];
+  if (spec.variant === 'form') {
+    const field = root.querySelector('.skeleton-stack .skeleton-form-field');
+    expect(field).toBeTruthy();
+    return field as HTMLElement;
+  }
   const card = root.querySelector('.skeleton-stack .skeleton-card');
   expect(card).toBeTruthy();
   return card as HTMLElement;
@@ -72,21 +97,29 @@ describe('SkeletonCard page presets (CLS proxy)', () => {
     }).compileComponents();
   });
 
-  it.each(PRESET_KEYS)('preset %s first card min-height within tolerance', (preset) => {
+  it.each(PRESET_KEYS)('preset %s first block min-height within tolerance', (preset) => {
     const spec = SKELETON_PAGE_PRESETS[preset];
     const fixture = TestBed.createComponent(SkeletonPresetHost);
     fixture.componentInstance.preset = preset;
     fixture.detectChanges();
 
-    const card = firstSkeletonCard(fixture.nativeElement as HTMLElement);
-    expect(Math.abs(readMinHeightPx(card) - spec.firstCardHeightPx)).toBeLessThanOrEqual(CLS_TOLERANCE_PX);
+    const block = firstSkeletonBlock(fixture.nativeElement as HTMLElement, preset);
+    const measured =
+      spec.variant === 'form'
+        ? parseFloat(getComputedStyle(block.querySelector('.skeleton-form-field__input')!).height) ||
+          0
+        : readMinHeightPx(block);
+    expect(Math.abs(measured - spec.firstCardHeightPx)).toBeLessThanOrEqual(CLS_TOLERANCE_PX);
   });
 
-  it.each(PRESET_KEYS)('preset %s first card offset within tolerance', (preset) => {
+  it.each(PRESET_KEYS)('preset %s first block offset within tolerance', (preset) => {
     const spec = SKELETON_PAGE_PRESETS[preset];
     const documentedOffset = skeletonFirstCardOffsetPx(preset);
     expect(documentedOffset).toBe(
-      spec.stackOffsetPx + (spec.headerChrome ? spec.headerChromeHeightPx : 0),
+      spec.stackOffsetPx +
+        (spec.sectionChrome ? spec.sectionChromeHeightPx : 0) +
+        (spec.headerChrome ? spec.headerChromeHeightPx : 0) +
+        (spec.filterChrome ? spec.filterChromeHeightPx : 0),
     );
 
     const fixture = TestBed.createComponent(SkeletonPresetHost);
@@ -95,19 +128,35 @@ describe('SkeletonCard page presets (CLS proxy)', () => {
 
     const root = fixture.nativeElement as HTMLElement;
     const stack = root.querySelector('.skeleton-stack') as HTMLElement;
-    const card = firstSkeletonCard(root);
-    if (spec.headerChrome) {
-      const header = stack.querySelector('.skeleton-header-chrome') as HTMLElement;
-      expect(header).toBeTruthy();
-      const headerHeight = parseFloat(getComputedStyle(header).height) || header.offsetHeight;
-      expect(Math.abs(headerHeight - spec.headerChromeHeightPx)).toBeLessThanOrEqual(CLS_TOLERANCE_PX);
-      const gapAfterHeader = card.offsetTop - header.offsetTop - header.offsetHeight;
-      expect(Math.abs(gapAfterHeader - SKELETON_STACK_GAP_PX)).toBeLessThanOrEqual(
+    const block = firstSkeletonBlock(root, preset);
+
+    const chromeSelector = spec.filterChrome
+      ? '.skeleton-filter-chrome'
+      : spec.headerChrome
+        ? '.skeleton-header-chrome'
+        : spec.sectionChrome
+          ? '.skeleton-section-chrome'
+          : null;
+
+    if (chromeSelector) {
+      const chrome = stack.querySelector(chromeSelector) as HTMLElement;
+      expect(chrome).toBeTruthy();
+      const gapAfterChrome = block.offsetTop - chrome.offsetTop - chrome.offsetHeight;
+      expect(Math.abs(gapAfterChrome - SKELETON_STACK_GAP_PX)).toBeLessThanOrEqual(
+        SKELETON_STACK_GAP_PX,
+      );
+    } else if (spec.stackOffsetPx > 0) {
+      const pad = parseFloat(getComputedStyle(stack).paddingTop) || 0;
+      expect(Math.abs(pad - spec.stackOffsetPx)).toBeLessThanOrEqual(CLS_TOLERANCE_PX);
+    } else if (spec.sectionChrome) {
+      const section = stack.querySelector('.skeleton-section-chrome') as HTMLElement;
+      expect(section).toBeTruthy();
+      const gapAfterSection = block.offsetTop - section.offsetTop - section.offsetHeight;
+      expect(Math.abs(gapAfterSection - SKELETON_STACK_GAP_PX)).toBeLessThanOrEqual(
         SKELETON_STACK_GAP_PX,
       );
     } else {
-      const offset =
-        card.getBoundingClientRect().top - stack.getBoundingClientRect().top;
+      const offset = block.getBoundingClientRect().top - stack.getBoundingClientRect().top;
       expect(Math.abs(offset - documentedOffset)).toBeLessThanOrEqual(CLS_TOLERANCE_PX);
     }
   });

@@ -2,7 +2,7 @@
   <app-provider-setup-bar active="coverage" />
 
   @if (loading()) {
-    <app-skeleton-card [count]="2" />
+    <app-skeleton-card preset="coverage" />
   } @else if (!provider()) {
     <div class="state">
       <div class="em">👤</div>

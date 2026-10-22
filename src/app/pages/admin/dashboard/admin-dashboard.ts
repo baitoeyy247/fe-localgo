@@ -33,6 +33,10 @@ import { ToastService } from '../../../core/toast.service';
 import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { suspendUserConfirmMessage, suspendUserAriaLabel } from '../../../shared/confirm-copy';
 import { GLOSSARY } from '../../../shared/glossary';
+import {
+  ADMIN_RESET_TOAST,
+  optimisticAdminDashboardAfterReset,
+} from './admin-reset.util';
 
 @Component({
   selector: 'app-admin-dashboard-page',
@@ -259,20 +263,14 @@ export class AdminDashboardPage implements OnInit {
       const kept = (result as { keptUsers?: number }).keptUsers ?? 10;
       const deletedReq = (result as { deletedRequests?: number }).deletedRequests ?? 0;
       const seeded = (result as { sampleReviewsSeeded?: number }).sampleReviewsSeeded ?? 0;
-      const automated = (result as { deletedAutomatedRequests?: number }).deletedAutomatedRequests ?? 0;
-      const deletedUsers = (result as { deletedAutomatedUsers?: number }).deletedAutomatedUsers ?? 0;
-      this.toast.show('รีเซ็ตข้อมูลทดสอบแล้ว');
+      this.toast.show(ADMIN_RESET_TOAST);
       this.marketplaceCache.invalidateAll();
       this.usersPage.set(1);
-      this.dashboard.set({
-        users: 0,
-        providers: 0,
-        publishedRequests: 0,
-        completedRequests: 0,
-        expiredRequests: 0,
-        pendingNotifications: 0,
-      });
-      await this.refreshAfterMutation();
+      this.dashboard.update((d) => optimisticAdminDashboardAfterReset(d));
+      this.requests.set([]);
+      this.appointments.set([]);
+      this.notifications.set([]);
+      void this.refreshAfterMutation();
       this.notice.set(
         `รีเซ็ตสำเร็จ — ลบงาน ${deletedReq} รายการ · คงบัญชีทดสอบ ${kept} บัญชี · สร้างรีวิวตัวอย่าง ${seeded} รายการ`,
       );

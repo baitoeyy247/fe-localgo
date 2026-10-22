@@ -40,8 +40,8 @@
     <p class="muted" style="margin: 0; font-size: 13px">
       <b>ซ่อมข้อมูลทดสอบ</b> — แก้รีวิว/งานค้างโดยไม่ลบบัญชี · <b>รีเซ็ตข้อมูลทดสอบ</b> — ล้างงาน/นัด/รีวิว คง 10 บัญชีทดสอบ
     </p>
-    <div class="sec-title">
-      ผู้ใช้ ({{ usersTotal() }})
+    <div class="sec-title admin-users-head__title">ผู้ใช้ ({{ usersTotal() }})</div>
+    <div class="admin-tool-row">
       <button type="button" class="btn btn-secondary btn-sm" [disabled]="acting() || resetting() || repairing()" (click)="askRepairTestData()">
         {{ repairing() ? 'กำลังซ่อม…' : 'ซ่อมข้อมูลทดสอบ' }}
       </button>
@@ -49,7 +49,38 @@
         {{ resetting() ? 'กำลังรีเซ็ต…' : 'รีเซ็ตข้อมูลทดสอบ' }}
       </button>
     </div>
-    <div class="admin-table-wrap admin-wide">
+    <div class="admin-user-cards" aria-label="รายการผู้ใช้">
+      @for (u of users(); track u.id ?? $index) {
+        <article class="admin-user-card">
+          <b>{{ u.displayName ?? u.lineUserId ?? 'ผู้ใช้' }}</b>
+          @if (isTestUser(u)) {
+            <span class="muted">บัญชีทดสอบ</span>
+          }
+          <div class="admin-user-card__meta">
+            <span>{{ adminAccountRoleLabel(u) }}</span>
+            <span>{{ adminUserStatusLabel(userStatus(u)) }}</span>
+          </div>
+          <div class="admin-user-card__actions">
+            @if (canToggleUserStatus(u)) {
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm admin-user-action-btn"
+                [disabled]="acting()"
+                [attr.aria-label]="userStatus(u) === 'Suspended' ? 'เปิดใช้งานบัญชี ' + (u.displayName ?? u.lineUserId ?? 'ผู้ใช้') : suspendButtonAriaLabel(u)"
+                (click)="requestToggleUser(u)"
+              >
+                {{ userStatus(u) === 'Suspended' ? 'เปิดใช้งาน' : GLOSSARY.adminSuspend }}
+              </button>
+            } @else if (auth.user()?.id === u.id) {
+              <span class="muted">บัญชีของคุณ</span>
+            }
+          </div>
+        </article>
+      } @empty {
+        <p class="muted">ยังไม่มีผู้ใช้</p>
+      }
+    </div>
+    <div class="admin-table-wrap admin-wide admin-users-table">
       <table class="admin-table admin-table--users">
         <thead>
           <tr>
@@ -74,7 +105,7 @@
                 @if (canToggleUserStatus(u)) {
                   <button
                     type="button"
-                    class="btn btn-ghost btn-sm"
+                    class="btn btn-ghost btn-sm admin-user-action-btn"
                     [disabled]="acting()"
                     [attr.aria-label]="userStatus(u) === 'Suspended' ? 'เปิดใช้งานบัญชี ' + (u.displayName ?? u.lineUserId ?? 'ผู้ใช้') : suspendButtonAriaLabel(u)"
                     (click)="requestToggleUser(u)"

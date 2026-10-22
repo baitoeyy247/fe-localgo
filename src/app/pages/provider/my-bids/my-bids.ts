@@ -16,6 +16,7 @@ import { formatScheduledAt } from '../../../shared/datetime.util';
 import { SlowLoadHint } from '../../../shared/load-state';
 import { ErrorState } from '../../../shared/ui/error-state';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
+import { GLOSSARY } from '../../../shared/glossary';
 
 const FILTER_CHIPS: { key: ProviderBidFilterKey; label: string }[] = [
   { key: 'all', label: 'ทั้งหมด' },
@@ -40,6 +41,7 @@ const FILTER_CHIPS: { key: ProviderBidFilterKey; label: string }[] = [
   templateUrl: './my-bids.html',
 })
 export class ProviderMyBidsPage implements OnInit, OnDestroy {
+  protected readonly GLOSSARY = GLOSSARY;
   protected readonly items = signal<ProviderBidListItem[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);

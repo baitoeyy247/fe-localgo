@@ -29,7 +29,7 @@
     </div>
 
     <div class="card">
-      <p style="margin: 0 0 8px"><b>วันและเวลานัด:</b> {{ formatScheduledAt(a.scheduledAt) }}</p>
+      <p style="margin: 0 0 8px"><b>{{ GLOSSARY.appointmentDateTimeLabel }}:</b> {{ formatScheduledAt(a.scheduledAt) }}</p>
       <p style="margin: 0 0 8px"><b>สถานที่:</b> {{ a.addressText || 'ยังไม่ระบุ' }}</p>
       @if (priceLine(); as price) {
         <p style="margin: 0"><b>ราคา:</b> {{ price }}</p>
@@ -76,10 +76,10 @@
 
   <app-confirm-sheet
     [open]="cancelOpen()"
-    title="ยกเลิกนัดหมาย?"
-    message="ต้องการยกเลิกนัดหมายนี้ใช่หรือไม่"
+    [title]="GLOSSARY.cancelAppointmentSheetTitle"
+    [message]="cancelConfirmMessage()"
     [confirmLabel]="GLOSSARY.cancelAppointment"
-    [cancelLabel]="GLOSSARY.dialogCancel"
+    [cancelLabel]="GLOSSARY.destructiveSheetDismiss"
     [danger]="true"
     [busy]="acting()"
     (confirm)="cancelAppointment()"

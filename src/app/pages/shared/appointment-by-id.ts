@@ -13,6 +13,10 @@ import { NotFoundState } from '../../shared/ui/not-found-state';
 import { SkeletonCard } from '../../shared/ui/skeleton-card';
 import { ConfirmSheet } from '../../shared/ui/confirm-sheet';
 import { GLOSSARY } from '../../shared/glossary';
+import {
+  cancelAppointmentConfirmMessage,
+  cancelAppointmentToast,
+} from '../../shared/confirm-copy';
 import { ToastService } from '../../core/toast.service';
 
 @Component({
@@ -85,6 +89,14 @@ export class AppointmentByIdPage implements OnInit {
     return this.canCancel();
   }
 
+  protected cancelConfirmMessage(): string {
+    const a = this.appointment();
+    if (!a) {
+      return '';
+    }
+    return cancelAppointmentConfirmMessage(a.scheduledAt, this.title());
+  }
+
   ngOnInit(): void {
     void this.load();
   }
@@ -129,7 +141,7 @@ export class AppointmentByIdPage implements OnInit {
     try {
       const updated = await firstValueFrom(this.api.updateAppointmentStatus(a.id, 'Cancelled'));
       this.appointment.set(updated);
-      this.toast.show('ยกเลิกนัดหมายแล้ว');
+      this.toast.show(cancelAppointmentToast(a.scheduledAt, this.title()));
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'ยกเลิกนัดหมายไม่สำเร็จ'));
     } finally {

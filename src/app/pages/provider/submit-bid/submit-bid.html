@@ -90,7 +90,10 @@
 
   <app-confirm-save-dialog
     [saveOpen]="saveConfirmOpen()"
+    [saveTitle]="saveDialogTitle()"
     [saveMessage]="saveConfirmMessage()"
+    [saveConfirmLabel]="saveDialogConfirmLabel()"
+    [saveCancelLabel]="GLOSSARY.confirmSubmitBidCancel"
     [saveBusy]="submitting()"
     [discardOpen]="discardConfirmOpen()"
     (saveConfirm)="confirmSaveDialog()"

@@ -13,7 +13,7 @@
   }
 
   @if (loading()) {
-    <app-skeleton-card variant="form" [count]="1" [topOffset]="true" />
+    <app-skeleton-card preset="post-form" />
   } @else {
   <div class="post-request-form">
   <label class="field" [class.field--error]="!!fieldErrors()['title']">
@@ -140,7 +140,10 @@
 
   <app-confirm-save-dialog
     [saveOpen]="saveConfirmOpen()"
+    [saveTitle]="GLOSSARY.confirmPostRequestTitle"
     [saveMessage]="saveConfirmMessage()"
+    [saveConfirmLabel]="GLOSSARY.confirmPostRequestConfirm"
+    [saveCancelLabel]="GLOSSARY.confirmPostRequestCancel"
     [saveBusy]="posting()"
     [discardOpen]="discardConfirmOpen()"
     (saveConfirm)="confirmSaveDialog()"

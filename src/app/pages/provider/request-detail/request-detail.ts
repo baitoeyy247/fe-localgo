@@ -196,12 +196,12 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
         ),
       ]);
       this.request.set(detail);
+      const hasMyBidHistory =
+        !!myProvider && !!detail.bids?.some((b) => b.providerId === myProvider.id);
       const needsBidAccess =
         (detail.status === 'Open' || detail.status === 'HasOffers') &&
         detail.source !== 'DirectBooking' &&
-        !detail.bids?.some(
-          (b) => b.providerId === myProvider?.id && b.status !== 'Withdrawn',
-        ) &&
+        !hasMyBidHistory &&
         detail.selectedProviderId !== myProvider?.id;
       if (needsBidAccess) {
         try {
@@ -246,10 +246,13 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       }
       this.distanceMeters.set(meters);
     } catch (e) {
+      const keepVisible = options?.background && !!this.request();
       if (isNotFoundError(e)) {
-        this.request.set(null);
-        this.notFound.set(true);
-      } else {
+        if (!keepVisible) {
+          this.request.set(null);
+          this.notFound.set(true);
+        }
+      } else if (!keepVisible) {
         this.error.set(apiErrorMessage(e, 'โหลดรายละเอียดไม่สำเร็จ'));
       }
     } finally {
@@ -683,50 +686,61 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.actingLabel.set(options.busyLabel);
     this.error.set(null);
     this.advanceConfirmOpen.set(false);
+
+    const previousAppt = appt;
+    const previousRequest = this.request();
+    const jobTitle = previousRequest?.title?.trim() || 'งาน';
+    const optimisticAppt: AppointmentDetail = { ...appt, status };
+    this.appointment.set(optimisticAppt);
+    if (previousRequest) {
+      const nextRequestStatus =
+        status === 'InProgress'
+          ? 'InProgress'
+          : status === 'Completed'
+            ? 'Completed'
+            : previousRequest.status;
+      this.request.set({
+        ...previousRequest,
+        status: nextRequestStatus,
+        appointmentStatus: status,
+      });
+    }
+    this.notice.set(options.notice ?? null);
+    if (status === 'Confirmed') {
+      this.toast.show(providerConfirmAppointmentToast(appt.scheduledAt));
+    } else if (status === 'InProgress') {
+      this.toast.show(providerStartJobToast(jobTitle));
+    } else if (status === 'Completed') {
+      this.toast.show(providerCompleteJobToast(jobTitle));
+    }
+    this.acting.set(false);
+    this.cache.invalidateAll();
+
     try {
       const updated = await firstValueFrom(this.api.updateAppointmentStatus(appt.id, status));
-      this.acting.set(false);
       this.appointment.set(updated);
-      this.cache.invalidateAll();
       const current = this.request();
       if (current) {
-        const nextStatus =
-          status === 'InProgress'
-            ? 'InProgress'
-            : status === 'Completed'
-              ? 'Completed'
-              : status === 'Confirmed'
-                ? current.status
-                : current.status;
         this.request.set({
           ...current,
-          status: nextStatus,
           appointmentStatus: updated.status,
+          status:
+            status === 'InProgress'
+              ? 'InProgress'
+              : status === 'Completed'
+                ? 'Completed'
+                : current.status,
         });
       }
-      const requestId = current?.id;
-      if (requestId) {
-        try {
-          this.request.set(await firstValueFrom(this.api.getRequest(requestId)));
-        } catch {
-          /* local patch already applied */
-        }
-      }
-      this.notice.set(options.notice ?? null);
-      const jobTitle = current?.title?.trim() || 'งาน';
-      if (status === 'Confirmed') {
-        this.toast.show(providerConfirmAppointmentToast(updated.scheduledAt));
-      } else if (status === 'InProgress') {
-        this.toast.show(providerStartJobToast(jobTitle));
-      } else if (status === 'Completed') {
-        this.toast.show(providerCompleteJobToast(jobTitle));
-      }
+      void this.load({ background: true });
     } catch (e) {
-      this.appointment.set(appt);
+      this.appointment.set(previousAppt);
+      if (previousRequest) {
+        this.request.set(previousRequest);
+      }
+      this.notice.set(null);
       this.error.set(apiErrorMessage(e, options.errorFallback));
       scrollToFirstError();
-    } finally {
-      this.acting.set(false);
     }
   }
 }

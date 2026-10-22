@@ -1,4 +1,4 @@
-<app-page-shell title="ผู้รับบริการ" subtitle="ต้องการบริการอะไรวันนี้?" [showBack]="true" backLink="/" backLabel="กลับ" [hero]="true">
+<app-page-shell title="ผู้รับบริการ" subtitle="ต้องการบริการอะไรวันนี้?" [showBack]="false" [hero]="true">
   <a class="search" routerLink="/requester/search" style="background: #fff; box-shadow: var(--shadow-1)">
     🔍 เช่น ซักรีด, ทำความสะอาด, ช่างไฟ
   </a>
@@ -33,7 +33,7 @@
           }
           ข้อเสนอ {{ request.bidCount }}
         </p>
-        <div class="row">
+        <div class="row requester-job-actions">
           @if (isTerminalCard(request)) {
             <button type="button" class="btn btn-ghost btn-sm grow" (click)="openDetail(request)">
               ดูรายละเอียด
@@ -43,10 +43,10 @@
               {{ continueLabel(request) }}
             </button>
             @if (!isReviewed(request) && request.status !== 'Completed') {
-              <button type="button" class="btn btn-ghost btn-sm" (click)="openDetail(request)">ดูรายละเอียด</button>
+              <button type="button" class="btn btn-ghost btn-sm grow" (click)="openDetail(request)">ดูรายละเอียด</button>
             }
             @if (canCancel(request.status)) {
-              <button type="button" class="btn btn-danger-o btn-sm" (click)="askCancel(request, $event)">ยกเลิก</button>
+              <button type="button" class="btn btn-danger-o btn-sm grow" (click)="askCancel(request, $event)">ยกเลิกงาน</button>
             }
           }
         </div>
@@ -72,7 +72,7 @@
     [open]="!!cancelTarget()"
     title="ยกเลิกงานนี้?"
     [message]="cancelTarget() ? 'ยกเลิกงาน &quot;' + cancelTarget()!.title + '&quot; ใช่หรือไม่' : ''"
-    confirmLabel="ยืนยันยกเลิก"
+    confirmLabel="ยกเลิกงาน"
     cancelLabel="กลับ"
     [danger]="true"
     [busy]="busy()"

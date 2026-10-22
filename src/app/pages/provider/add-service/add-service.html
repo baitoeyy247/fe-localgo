@@ -42,8 +42,8 @@
     </label>
 
     <div class="sec-title">
-      จุดที่ใช้กับบริการนี้
-      <a class="btn btn-ghost btn-sm" routerLink="/provider/coverage">จัดการจุด</a>
+      {{ GLOSSARY.serviceCoverageBranchesTitle }}
+      <a class="btn btn-ghost btn-sm" routerLink="/provider/coverage">{{ GLOSSARY.manageCoverageAreas }}</a>
     </div>
     @for (branch of provider()!.branches; track branch.id) {
       <label class="location-option branch-check" [class.location-option--selected]="isBranchSelected(branch.id)">
@@ -54,7 +54,7 @@
         </span>
       </label>
     } @empty {
-      <p class="muted">เพิ่มจุดให้บริการในขั้นตอนพื้นที่ก่อน</p>
+      <p class="muted">{{ GLOSSARY.addCoverageBeforeService }}</p>
     }
 
     @if (error()) {

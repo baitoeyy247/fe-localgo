@@ -8,7 +8,7 @@ import {
 const FIXTURE_CSS = `
 .budget-seg--tap .budget-seg__option {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   min-height: ${FORM_LABEL_ROW_MIN_HEIGHT_PX}px;
   gap: 12px;
 }
@@ -18,7 +18,7 @@ const FIXTURE_CSS = `
   min-width: ${FORM_CONTROL_HIT_PX}px;
   min-height: ${FORM_CONTROL_HIT_PX}px;
   opacity: 1;
-  margin: 10px 0 0;
+  margin: 0;
   flex-shrink: 0;
 }
 label.branch-check {
@@ -37,7 +37,9 @@ label.branch-check input[type='checkbox'] {
 }
 label.location-option.branch-check {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
   min-height: ${FORM_LABEL_ROW_MIN_HEIGHT_PX}px;
 }
 `;
@@ -94,7 +96,7 @@ describe('form control metrics (DOM computed styles)', () => {
     expect(px(boxStyles.height)).toBe(FORM_CONTROL_HIT_PX);
   });
 
-  it('aligns control to first line on multi-line branch-check labels', () => {
+  it('centers branch-check control with 16px card inset', () => {
     mountFixture(`
       <label class="location-option branch-check">
         <input type="checkbox" />
@@ -106,9 +108,12 @@ describe('form control metrics (DOM computed styles)', () => {
     `);
     const label = document.querySelector('label.location-option.branch-check') as HTMLLabelElement;
     const box = document.querySelector('input[type="checkbox"]') as HTMLInputElement;
-    const labelRect = label.getBoundingClientRect();
-    const boxRect = box.getBoundingClientRect();
-    expect(getComputedStyle(label).alignItems).toBe('flex-start');
-    expect(boxRect.top - labelRect.top).toBeLessThan(12);
+    const labelStyles = getComputedStyle(label);
+    const boxStyles = getComputedStyle(box);
+    expect(labelStyles.alignItems).toBe('center');
+    expect(px(labelStyles.padding)).toBe(16);
+    expect(px(labelStyles.gap)).toBe(12);
+    expect(px(boxStyles.width)).toBe(FORM_CONTROL_HIT_PX);
+    expect(px(boxStyles.marginLeft)).toBe(0);
   });
 });

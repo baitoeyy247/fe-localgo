@@ -63,7 +63,10 @@
 
   <app-confirm-save-dialog
     [saveOpen]="saveConfirmOpen()"
+    [saveTitle]="GLOSSARY.confirmReviewTitle"
     [saveMessage]="saveConfirmMessage()"
+    [saveConfirmLabel]="GLOSSARY.confirmReviewConfirm"
+    [saveCancelLabel]="GLOSSARY.confirmReviewCancel"
     [saveBusy]="submitting()"
     [discardOpen]="discardConfirmOpen()"
     (saveConfirm)="confirmSaveDialog()"

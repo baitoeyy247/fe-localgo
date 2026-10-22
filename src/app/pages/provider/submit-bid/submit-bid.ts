@@ -269,6 +269,14 @@ export class SubmitBidPage implements OnInit, OnDestroy {
     this.discardConfirmOpen.set(false);
   }
 
+  protected saveDialogTitle(): string {
+    return this.existingBidId() ? GLOSSARY.confirmUpdateBidTitle : GLOSSARY.confirmSubmitBidTitle;
+  }
+
+  protected saveDialogConfirmLabel(): string {
+    return this.existingBidId() ? GLOSSARY.confirmUpdateBidConfirm : GLOSSARY.confirmSubmitBidConfirm;
+  }
+
   protected async submit(): Promise<void> {
     const requestId = this.session.providerRequestId;
     const providerId = this.providerId();
@@ -292,9 +300,9 @@ export class SubmitBidPage implements OnInit, OnDestroy {
     const optimistic = this.buildOptimisticDetail(requestId, providerId, payload, bidId);
     this.flowCache.putRequest(optimistic);
     this.formGuard.markSaved(this.formSnapshot());
-    this.toast.show(bidSubmittedToast(price, isUpdate));
+    const submittedNotice = bidSubmittedToast(price, isUpdate);
     await this.router.navigate(['/provider/requests', requestId], {
-      state: { notice: GLOSSARY.bidSubmitted, requestDetail: optimistic },
+      state: { notice: submittedNotice, requestDetail: optimistic },
     });
     try {
       if (bidId) {
@@ -308,10 +316,10 @@ export class SubmitBidPage implements OnInit, OnDestroy {
     } catch (e) {
       const recovered = await this.recoverAfterSubmitError(requestId, providerId, e);
       if (recovered) {
-        const isUpdate = !!this.existingBidId();
-        this.toast.show(bidSubmittedToast(price, isUpdate));
         await this.router.navigate(['/provider/requests', requestId], {
-          state: { notice: 'ระบบบันทึกข้อเสนอแล้ว แม้ตอบกลับผิดพลาด กรุณาตรวจสอบสถานะล่าสุด' },
+          state: {
+            notice: 'ระบบบันทึกข้อเสนอแล้ว แม้ตอบกลับผิดพลาด กรุณาตรวจสอบสถานะล่าสุด',
+          },
         });
       } else {
         this.error.set(apiErrorMessage(e, 'ส่งข้อเสนอไม่สำเร็จ'));

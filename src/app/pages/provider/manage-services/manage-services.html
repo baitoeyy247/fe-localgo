@@ -10,7 +10,7 @@
         <span class="badge b-green">{{ p.status === 'Active' ? 'พร้อมรับงาน' : p.status === 'Draft' ? 'ฉบับร่าง' : p.status === 'Suspended' ? 'ระงับ' : 'พร้อมรับงาน' }}</span>
       </div>
       <p class="muted" style="margin: 4px 0 0">
-        {{ p.services.length }} บริการ · {{ p.branches.length }} จุดให้บริการ ·
+        {{ p.services.length }} บริการ · {{ p.branches.length }} {{ GLOSSARY.serviceBranch }} ·
         @if (p.verifiedReviewCount > 0) {
           <span class="stars">{{ formatVerifiedRatingLine(p.averageVerifiedRating, p.verifiedReviewCount) }}</span>
         } @else {

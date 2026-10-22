@@ -10,6 +10,7 @@ import { SessionStateService } from '../../../core/session-state.service';
 import { providerTypeLabel } from '../../../shared/status-labels';
 import { formatPrice } from '../../../shared/format-price';
 import { formatVerifiedRatingLine } from '../../../shared/format-verified-rating';
+import { GLOSSARY } from '../../../shared/glossary';
 
 @Component({
   selector: 'app-provider-profile-page',
@@ -17,6 +18,7 @@ import { formatVerifiedRatingLine } from '../../../shared/format-verified-rating
   templateUrl: './provider-profile.html',
 })
 export class ProviderProfilePage implements OnInit {
+  protected readonly GLOSSARY = GLOSSARY;
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly reviews = signal<ReviewItem[]>([]);
   protected readonly loading = signal(true);
@@ -195,7 +197,7 @@ export class ProviderProfilePage implements OnInit {
   protected branchLabels(): string {
     const p = this.provider();
     if (!p?.branches.length) {
-      return 'ยังไม่ระบุจุดให้บริการ';
+      return GLOSSARY.noCoverageSpecified;
     }
     return p.branches.map((b) => b.name).join(', ');
   }

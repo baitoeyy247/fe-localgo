@@ -19,6 +19,7 @@ import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { ProviderBranch, ProviderDetail } from '../../../core/models';
 import { UserLocationService } from '../../../core/user-location.service';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
+import { GLOSSARY } from '../../../shared/glossary';
 
 @Component({
   selector: 'app-coverage-page',
@@ -35,6 +36,7 @@ import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
   templateUrl: './coverage.html',
 })
 export class CoveragePage implements OnInit {
+  protected readonly GLOSSARY = GLOSSARY;
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly branches = signal<ProviderBranch[]>([]);
   protected readonly saving = signal(false);
@@ -55,7 +57,7 @@ export class CoveragePage implements OnInit {
   protected readonly editingRadiusKm = signal(5);
   protected readonly editingLat = signal(0);
   protected readonly editingLng = signal(0);
-  protected readonly pickerTitle = signal('พื้นที่ให้บริการ');
+  protected readonly pickerTitle = signal<string>(GLOSSARY.coverageAreaTitle);
   protected readonly selectedBranchId = signal<string | null>(null);
   protected readonly saveConfirmOpen = signal(false);
   protected readonly saveConfirmMessage = signal('');
@@ -204,7 +206,7 @@ export class CoveragePage implements OnInit {
     const p = this.provider();
     const name = this.editingName().trim();
     if (!p || !name || this.saving()) {
-      this.error.set('กรุณาระบุชื่อจุดให้บริการ');
+      this.error.set(GLOSSARY.branchNameRequired);
       scrollToFirstError();
       return;
     }

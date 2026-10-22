@@ -22,10 +22,28 @@ import {
         <p class="muted" style="text-align: center" role="status">กำลังเชื่อมต่อเซิร์ฟเวอร์…</p>
       }
       <div class="skeleton-stack" [ngClass]="stackClasses()">
+        @if (showSectionChrome()) {
+          <div class="skeleton-section-chrome" aria-hidden="true">
+            <div class="skel skeleton-section-chrome__title"></div>
+            <div class="skel skeleton-section-chrome__action"></div>
+          </div>
+        }
         @if (showHeaderChrome()) {
           <div class="skeleton-header-chrome" aria-hidden="true">
             <div class="skel skeleton-header-chrome__title"></div>
             <div class="skel skeleton-header-chrome__line"></div>
+          </div>
+        }
+        @if (showFilterChrome()) {
+          <div class="skeleton-filter-chrome" aria-hidden="true">
+            <div class="skel skeleton-filter-chrome__banner"></div>
+            <p class="skel skeleton-filter-chrome__hint"></p>
+            <div class="skeleton-filter-chrome__chips">
+              @for (i of filterChips(); track i) {
+                <div class="skel skeleton-filter-chrome__chip"></div>
+              }
+            </div>
+            <div class="skel skeleton-filter-chrome__sec-title"></div>
           </div>
         }
         @if (effectiveVariant() === 'form') {
@@ -38,12 +56,19 @@ import {
           <div class="skel skeleton-form-field__button" aria-hidden="true"></div>
         } @else {
           @for (i of items(); track i) {
-            <div class="card skeleton-card" aria-hidden="true">
+            <div
+              class="card skeleton-card"
+              [class.skeleton-card--map]="mapCardIndex() === i"
+              aria-hidden="true"
+            >
               <div class="skel" [style.height.px]="effectiveVariant() === 'detail' ? 24 : 20" style="width: 60%"></div>
               <div class="skel" style="height: 14px; margin-top: 12px"></div>
               <div class="skel" style="height: 14px; width: 80%; margin-top: 8px"></div>
               @if (effectiveVariant() === 'detail') {
-                <div class="skel" style="height: 120px; width: 100%; margin-top: 12px; border-radius: 12px"></div>
+                <div class="skel skeleton-card__detail-block" style="height: 120px; width: 100%; margin-top: 12px; border-radius: 12px"></div>
+              }
+              @if (mapCardIndex() === i) {
+                <div class="skel skeleton-card__map" aria-hidden="true"></div>
               }
             </div>
           }
@@ -80,6 +105,21 @@ export class SkeletonCard {
     return p ? SKELETON_PAGE_PRESETS[p].headerChrome : false;
   });
 
+  protected readonly showFilterChrome = computed(() => {
+    const p = this.preset();
+    return p ? SKELETON_PAGE_PRESETS[p].filterChrome : false;
+  });
+
+  protected readonly showSectionChrome = computed(() => {
+    const p = this.preset();
+    return p ? SKELETON_PAGE_PRESETS[p].sectionChrome : false;
+  });
+
+  protected readonly mapCardIndex = computed(() => {
+    const p = this.preset();
+    return p === 'coverage' ? 0 : -1;
+  });
+
   protected stackClasses(): Record<string, boolean> {
     const p = this.preset();
     const variant = this.effectiveVariant();
@@ -101,5 +141,9 @@ export class SkeletonCard {
 
   protected formFields(): number[] {
     return [0, 1, 2, 3, 4];
+  }
+
+  protected filterChips(): number[] {
+    return [0, 1, 2, 3];
   }
 }
