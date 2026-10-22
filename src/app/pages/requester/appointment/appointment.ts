@@ -284,7 +284,6 @@ export class AppointmentPage implements OnInit, OnDestroy {
     const whenPreview = this.scheduledAt().trim()
       ? formatScheduledAt(new Date(this.scheduledAt()).toISOString())
       : GLOSSARY.appointment;
-    this.toast.show(`บันทึกนัดหมาย ${whenPreview} แล้ว`);
     this.saving.set(true);
     this.error.set(null);
     this.success.set(null);
@@ -332,6 +331,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
       );
       this.cache.invalidateAll();
       this.formGuard.markSaved(this.formSnapshot());
+      this.toast.show(`บันทึกนัดหมาย ${whenPreview} แล้ว`);
       await this.router.navigate(['/requester/appointments', created.id]);
     } catch (e) {
       this.success.set(null);

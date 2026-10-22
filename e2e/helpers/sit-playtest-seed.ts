@@ -6,7 +6,7 @@ const API_BASE =
 const CLEANING_CATEGORY_ID = 'eef6548b-0ded-41a1-9d37-e925fdfd89e3';
 const SEED_LAT = 16.1880948;
 const SEED_LNG = 103.2987346;
-const SEED_TITLE = 'QA R31 skeleton seed';
+const SEED_TITLE = 'QA R32 skeleton seed';
 
 export type SitPlaytestIds = {
   requestId?: string;
@@ -43,6 +43,7 @@ export async function ensureSitPlaytestMarketplace(
 
   let requestId =
     mine.find((r) => r.title === SEED_TITLE)?.id ??
+    mine.find((r) => r.title.includes('QA R32'))?.id ??
     mine.find((r) => r.title.includes('QA R31'))?.id ??
     mine.find((r) => r.title.includes('QA R30'))?.id ??
     mine[0]?.id;

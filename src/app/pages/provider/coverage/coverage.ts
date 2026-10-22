@@ -18,6 +18,7 @@ import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { ProviderBranch, ProviderDetail } from '../../../core/models';
+import { apiErrorMessage } from '../../../core/api-error.util';
 import { UserLocationService } from '../../../core/user-location.service';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { GLOSSARY } from '../../../shared/glossary';
@@ -225,23 +226,31 @@ export class CoveragePage implements OnInit {
     };
     try {
       const branchId = this.editingBranchId();
+      let saved: ProviderBranch;
       if (branchId) {
-        await firstValueFrom(this.api.updateBranch(p.id, branchId, body));
+        saved = await firstValueFrom(this.api.updateBranch(p.id, branchId, body));
+        this.marketplaceCache.applyBranchUpdate(saved);
         this.toastService.show(GLOSSARY.coverageSavedToast(name, this.editingRadiusKm()));
       } else {
-        await firstValueFrom(this.api.addBranch(p.id, body));
+        saved = await firstValueFrom(this.api.addBranch(p.id, body));
+        this.marketplaceCache.applyBranchUpdate(saved);
         this.toastService.show(GLOSSARY.coverageAddedToast(name, this.editingRadiusKm()));
       }
+      this.branches.update((list) => {
+        const idx = list.findIndex((b) => b.id === saved.id);
+        if (idx >= 0) {
+          return list.map((b) => (b.id === saved.id ? saved : b));
+        }
+        return [...list, saved];
+      });
       this.formGuard.markSaved(this.branchFormState());
       this.formSnapshot = JSON.stringify(this.branchFormState());
-      await this.reload();
-      const list = this.branches();
-      const saved = branchId ? list.find((b) => b.id === branchId) : list[list.length - 1];
-      if (saved) {
-        this.loadBranchDraft(saved, false);
-      }
+      this.loadBranchDraft(saved, false);
+      this.formOpen.set(false);
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'บันทึกไม่สำเร็จ');
+      const msg = apiErrorMessage(e, 'บันทึกไม่สำเร็จ');
+      this.error.set(msg);
+      this.toastService.show(msg);
       scrollToFirstError();
     } finally {
       this.saving.set(false);
@@ -264,7 +273,7 @@ export class CoveragePage implements OnInit {
     this.disabling.set(true);
     this.error.set(null);
     try {
-      await firstValueFrom(
+      const updated = await firstValueFrom(
         this.api.updateBranch(p.id, branch.id, {
           name: branch.name,
           latitude: branch.latitude,
@@ -273,8 +282,9 @@ export class CoveragePage implements OnInit {
           isActive: true,
         }),
       );
+      this.marketplaceCache.applyBranchUpdate(updated);
+      this.branches.update((list) => list.map((b) => (b.id === updated.id ? updated : b)));
       this.showToast('บันทึกแล้ว');
-      await this.reload();
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'เปิดใช้งานไม่สำเร็จ');
     } finally {
@@ -290,7 +300,7 @@ export class CoveragePage implements OnInit {
     }
     this.disabling.set(true);
     try {
-      await firstValueFrom(
+      const updated = await firstValueFrom(
         this.api.updateBranch(p.id, branch.id, {
           name: branch.name,
           latitude: branch.latitude,
@@ -299,9 +309,10 @@ export class CoveragePage implements OnInit {
           isActive: false,
         }),
       );
+      this.marketplaceCache.applyBranchUpdate(updated);
+      this.branches.update((list) => list.map((b) => (b.id === updated.id ? updated : b)));
       this.showToast('บันทึกแล้ว');
       this.disableTarget.set(null);
-      await this.reload();
     } finally {
       this.disabling.set(false);
     }
@@ -317,13 +328,18 @@ export class CoveragePage implements OnInit {
     this.error.set(null);
     try {
       await firstValueFrom(this.api.deleteBranch(p.id, branch.id));
+      this.marketplaceCache.removeBranchFromCache(branch.id);
+      this.branches.update((list) => list.filter((b) => b.id !== branch.id));
       this.showToast(GLOSSARY.coverageRemovedToast);
       this.deleteTarget.set(null);
       if (this.editingBranchId() === branch.id) {
         this.editingBranchId.set(null);
         this.formOpen.set(false);
       }
-      await this.reload();
+      if (this.selectedBranchId() === branch.id) {
+        const next = this.branches()[0];
+        this.selectedBranchId.set(next?.id ?? null);
+      }
     } catch (e) {
       this.error.set(e instanceof Error ? e.message : 'ลบพื้นที่ให้บริการไม่สำเร็จ');
     } finally {

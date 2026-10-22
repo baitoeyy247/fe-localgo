@@ -309,6 +309,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     const title = this.request()?.title?.trim() || 'งาน';
     const price = bid.priceText?.trim() || '—';
     const current = this.request();
+    const previousRequest = current;
     if (current) {
       const next: ServiceRequestDetail = {
         ...current,
@@ -327,7 +328,13 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       this.toast.show(withdrawBidToast(title, price));
       void this.load({ background: true });
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'ถอนข้อเสนอไม่สำเร็จ'));
+      if (previousRequest) {
+        this.request.set(previousRequest);
+        this.flowCache.putRequest(previousRequest);
+      }
+      const msg = apiErrorMessage(e, 'ถอนข้อเสนอไม่สำเร็จ');
+      this.error.set(msg);
+      this.toast.show(msg);
       scrollToFirstError();
       void this.load({ background: true });
     } finally {
@@ -553,6 +560,8 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.actingLabel.set(GLOSSARY.rejectingAppointment);
     this.error.set(null);
     this.rejectOpen.set(false);
+    const previousAppt = appt;
+    const previousRequest = this.request();
     try {
       const updated = await firstValueFrom(
         this.api.updateAppointmentStatus(appt.id, 'Rejected', reason || undefined),
@@ -573,8 +582,13 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
         }
       }
     } catch (e) {
-      this.appointment.set(appt);
-      this.error.set(apiErrorMessage(e, 'ปฏิเสธนัดหมายไม่สำเร็จ'));
+      this.appointment.set(previousAppt);
+      if (previousRequest) {
+        this.request.set(previousRequest);
+      }
+      const msg = apiErrorMessage(e, 'ปฏิเสธนัดหมายไม่สำเร็จ');
+      this.error.set(msg);
+      this.toast.show(msg);
       scrollToFirstError();
     } finally {
       this.acting.set(false);
@@ -704,17 +718,6 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
         appointmentStatus: status,
       });
     }
-    this.notice.set(options.notice ?? null);
-    if (status === 'Confirmed') {
-      this.toast.show(providerConfirmAppointmentToast(appt.scheduledAt));
-    } else if (status === 'InProgress') {
-      this.toast.show(providerStartJobToast(jobTitle));
-    } else if (status === 'Completed') {
-      this.toast.show(providerCompleteJobToast(jobTitle));
-    }
-    this.acting.set(false);
-    this.cache.invalidateAll();
-
     try {
       const updated = await firstValueFrom(this.api.updateAppointmentStatus(appt.id, status));
       this.appointment.set(updated);
@@ -731,6 +734,15 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
                 : current.status,
         });
       }
+      this.notice.set(options.notice ?? null);
+      if (status === 'Confirmed') {
+        this.toast.show(providerConfirmAppointmentToast(appt.scheduledAt));
+      } else if (status === 'InProgress') {
+        this.toast.show(providerStartJobToast(jobTitle));
+      } else if (status === 'Completed') {
+        this.toast.show(providerCompleteJobToast(jobTitle));
+      }
+      this.cache.invalidateAll();
       void this.load({ background: true });
     } catch (e) {
       this.appointment.set(previousAppt);
@@ -738,8 +750,12 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
         this.request.set(previousRequest);
       }
       this.notice.set(null);
-      this.error.set(apiErrorMessage(e, options.errorFallback));
+      const msg = apiErrorMessage(e, options.errorFallback);
+      this.error.set(msg);
+      this.toast.show(msg);
       scrollToFirstError();
+    } finally {
+      this.acting.set(false);
     }
   }
 }

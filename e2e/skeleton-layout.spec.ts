@@ -100,7 +100,7 @@ function assertBoxDelta(
   ).toBeLessThanOrEqual(SKELETON_CLS_TOLERANCE_PX + extraHeightTolerance);
 }
 
-test.describe('QA31 M-1 skeleton layout shift', () => {
+test.describe('QA32 M-1 skeleton layout shift', () => {
   test.afterAll(async ({ request }) => {
     await cleanupSitPlaytestMarketplace(request);
   });

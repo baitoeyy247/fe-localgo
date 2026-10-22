@@ -84,9 +84,14 @@ import { SKELETON_PAGE_PRESETS, type SkeletonPagePreset } from './skeleton-layou
               [style.min-height.px]="cardHeightPx(i)"
               aria-hidden="true"
             >
-              <div class="skel" [style.height.px]="effectiveVariant() === 'detail' ? 24 : 20" style="width: 60%"></div>
-              <div class="skel" style="height: 14px; margin-top: 12px"></div>
-              <div class="skel" style="height: 14px; width: 80%; margin-top: 8px"></div>
+              @if (effectiveVariant() === 'detail' && i === 0) {
+                <div class="skel" style="height: 18px; width: 62%"></div>
+                <div class="skel" style="height: 14px; width: 42%; margin-top: 8px"></div>
+              } @else {
+                <div class="skel" [style.height.px]="effectiveVariant() === 'detail' ? 24 : 20" style="width: 60%"></div>
+                <div class="skel" style="height: 14px; margin-top: 12px"></div>
+                <div class="skel" style="height: 14px; width: 80%; margin-top: 8px"></div>
+              }
               @if (effectiveVariant() === 'detail' && i > 0) {
                 <div class="skel skeleton-card__detail-block" style="height: 120px; width: 100%; margin-top: 12px; border-radius: 12px"></div>
               }

@@ -169,6 +169,7 @@
     [cancelLabel]="GLOSSARY.dialogCancel"
     [danger]="false"
     [busy]="acting()"
+    [busyLabel]="actingLabel()"
     (confirm)="runAdvanceConfirm()"
     (cancel)="cancelAdvanceConfirm()"
   />
@@ -180,6 +181,7 @@
     [cancelLabel]="GLOSSARY.dialogCancel"
     [danger]="true"
     [busy]="acting()"
+    [busyLabel]="actingLabel()"
     [reasonEnabled]="true"
     reasonLabel="เหตุผล (ไม่บังคับ)"
     (confirmWithReason)="rejectAppointment($event)"

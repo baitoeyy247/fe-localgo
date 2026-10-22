@@ -1,7 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { Observable, of, tap, shareReplay, catchError } from 'rxjs';
 import { LocalGoApiService } from './localgo-api.service';
-import { ProviderDetail, ServiceRequestSummary } from './models';
+import { ProviderBranch, ProviderDetail, ServiceRequestSummary } from './models';
+import { mergeBranchIntoProvider, removeBranchFromProvider } from './marketplace-provider-branches.util';
 
 type CacheEntry<T> = { at: number; data: T; stream$: Observable<T> };
 
@@ -64,6 +65,29 @@ export class MarketplaceCacheService {
 
   invalidateMyProvider(): void {
     this.myProvider = null;
+  }
+
+  /** Keep provider cache in sync after branch PATCH/POST (M-4 — avoid stale GET /me). */
+  applyBranchUpdate(branch: ProviderBranch): void {
+    if (!this.myProvider) {
+      return;
+    }
+    this.myProvider = {
+      at: Date.now(),
+      data: mergeBranchIntoProvider(this.myProvider.data, branch),
+      stream$: this.myProvider.stream$,
+    };
+  }
+
+  removeBranchFromCache(branchId: string): void {
+    if (!this.myProvider) {
+      return;
+    }
+    this.myProvider = {
+      at: Date.now(),
+      data: removeBranchFromProvider(this.myProvider.data, branchId),
+      stream$: this.myProvider.stream$,
+    };
   }
 
   invalidateAll(): void {

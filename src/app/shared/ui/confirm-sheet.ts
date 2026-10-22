@@ -32,7 +32,7 @@ import { Component, input, output, signal } from '@angular/core';
             [disabled]="busy()"
             (click)="onConfirm()"
           >
-            {{ busy() ? 'กำลังดำเนินการ…' : confirmLabel() }}
+            {{ busy() ? busyLabel() : confirmLabel() }}
           </button>
           <button type="button" class="btn btn-ghost btn-block" [disabled]="busy()" (click)="cancel.emit()">
             {{ cancelLabel() }}
@@ -50,6 +50,7 @@ export class ConfirmSheet {
   readonly cancelLabel = input('ยกเลิก');
   readonly danger = input(false);
   readonly busy = input(false);
+  readonly busyLabel = input('กำลังดำเนินการ…');
   /** Optional free-text reason (e.g. reject appointment). */
   readonly reasonEnabled = input(false);
   readonly reasonLabel = input('เหตุผล (ไม่บังคับ)');

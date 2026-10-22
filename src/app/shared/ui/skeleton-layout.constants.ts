@@ -1,4 +1,4 @@
-/** QA31 M-1 — skeleton layout targets (CLS @ 320–430×800, API delay ~2.5s). */
+/** QA32 M-1 — skeleton layout targets (CLS @ 320–430×800, API delay ~2.5s). */
 
 export const SKELETON_STACK_GAP_PX = 12;
 export const SKELETON_FORM_FIELD_HEIGHT_PX = 52;
@@ -45,7 +45,7 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     count: 2,
     variant: 'list',
     stackModifier: 'requester-home',
-    firstCardHeightPx: 120,
+    firstCardHeightPx: 192,
     stackOffsetPx: 0,
     contentFirstCardTopPx: 0,
     flowChrome: false,
@@ -63,10 +63,10 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     count: 2,
     variant: 'list',
     stackModifier: 'bids',
-    firstCardHeightPx: 178,
-    cardHeightsPx: [178, 178],
+    firstCardHeightPx: 82,
+    cardHeightsPx: [82, 178],
     stackOffsetPx: 0,
-    contentFirstCardTopPx: 230,
+    contentFirstCardTopPx: 190,
     flowChrome: false,
     flowChromeHeightPx: 0,
     requestSummaryChrome: true,
@@ -86,7 +86,7 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     firstCardHeightPx: 166,
     cardHeightsPx: [166, 166],
     stackOffsetPx: 0,
-    contentFirstCardTopPx: 222,
+    contentFirstCardTopPx: 273,
     flowChrome: false,
     flowChromeHeightPx: 0,
     requestSummaryChrome: false,
@@ -95,9 +95,9 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     headerChromeHeightPx: 0,
     filterChrome: true,
     filterChromeMode: 'inbox',
-    filterChromeHeightPx: 154,
-    sectionChrome: true,
-    sectionChromeHeightPx: 44,
+    filterChromeHeightPx: 117,
+    sectionChrome: false,
+    sectionChromeHeightPx: 0,
   },
   'provider-my-bids': {
     count: 2,
@@ -106,7 +106,7 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     firstCardHeightPx: 194,
     cardHeightsPx: [194, 194],
     stackOffsetPx: 0,
-    contentFirstCardTopPx: 74,
+    contentFirstCardTopPx: 130,
     flowChrome: false,
     flowChromeHeightPx: 0,
     requestSummaryChrome: false,
@@ -115,7 +115,7 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     headerChromeHeightPx: 0,
     filterChrome: true,
     filterChromeMode: 'chips',
-    filterChromeHeightPx: 62,
+    filterChromeHeightPx: 118,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
   },
@@ -256,11 +256,21 @@ export type SkeletonE2ERouteCase = {
 
 export const SKELETON_E2E_ROUTE_CASES: SkeletonE2ERouteCase[] = [
   {
+    name: 'requester-home',
+    path: '/requester',
+    personaKey: 'req-01',
+    preset: 'requester-home',
+    loadedSelector: '.page-content .sec-title ~ div.card',
+    skeletonSelector: '.page-content .skeleton-stack--requester-home .skeleton-card',
+    assertSecondCard: true,
+  },
+  {
     name: 'requester-bids',
     path: '/requester/bids',
     personaKey: 'req-01',
     preset: 'bids',
     loadedSelector: '.page-content article.card',
+    skeletonSelector: '.page-content .skeleton-stack--bids .skeleton-card',
     assertSecondCard: true,
   },
   {
@@ -276,7 +286,8 @@ export const SKELETON_E2E_ROUTE_CASES: SkeletonE2ERouteCase[] = [
     path: '/provider/requests',
     personaKey: 'prov-01',
     preset: 'provider-requests',
-    loadedSelector: '.page-content article.card',
+    loadedSelector: '.page-content .chips--scroll ~ article.card',
+    skeletonSelector: '.page-content .skeleton-stack--provider-requests .skeleton-card',
     assertSecondCard: true,
   },
   {
@@ -284,7 +295,8 @@ export const SKELETON_E2E_ROUTE_CASES: SkeletonE2ERouteCase[] = [
     path: '/provider/my-bids',
     personaKey: 'prov-01',
     preset: 'provider-my-bids',
-    loadedSelector: '.page-content article.card',
+    loadedSelector: '.page-content .chips[aria-label="กรองตามสถานะ"] ~ article.card',
+    skeletonSelector: '.page-content .skeleton-stack--provider-my-bids .skeleton-card',
     assertSecondCard: true,
   },
   {
@@ -313,6 +325,7 @@ export const SKELETON_E2E_ROUTE_CASES: SkeletonE2ERouteCase[] = [
 ];
 
 const SKELETON_E2E_ALIGN_ROUTE_NAMES = [
+  'requester-home',
   'requester-bids',
   'appointment-detail',
   'provider-requests',

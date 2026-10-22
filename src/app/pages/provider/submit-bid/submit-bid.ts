@@ -299,13 +299,6 @@ export class SubmitBidPage implements OnInit, OnDestroy {
     };
     const bidId = this.existingBidId();
     const isUpdate = !!bidId;
-    const optimistic = this.buildOptimisticDetail(requestId, providerId, payload, bidId);
-    this.flowCache.putRequest(optimistic);
-    this.formGuard.markSaved(this.formSnapshot());
-    const submittedNotice = bidSubmittedToast(price, isUpdate);
-    await this.router.navigate(['/provider/requests', requestId], {
-      state: { notice: submittedNotice, requestDetail: optimistic },
-    });
     try {
       if (bidId) {
         await firstValueFrom(this.api.updateBid(bidId, payload));
@@ -315,6 +308,11 @@ export class SubmitBidPage implements OnInit, OnDestroy {
       this.cache.invalidateMatching();
       const detail = await firstValueFrom(this.api.getRequest(requestId));
       this.flowCache.putRequest(detail);
+      this.formGuard.markSaved(this.formSnapshot());
+      const submittedNotice = bidSubmittedToast(price, isUpdate);
+      await this.router.navigate(['/provider/requests', requestId], {
+        state: { notice: submittedNotice, requestDetail: detail },
+      });
     } catch (e) {
       const recovered = await this.recoverAfterSubmitError(requestId, providerId, e);
       if (recovered) {
@@ -324,7 +322,9 @@ export class SubmitBidPage implements OnInit, OnDestroy {
           },
         });
       } else {
-        this.error.set(apiErrorMessage(e, 'ส่งข้อเสนอไม่สำเร็จ'));
+        const msg = apiErrorMessage(e, 'ส่งข้อเสนอไม่สำเร็จ');
+        this.error.set(msg);
+        this.toast.show(msg);
         scrollToFirstError();
       }
     } finally {
@@ -360,7 +360,9 @@ export class SubmitBidPage implements OnInit, OnDestroy {
         await this.router.navigateByUrl('/provider/requests');
       }
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'ถอนข้อเสนอไม่สำเร็จ'));
+      const msg = apiErrorMessage(e, 'ถอนข้อเสนอไม่สำเร็จ');
+      this.error.set(msg);
+      this.toast.show(msg);
       scrollToFirstError();
     } finally {
       this.withdrawing.set(false);
@@ -398,38 +400,5 @@ export class SubmitBidPage implements OnInit, OnDestroy {
 
   private isActiveBidStatus(status: string): boolean {
     return status === 'Submitted' || status === 'Pending' || status === 'Selected';
-  }
-
-  private buildOptimisticDetail(
-    requestId: string,
-    providerId: string,
-    payload: { priceText: string; description?: string },
-    existingBidId: string | null,
-  ): ServiceRequestDetail {
-    const base = this.request();
-    if (!base) {
-      throw new Error('missing request');
-    }
-    const bids = [...(base.bids ?? [])];
-    if (existingBidId) {
-      const idx = bids.findIndex((b) => b.id === existingBidId);
-      if (idx >= 0) {
-        bids[idx] = {
-          ...bids[idx],
-          priceText: payload.priceText,
-          description: payload.description ?? bids[idx].description,
-        };
-      }
-    } else {
-      bids.push({
-        id: `optimistic-${Date.now()}`,
-        providerId,
-        providerName: base.bids?.find((b) => b.providerId === providerId)?.providerName ?? 'ฉัน',
-        priceText: payload.priceText,
-        description: payload.description ?? '',
-        status: 'Submitted',
-      });
-    }
-    return { ...base, id: requestId, bids, status: base.status === 'Open' ? 'HasOffers' : base.status };
   }
 }
