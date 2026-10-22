@@ -325,8 +325,22 @@ export class AppointmentPage implements OnInit, OnDestroy {
     return !this.canCreateAppointment(detail);
   }
 
+  protected hasSelectedProvider(): boolean {
+    return !!(this.selectedBid() || this.request()?.selectedProviderId);
+  }
+
+  protected canEditAppointmentForm(): boolean {
+    if (this.hasActiveAppointment() || this.isReadOnly() || this.isTerminal()) {
+      return false;
+    }
+    if (this.needsBidSelection && !this.hasSelectedProvider()) {
+      return false;
+    }
+    return true;
+  }
+
   protected get canConfirm(): boolean {
-    if (this.saving() || this.hasActiveAppointment() || this.isReadOnly()) {
+    if (!this.canEditAppointmentForm() || this.saving()) {
       return false;
     }
     const detail = this.request();
@@ -336,7 +350,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
     if (this.canCreateAppointment(detail)) {
       return true;
     }
-    return !!this.selectedBid();
+    return this.hasSelectedProvider();
   }
 
   protected hasActiveAppointment(): boolean {

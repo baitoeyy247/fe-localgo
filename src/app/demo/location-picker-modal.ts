@@ -147,15 +147,13 @@ export interface LocationPickerValue {
 export class LocationPickerModal {
   readonly open = input(false);
   readonly heading = input('เลือกตำแหน่ง');
-  readonly description = input(
-    'ค่าเริ่มต้น: ถนนผดุงวิถี เทศบาลเมืองมหาสารคาม · รัศมี 5 กม. (ปรับได้) — แตะแผนที่หรือค้นหาแล้วกดยืนยัน',
-  );
-  readonly locationTitle = input('ถนนผดุงวิถี, เทศบาลเมืองมหาสารคาม');
-  readonly locationSubtitle = input('ตำแหน่งเริ่มต้น (ค่าเริ่มต้น)');
-  readonly searchText = input('ถนนผดุงวิถี, เทศบาลเมืองมหาสารคาม');
+  readonly description = input('แตะแผนที่ ค้นหาที่อยู่ หรือใช้ตำแหน่งปัจจุบัน แล้วกดยืนยัน');
+  readonly locationTitle = input('');
+  readonly locationSubtitle = input('');
+  readonly searchText = input('');
   readonly radiusKm = input(5);
-  readonly lat = input(16.185);
-  readonly lng = input(103.302);
+  readonly lat = input<number | null>(null);
+  readonly lng = input<number | null>(null);
   readonly radiusOptions = input<number[]>([1, 3, 5, 8, 10, 15]);
   /** Hide radius controls (e.g. booking pin picker). */
   readonly showRadius = input(true);
@@ -303,8 +301,10 @@ export class LocationPickerModal {
   }
 
   private syncDraft(): void {
-    this.draftLat.set(this.lat());
-    this.draftLng.set(this.lng());
+    const lat = this.lat();
+    const lng = this.lng();
+    this.draftLat.set(lat ?? 16.185);
+    this.draftLng.set(lng ?? 103.302);
     this.draftRadiusKm.set(this.radiusKm());
     this.placeTitle.set(this.locationTitle());
     if (this.showRadius()) {

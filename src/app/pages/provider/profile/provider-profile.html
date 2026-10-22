@@ -15,7 +15,7 @@
       >
         <option value="">-- เลือกประเภท --</option>
         @for (opt of typeOptions; track opt.value) {
-          <option [value]="opt.value">{{ opt.label }}</option>
+          <option [value]="opt.value" [selected]="providerType() === opt.value">{{ opt.label }}</option>
         }
       </select>
       @if (fieldErrors()['providerType']; as msg) {

@@ -73,7 +73,7 @@
       </div>
     }
 
-    @if (!hasActiveAppointment() && !isReadOnly() && !isTerminal()) {
+    @if (canEditAppointmentForm()) {
       <app-thai-datetime-field
         label="วันและเวลา *"
         [value]="scheduledAt()"
@@ -101,12 +101,12 @@
       </label>
     }
 
-    @if (needsBidSelection && !selectedBid() && !isTerminal()) {
+    @if (needsBidSelection && !hasSelectedProvider() && !isTerminal()) {
       <div class="state">
         <div class="em">💬</div>
         <h3>ยังไม่ได้เลือกผู้ให้บริการ</h3>
         <p>ไปที่หน้าข้อเสนอเพื่อเลือกผู้ให้บริการก่อนนัดหมาย</p>
-        <button class="btn btn-primary" type="button" (click)="goToBids()">ไปเลือกข้อเสนอ</button>
+        <button class="btn btn-primary" type="button" (click)="goToBids()">ไปดูข้อเสนอ</button>
       </div>
     }
 
@@ -132,7 +132,7 @@
       </button>
     }
 
-    @if (!hasActiveAppointment() && !isReadOnly() && !isTerminal()) {
+    @if (canEditAppointmentForm()) {
       <button
         class="btn btn-primary btn-block"
         type="button"

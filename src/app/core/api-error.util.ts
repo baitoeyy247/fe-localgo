@@ -67,9 +67,29 @@ function messageFromBody(body: ProblemBody | null, status: number, fallback: str
   return null;
 }
 
+function retryAfterHint(err: HttpErrorResponse): string | null {
+  if (err.status !== 429) {
+    return null;
+  }
+  const raw = err.headers.get('Retry-After');
+  const sec = raw ? Number.parseInt(raw, 10) : NaN;
+  if (Number.isFinite(sec) && sec > 0) {
+    return `คุณทำรายการบ่อยเกินไป ลองใหม่ภายใน ${sec} วินาที`;
+  }
+  const fromDetail = messageFromBody(err.error as ProblemBody | null, 429, '');
+  if (fromDetail?.includes('วินาที')) {
+    return fromDetail;
+  }
+  return STATUS_MESSAGES[429] ?? null;
+}
+
 /** Map HTTP/API failures to a short Thai message for UI. */
 export function apiErrorMessage(err: unknown, fallback = 'เกิดข้อผิดพลาด'): string {
   if (err instanceof HttpErrorResponse) {
+    const rateLimited = retryAfterHint(err);
+    if (rateLimited) {
+      return rateLimited;
+    }
     const fromBody = messageFromBody(err.error as ProblemBody | null, err.status, fallback);
     if (fromBody) {
       return fromBody;

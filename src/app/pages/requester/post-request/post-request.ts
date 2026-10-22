@@ -182,7 +182,7 @@ export class PostRequestPage implements OnInit {
     if (!iso) {
       errors['preferredAt'] = 'กรุณาเลือกวันที่และเวลาที่ต้องการ';
     } else if (new Date(iso).getTime() < Date.now() - 60_000) {
-      errors['preferredAt'] = 'วันที่และเวลาที่ต้องการต้องไม่เป็นเวลาในอดีต';
+      errors['preferredAt'] = 'กรุณาเลือกวันและเวลาในอนาคต';
     }
     if (this.budgetMode() === 'fixed') {
       const amount = Number(this.budgetAmount().trim());
@@ -196,7 +196,7 @@ export class PostRequestPage implements OnInit {
   /** API contract: open → "เปิดรับราคา"; fixed → integer digits only. */
   private resolveBudgetText(): string {
     if (this.budgetMode() === 'open') {
-      return 'เปิดรับราคา';
+      return 'เปิดรับข้อเสนอ';
     }
     return this.budgetAmount().trim();
   }

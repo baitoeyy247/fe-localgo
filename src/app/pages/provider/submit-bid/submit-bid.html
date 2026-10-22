@@ -6,7 +6,7 @@
   } @else if (categoryBlocked()) {
     <div class="state">
       <div class="em">🚫</div>
-      <h3>งานนี้ไม่ตรงกับบริการของคุณ</h3>
+      <h3>{{ categoryBlockedTitle() }}</h3>
       <p class="muted">{{ categoryBlocked() }}</p>
       <a class="btn btn-primary" routerLink="/provider/requests">กลับไปรายการงาน</a>
     </div>

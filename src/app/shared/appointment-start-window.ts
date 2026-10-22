@@ -1,5 +1,5 @@
-/** Matches backend AppointmentStartWindow.EarlyStartAllowed (30 minutes). */
-export const APPOINTMENT_START_EARLY_MS = 30 * 60 * 1000;
+/** Matches backend AppointmentStartWindow.EarlyStartAllowed (start at scheduled time). */
+export const APPOINTMENT_START_EARLY_MS = 0;
 
 export function earliestJobStartMs(scheduledAtIso: string): number | null {
   const scheduled = new Date(scheduledAtIso).getTime();

@@ -1279,6 +1279,49 @@ input.input,
   padding: 10px 14px;
 }
 
+.provider-name-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 4px 0;
+}
+
+label.branch-check,
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+
+label.branch-check input[type='checkbox'],
+.check-row input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  min-height: 22px;
+  margin: 11px 0;
+  flex-shrink: 0;
+}
+
+.location-picker input[type='range'],
+.map-radius-slider {
+  min-height: 44px;
+  width: 100%;
+}
+
+.provider-home-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 4px 0;
+  color: var(--primary-dark);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
 .provider-home-hint {
   line-height: 1.45;
   word-break: break-word;

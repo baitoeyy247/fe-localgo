@@ -19,6 +19,7 @@ import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { AuthService } from '../../../core/auth.service';
 import { formatDistanceMeters } from '../../../shared/geo-distance';
 import { formatPrice } from '../../../shared/format-price';
+import { formatBudgetDisplay } from '../../../shared/format-budget';
 import { normalizeList } from '../../../shared/normalize-list';
 
 type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
@@ -287,6 +288,15 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
 
   protected formatDistance(meters?: number | null): string {
     return formatDistanceMeters(meters);
+  }
+
+  protected cardMetaLine(request: ServiceRequestSummary): string {
+    const status = this.chipLabel(request);
+    const budget = formatBudgetDisplay(request.budgetText);
+    if (budget && (request.status === 'Open' || request.status === 'HasOffers')) {
+      return `${status} · ${budget}`;
+    }
+    return status;
   }
 
   private syncInitialTab(): void {

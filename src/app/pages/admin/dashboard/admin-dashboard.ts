@@ -29,6 +29,8 @@ import {
   adminUserStatusLabel,
 } from '../../../shared/admin-labels';
 import { formatScheduledAt } from '../../../shared/datetime.util';
+import { ToastService } from '../../../core/toast.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 
 @Component({
   selector: 'app-admin-dashboard-page',
@@ -68,6 +70,8 @@ export class AdminDashboardPage implements OnInit {
   protected readonly adminUserStatusLabel = adminUserStatusLabel;
 
   private readonly api = inject(LocalGoApiService);
+  private readonly toast = inject(ToastService);
+  private readonly marketplaceCache = inject(MarketplaceCacheService);
   protected readonly auth = inject(AuthService);
 
   ngOnInit(): void {
@@ -199,8 +203,11 @@ export class AdminDashboardPage implements OnInit {
     this.acting.set(true);
     try {
       await firstValueFrom(this.api.setAdminUserStatus(userId, target));
+      this.users.update((rows) =>
+        rows.map((row) => (row.id === userId ? { ...row, status: target } : row)),
+      );
       this.notice.set(target === 'Suspended' ? 'ระงับผู้ใช้แล้ว' : 'เปิดใช้งานผู้ใช้แล้ว');
-      await this.load();
+      void this.refreshAfterMutation();
     } catch (e) {
       this.actionError.set(apiErrorMessage(e, 'อัปเดตสถานะผู้ใช้ไม่สำเร็จ'));
     } finally {
@@ -230,10 +237,11 @@ export class AdminDashboardPage implements OnInit {
       const seeded = (result as { sampleReviewsSeeded?: number }).sampleReviewsSeeded ?? 0;
       const automated = (result as { deletedAutomatedRequests?: number }).deletedAutomatedRequests ?? 0;
       const deletedUsers = (result as { deletedAutomatedUsers?: number }).deletedAutomatedUsers ?? 0;
+      this.marketplaceCache.invalidateAll();
       this.usersPage.set(1);
+      this.dashboard.set(null);
       await this.refreshAfterMutation();
-      const dash = await firstValueFrom(this.api.getAdminDashboard());
-      this.dashboard.set({ ...dash });
+      this.toast.show('รีเซ็ตข้อมูลแล้ว');
       this.notice.set(
         `รีเซ็ตสำเร็จ — ลบงาน ${deletedReq} รายการ · คงบัญชีทดสอบ ${kept} บัญชี · สร้างรีวิวตัวอย่าง ${seeded} รายการ`,
       );

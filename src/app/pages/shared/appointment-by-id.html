@@ -15,9 +15,9 @@
         <div>
           @if (providerName(); as name) {
             <p style="margin: 0">
-              <span class="muted">{{ GLOSSARY.providerLabel }}:</span>
+              <span class="muted">{{ GLOSSARY.providerLabel }}: </span>
               @if (providerProfileLink(); as link) {
-                <a [routerLink]="link"><b>{{ name }}</b></a>
+                <a class="provider-name-link" [routerLink]="link"><b>{{ name }}</b></a>
               } @else {
                 <b>{{ name }}</b>
               }

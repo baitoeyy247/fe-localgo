@@ -102,8 +102,17 @@ export class ThaiDatetimeField {
       return 'กรุณาเลือกวันที่และเวลา';
     }
     const iso = this.toIsoLocal();
-    if (this.requireFuture() && iso && !this.isFuture()) {
-      return 'กรุณาเลือกวันและเวลาในอนาคต';
+    if (this.requireFuture()) {
+      if (iso && !this.isFuture()) {
+        return 'กรุณาเลือกวันและเวลาในอนาคต';
+      }
+      if (!iso) {
+        const parts = this.parseDateParts(this.dateText());
+        const time = this.parseTimeParts(this.timeText());
+        if (parts && time) {
+          return 'กรุณาเลือกวันและเวลาในอนาคต';
+        }
+      }
     }
     if (!iso) {
       return 'รูปแบบวันที่หรือเวลาไม่ถูกต้อง';

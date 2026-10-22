@@ -40,7 +40,7 @@
       <a class="btn btn-ghost btn-sm" routerLink="/provider/coverage">จัดการจุด</a>
     </div>
     @for (branch of provider()!.branches; track branch.id) {
-      <label class="location-option" [class.location-option--selected]="isBranchSelected(branch.id)">
+      <label class="location-option branch-check" [class.location-option--selected]="isBranchSelected(branch.id)">
         <input type="checkbox" [checked]="isBranchSelected(branch.id)" (change)="toggleBranch(branch.id, $any($event.target).checked)" />
         <span>
           <strong>{{ branch.name }}</strong>

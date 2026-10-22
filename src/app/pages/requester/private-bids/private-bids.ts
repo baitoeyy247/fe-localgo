@@ -19,6 +19,7 @@ import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 import { formatPrice } from '../../../shared/format-price';
 import { shouldShowLineNotificationHint } from '../../../shared/line-notification-hint';
+import { GLOSSARY } from '../../../shared/glossary';
 
 @Component({
   selector: 'app-private-bids-page',
@@ -34,6 +35,7 @@ import { shouldShowLineNotificationHint } from '../../../shared/line-notificatio
   templateUrl: './private-bids.html',
 })
 export class PrivateBidsPage implements OnInit, OnDestroy {
+  protected readonly GLOSSARY = GLOSSARY;
   protected readonly bids = signal<BidItem[]>([]);
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly selectedBidId = signal<string | null>(null);
@@ -198,6 +200,22 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
 
   protected isExpired(): boolean {
     return this.request()?.status === 'Expired';
+  }
+
+  protected canSelectOffers(): boolean {
+    const status = this.request()?.status;
+    if (!status || this.isExpired()) {
+      return false;
+    }
+    return status === 'Open' || status === 'HasOffers';
+  }
+
+  protected selectedOffer(): BidItem | null {
+    const detail = this.request();
+    if (!detail?.selectedBidId) {
+      return null;
+    }
+    return this.bids().find((b) => b.id === detail.selectedBidId) ?? null;
   }
 
   private async load(requestId: string): Promise<void> {

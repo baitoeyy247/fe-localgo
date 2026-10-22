@@ -33,6 +33,7 @@ export class SubmitBidPage implements OnInit, OnDestroy {
   protected readonly error = signal<string | null>(null);
   protected readonly loadError = signal<string | null>(null);
   protected readonly categoryBlocked = signal<string | null>(null);
+  protected readonly blockReasonCode = signal<string | null>(null);
   protected readonly truncated = signal(false);
   protected readonly maxLength = BID_DESCRIPTION_MAX;
   protected readonly hint = new SlowLoadHint();
@@ -43,6 +44,21 @@ export class SubmitBidPage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
   private readonly cache = inject(MarketplaceCacheService);
+
+  protected categoryBlockedTitle(): string {
+    const code = this.blockReasonCode();
+    const body = this.categoryBlocked() ?? '';
+    if (code === 'REQUEST_CLOSED' || /ไม่เปิดรับ|ปิดรับ|เลือกผู้ให้แล้ว/iu.test(body)) {
+      return 'งานนี้ปิดรับข้อเสนอแล้ว';
+    }
+    if (code === 'CATEGORY_MISMATCH' || body.includes('หมวด')) {
+      return 'งานนี้ไม่ตรงกับบริการของคุณ';
+    }
+    if (code === 'OUT_OF_RANGE' || body.includes('นอกพื้นที่')) {
+      return 'งานนี้อยู่นอกพื้นที่ให้บริการ';
+    }
+    return 'ไม่สามารถเสนอราคางานนี้ได้';
+  }
 
   protected backLink(): string {
     const id = this.request()?.id;
@@ -100,6 +116,7 @@ export class SubmitBidPage implements OnInit, OnDestroy {
           bidAccess.reasonCode === 'CATEGORY_MISMATCH' || reason?.includes('ไม่ตรง')
             ? `งานนี้อยู่ในหมวด ${cat} ซึ่งไม่ตรงกับบริการที่คุณเปิดไว้`
             : reason || 'ไม่สามารถเสนอราคางานนี้ได้ — กลับไปเลือกงานจากกล่องงานหรือตรวจสอบบริการของคุณ';
+        this.blockReasonCode.set(bidAccess.reasonCode ?? null);
         this.categoryBlocked.set(blocked);
         this.loading.set(false);
         this.hint.end();
