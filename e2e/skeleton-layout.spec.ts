@@ -144,7 +144,8 @@ test.describe('QA32 M-1 skeleton layout shift', () => {
         if (routeCase.name === 'provider-requests') {
           await page.goto(path, { waitUntil: 'domcontentloaded' });
           await expect(loaded).toBeVisible({ timeout: 60_000 });
-          await Promise.all([waitSkeleton, page.getByRole('button', { name: 'รีเฟรช' }).click()]);
+          await page.getByRole('button', { name: 'รีเฟรช' }).click();
+          await expect(skeleton).toBeVisible({ timeout: 15_000 });
         } else {
           await Promise.all([waitSkeleton, page.goto(path, { waitUntil: 'domcontentloaded' })]);
         }

@@ -1399,7 +1399,7 @@ label.branch-check input[type='checkbox'],
 }
 
 .skeleton-stack--requester-home .skeleton-card {
-  min-height: 192px;
+  min-height: 243px;
 }
 
 .skeleton-stack--bids .skeleton-card:first-of-type {
@@ -1462,9 +1462,9 @@ label.branch-check input[type='checkbox'],
 
 .skeleton-stack--appointment-detail .skeleton-card:first-child {
   box-sizing: border-box;
-  min-height: 76px;
-  height: 76px;
-  max-height: 76px;
+  min-height: 117px;
+  height: 117px;
+  max-height: 117px;
   overflow: hidden;
 }
 
@@ -1478,9 +1478,9 @@ label.branch-check input[type='checkbox'],
 
 .skeleton-stack--provider-request-detail .skeleton-card:first-child {
   box-sizing: border-box;
-  min-height: 84px;
-  height: 84px;
-  max-height: 84px;
+  min-height: 135px;
+  height: 135px;
+  max-height: 135px;
   overflow: hidden;
 }
 
@@ -1497,7 +1497,7 @@ label.branch-check input[type='checkbox'],
 }
 
 .skeleton-filter-chrome--chips {
-  min-height: 118px;
+  min-height: 52px;
   gap: 0;
 }
 
