@@ -37,7 +37,7 @@
             </p>
           }
         </div>
-        <span class="badge b-blue">{{ statusLabel(a.status) }}</span>
+        <span class="badge b-blue">{{ statusLabel(a.status, role()) }}</span>
       </div>
     </div>
 
@@ -55,7 +55,7 @@
     @if (role() === 'requester') {
       @if (a.status === 'Rejected') {
         <div class="state">
-          <p class="muted">ผู้ให้บริการปฏิเสธนัดหมาย — คุณสามารถจองใหม่หรือหาผู้ให้บริการรายอื่น</p>
+          <p class="muted">{{ role() === 'provider' ? 'คุณปฏิเสธนัดหมายนี้แล้ว' : 'ผู้ให้บริการปฏิเสธนัดหมาย — คุณสามารถจองใหม่หรือหาผู้ให้บริการรายอื่น' }}</p>
           <a class="btn btn-primary btn-block" routerLink="/requester/search">หาผู้ให้บริการอื่น</a>
           <a class="btn btn-secondary btn-block" routerLink="/requester/post">จองใหม่ / ประกาศงาน</a>
         </div>

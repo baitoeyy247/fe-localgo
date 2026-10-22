@@ -79,17 +79,24 @@
         [value]="scheduledAt()"
         [requireFuture]="true"
         (valueChange)="onScheduledAtChange($event)"
+        (rawChange)="onScheduledRawChange($event)"
       />
-      <label class="field">
+      <label class="field" [class.field--error]="!!addressError()">
         <span>สถานที่นัดหมาย <span class="req">*</span></span>
         <input
           class="input"
+          [class.err]="!!addressError()"
+          [attr.aria-invalid]="!!addressError()"
+          aria-describedby="appt-address-error"
           placeholder="ที่อยู่นัดหมาย"
           [attr.maxlength]="LIMITS.appointmentAddress"
           [value]="addressText()"
           (input)="updateAddressText($any($event.target).value)"
         />
         <app-char-counter [value]="addressText()" [max]="LIMITS.appointmentAddress" label="สถานที่นัดหมาย" />
+        @if (addressError(); as msg) {
+          <p class="error-text" id="appt-address-error" role="alert">{{ msg }}</p>
+        }
         <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 8px; width: fit-content" (click)="openPicker()">
           เปลี่ยนจุดบนแผนที่
         </button>

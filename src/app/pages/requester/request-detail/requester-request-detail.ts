@@ -8,6 +8,7 @@ import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { AppointmentDetail, BidItem, ServiceRequestDetail } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
+import { ToastService } from '../../../core/toast.service';
 import {
   bidStatusLabel,
   displayRequestStatusBadgeClass,
@@ -43,6 +44,7 @@ export class RequesterRequestDetailPage implements OnInit, OnDestroy {
   protected readonly actionError = signal<string | null>(null);
   protected readonly notFound = signal(false);
   protected readonly cancelOpen = signal(false);
+  private readonly toast = inject(ToastService);
   protected readonly busy = signal(false);
   protected readonly hint = new SlowLoadHint();
   protected readonly bidStatusLabel = bidStatusLabel;
@@ -109,8 +111,20 @@ export class RequesterRequestDetailPage implements OnInit, OnDestroy {
   }
 
   protected canCancel(): boolean {
+    // F-N3: mirror BE RequestCancellationPolicy
     const st = this.request()?.status;
-    return st === 'Draft' || st === 'Open' || st === 'HasOffers';
+    const appt = this.appointment()?.status;
+    if (appt === 'InProgress' || appt === 'Completed') {
+      return false;
+    }
+    return (
+      st === 'Draft' ||
+      st === 'Open' ||
+      st === 'HasOffers' ||
+      st === 'ProviderSelected' ||
+      st === 'Selected' ||
+      st === 'Scheduled'
+    );
   }
 
   protected isRejected(): boolean {
@@ -173,10 +187,13 @@ export class RequesterRequestDetailPage implements OnInit, OnDestroy {
     try {
       await firstValueFrom(this.api.cancelRequest(r.id));
       this.cancelOpen.set(false);
+      this.toast.show('ยกเลิกงานแล้ว');
       await this.load();
     } catch (e) {
       this.cancelOpen.set(false);
-      this.actionError.set(apiErrorMessage(e, 'ยกเลิกงานไม่สำเร็จ'));
+      const msg = apiErrorMessage(e, 'ยกเลิกงานไม่สำเร็จ');
+      this.actionError.set(msg);
+      this.toast.show(msg);
     } finally {
       this.busy.set(false);
     }

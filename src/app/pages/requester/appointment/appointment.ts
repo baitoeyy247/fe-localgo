@@ -69,6 +69,9 @@ export class AppointmentPage implements OnInit, OnDestroy {
   protected readonly selectedBid = signal<BidItem | null>(null);
   protected readonly scheduledAt = signal('');
   protected readonly addressText = signal('');
+  protected readonly addressError = signal<string | null>(null);
+  /** L-15: typed-but-incomplete date/time text (empty when value is a valid ISO). */
+  private readonly scheduledRaw = signal('');
   protected readonly note = signal('');
   protected readonly saving = signal(false);
   protected readonly loading = signal(true);
@@ -188,7 +191,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
     lng: number | null;
   } {
     return {
-      scheduledAt: this.scheduledAt().trim(),
+      scheduledAt: this.scheduledAt().trim() || this.scheduledRaw(),
       addressText: this.addressText().trim(),
       note: this.note().trim(),
       lat: this.mapLat(),
@@ -216,6 +219,13 @@ export class AppointmentPage implements OnInit, OnDestroy {
   }
 
   protected askSave(): void {
+    // F-N2: trim before validating — blank / whitespace-only address never opens the confirm sheet
+    if (!this.addressText().trim()) {
+      this.addressError.set('กรุณาระบุสถานที่');
+      scrollToFirstError();
+      return;
+    }
+    this.addressError.set(null);
     if (!this.hasChanges()) {
       return;
     }
@@ -265,8 +275,16 @@ export class AppointmentPage implements OnInit, OnDestroy {
     this.touchForm();
   }
 
+  protected onScheduledRawChange(raw: string): void {
+    this.scheduledRaw.set(raw);
+    this.touchForm();
+  }
+
   protected updateAddressText(value: string): void {
     this.addressText.set(value);
+    if (value.trim()) {
+      this.addressError.set(null);
+    }
     this.touchForm();
   }
 
@@ -286,6 +304,11 @@ export class AppointmentPage implements OnInit, OnDestroy {
     dt?.markTouched();
     if (dt && !dt.isValid()) {
       this.error.set('กรุณาเลือกวันและเวลาในอนาคต');
+      scrollToFirstError();
+      return;
+    }
+    if (!this.addressText().trim()) {
+      this.addressError.set('กรุณาระบุสถานที่');
       scrollToFirstError();
       return;
     }

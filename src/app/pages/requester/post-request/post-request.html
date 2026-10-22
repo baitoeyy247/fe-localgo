@@ -113,8 +113,10 @@
             aria-label="งบประมาณ"
             inputmode="numeric"
             placeholder="400"
+            maxlength="7"
             [value]="budgetAmount()"
             (input)="updateBudgetAmount($any($event.target).value)"
+            (blur)="onBudgetBlur()"
           />
           <span class="input-with-unit__suffix">บาท</span>
         </div>

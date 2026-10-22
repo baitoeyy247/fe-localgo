@@ -1452,15 +1452,15 @@ label.branch-check input[type='checkbox'],
   min-height: 117px;
 }
 
-.skeleton-stack--provider-my-bids .skeleton-card:first-child {
-  min-height: 194px;
+.skeleton-stack--provider-my-bids .skeleton-card:first-of-type {
+  min-height: 246px;
 }
 
 .skeleton-stack--provider-my-bids .skeleton-card {
-  min-height: 194px;
+  min-height: 246px;
 }
 
-.skeleton-stack--appointment-detail .skeleton-card:first-child {
+.skeleton-stack--appointment-detail .skeleton-card:first-of-type {
   box-sizing: border-box;
   min-height: 117px;
   height: 117px;
@@ -1468,15 +1468,19 @@ label.branch-check input[type='checkbox'],
   overflow: hidden;
 }
 
-.skeleton-stack--appointment-detail .skeleton-card:nth-child(2) {
+.skeleton-stack--appointment-detail .skeleton-card:nth-of-type(2) {
   min-height: 125px;
+}
+
+.skeleton-stack--request-detail .skeleton-card:first-of-type {
+  min-height: 238px;
 }
 
 .skeleton-stack--request-detail .skeleton-card {
   min-height: 88px;
 }
 
-.skeleton-stack--provider-request-detail .skeleton-card:first-child {
+.skeleton-stack--provider-request-detail .skeleton-card:first-of-type {
   box-sizing: border-box;
   min-height: 135px;
   height: 135px;
@@ -1484,11 +1488,11 @@ label.branch-check input[type='checkbox'],
   overflow: hidden;
 }
 
-.skeleton-stack--provider-request-detail .skeleton-card:nth-child(2) {
+.skeleton-stack--provider-request-detail .skeleton-card:nth-of-type(2) {
   min-height: 224px;
 }
 
-.skeleton-stack--provider-request-detail .skeleton-card:nth-child(3) {
+.skeleton-stack--provider-request-detail .skeleton-card:nth-of-type(3) {
   min-height: 185px;
 }
 

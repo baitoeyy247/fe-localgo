@@ -1,3 +1,4 @@
+import { PRICE_ERROR, priceError } from '../../../shared/field-limits';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -182,7 +183,8 @@ export class PostRequestPage implements OnInit {
   }
 
   protected updateBudgetAmount(value: string): void {
-    this.budgetAmount.set(value.replace(/[^\d]/gu, ''));
+    // F-N1: never strip characters silently — validate with the shared bid price validator on blur
+    this.budgetAmount.set(value);
     this.clearFieldError('budget');
     this.touchForm();
   }
@@ -320,6 +322,20 @@ export class PostRequestPage implements OnInit {
     }
   }
 
+  protected onBudgetBlur(): void {
+    if (this.budgetMode() !== 'fixed') {
+      return;
+    }
+    const err = priceError(this.budgetAmount());
+    const next = { ...this.fieldErrors() };
+    if (err) {
+      next['budget'] = err;
+    } else {
+      delete next['budget'];
+    }
+    this.fieldErrors.set(next);
+  }
+
   private validateLocal(): Record<string, string> {
     const errors: Record<string, string> = {};
     const trimmedTitle = this.title().trim();
@@ -335,9 +351,9 @@ export class PostRequestPage implements OnInit {
       errors['preferredAt'] = 'กรุณาเลือกวันและเวลาในอนาคต';
     }
     if (this.budgetMode() === 'fixed') {
-      const amount = Number(this.budgetAmount().trim());
-      if (!Number.isInteger(amount) || amount < 1 || amount > 1_000_000) {
-        errors['budget'] = 'งบประมาณต้องเป็นจำนวนเต็มตั้งแต่ 1 ถึง 1000000';
+      const err = this.budgetAmount().trim() ? priceError(this.budgetAmount()) : PRICE_ERROR;
+      if (err) {
+        errors['budget'] = err;
       }
     }
     return errors;

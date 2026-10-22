@@ -24,7 +24,7 @@ import { normalizeList } from '../../../shared/normalize-list';
 import { GLOSSARY } from '../../../shared/glossary';
 
 type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
-type JobTab = 'pending' | 'bidWaiting' | 'active' | 'completed' | 'cancelled' | 'rejected';
+type JobTab = 'pending' | 'bidWaiting' | 'scheduled' | 'active' | 'completed' | 'cancelled' | 'rejected';
 
 @Component({
   selector: 'app-matching-requests-page',
@@ -84,6 +84,7 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   protected readonly tabs: { key: JobTab; label: string }[] = [
     { key: 'pending', label: 'รอยืนยัน' },
     { key: 'bidWaiting', label: 'รอผลข้อเสนอ' },
+    { key: 'scheduled', label: 'นัดหมายแล้ว' },
     { key: 'active', label: 'กำลังทำ' },
     { key: 'completed', label: 'เสร็จสิ้น' },
     { key: 'cancelled', label: 'ยกเลิก' },
@@ -173,14 +174,18 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
     if (tab === 'bidWaiting') {
       return this.isBidWaiting(request);
     }
-    // กำลังทำ — engaged work that is not pending confirm / bid waiting / terminal / completed
-    return (
+    const engaged =
       !this.isBidWaiting(request) &&
       !this.isPendingConfirm(request) &&
       !this.isTerminalJob(request) &&
       request.status !== 'Completed' &&
-      request.appointmentStatus !== 'Completed'
-    );
+      request.appointmentStatus !== 'Completed';
+    // T4-2: กำลังทำ = InProgress only; confirmed-but-not-started goes to นัดหมายแล้ว
+    const inProgress = request.status === 'InProgress' || request.appointmentStatus === 'InProgress';
+    if (tab === 'active') {
+      return engaged && inProgress;
+    }
+    return engaged && !inProgress;
   }
 
   private isPendingConfirm(request: ServiceRequestSummary): boolean {
@@ -193,12 +198,12 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   /** Single chip per card, from the shared status mapping. */
   protected chipLabel(request: ServiceRequestSummary): string {
     if (request.needsAppointmentConfirm) {
-      return 'รอผู้ให้บริการยืนยันนัดหมาย';
+      return 'รอคุณยืนยันนัดหมาย';
     }
     if (request.alreadyBidByMe && this.isBiddable(request)) {
       return 'ส่งราคาแล้ว';
     }
-    return this.statusLabel(request.status, request.appointmentStatus);
+    return this.statusLabel(request.status, request.appointmentStatus, 'provider');
   }
 
   protected chipClass(request: ServiceRequestSummary): string {
@@ -293,12 +298,9 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   }
 
   protected cardMetaLine(request: ServiceRequestSummary): string {
-    const status = this.chipLabel(request);
+    // T4-2: status lives in the chip only — meta line shows budget (if any), never the status again
     const budget = formatBudgetDisplay(request.budgetText);
-    if (budget && (request.status === 'Open' || request.status === 'HasOffers')) {
-      return `${status} · ${budget}`;
-    }
-    return status;
+    return budget && (request.status === 'Open' || request.status === 'HasOffers') ? budget : '';
   }
 
   private syncInitialTab(): void {
@@ -307,7 +309,7 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
       return;
     }
     const jobs = this.myJobs();
-    const order: JobTab[] = ['rejected', 'pending', 'bidWaiting', 'active', 'completed', 'cancelled'];
+    const order: JobTab[] = ['rejected', 'pending', 'bidWaiting', 'active', 'scheduled', 'completed', 'cancelled'];
     for (const key of order) {
       if (jobs.some((r) => this.matchesTab(r, key))) {
         this.tab.set(key);

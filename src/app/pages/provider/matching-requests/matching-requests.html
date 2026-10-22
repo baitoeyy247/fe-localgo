@@ -33,13 +33,6 @@
       <a class="btn btn-primary" [routerLink]="setupLink()">{{ setupActionLabel() }}</a>
     </div>
   } @else {
-    @if (pendingConfirmCount() > 0 && tab() === 'pending') {
-      <div class="banner warn" role="status">
-        <span
-          ><b>มีงาน{{ GLOSSARY.pendingAppointmentConfirmChip }} {{ pendingConfirmCount() }} รายการ</b><br />กด{{ GLOSSARY.confirmReceiveAppointment }}ในแท็บ{{ GLOSSARY.pendingAppointmentConfirmChip }}</span
-        >
-      </div>
-    }
 
     @if (openJobs().length > 0) {
       <div class="sec-title">งานเปิดรับข้อเสนอ ({{ openJobs().length }})</div>
@@ -79,7 +72,7 @@
           {{ request.categoryName ?? 'ทั่วไป' }} · {{ formatDistance(request.distanceMeters) }}
         </p>
         <p class="muted" style="margin: 4px 0 12px; font-size: 13px">
-          โพสต์ {{ formatWhen(request.createdAt) }} · {{ cardMetaLine(request) }}
+          โพสต์ {{ formatWhen(request.createdAt) }}@if (cardMetaLine(request); as meta) { · {{ meta }} }
         </p>
         @if (!isTerminalJob(request)) {
           <button type="button" class="btn btn-primary btn-sm btn-block" (click)="openRequest(request)">
@@ -91,6 +84,15 @@
       </article>
     } @empty {
       <p class="muted">ยังไม่มีงานในหมวดนี้</p>
+    }
+
+    <!-- M-1: banner rendered after the list so it never pushes the first card down -->
+    @if (pendingConfirmCount() > 0 && tab() === 'pending') {
+      <div class="banner warn" role="status" style="margin-top: 12px">
+        <span
+          ><b>มีงาน{{ GLOSSARY.pendingAppointmentConfirmChip }} {{ pendingConfirmCount() }} รายการ</b><br />กด{{ GLOSSARY.confirmReceiveAppointment }}ในแท็บ{{ GLOSSARY.pendingAppointmentConfirmChip }}</span
+        >
+      </div>
     }
   }
 

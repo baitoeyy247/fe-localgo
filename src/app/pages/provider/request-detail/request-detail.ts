@@ -89,14 +89,14 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   } | null = null;
 
   protected statusLabel(status: string): string {
-    return displayRequestStatusLabel(status, this.effectiveAppointmentStatus());
+    return displayRequestStatusLabel(status, this.effectiveAppointmentStatus(), 'provider');
   }
 
   /** Single status chip on the page header. */
   protected pageStatusLabel(): string {
     const appt = this.appointment();
     if (this.showAppointmentSection() && appt) {
-      return this.appointmentStatusLabel(appt.status);
+      return this.appointmentStatusLabel(appt.status, 'provider');
     }
     const r = this.request();
     return r ? this.statusLabel(r.status) : '';

@@ -50,12 +50,26 @@ export function requestStatusLabel(status: string): string {
  * Request status label that accounts for the appointment state.
  * `Scheduled` / `ProviderSelected` must not read "นัดหมายแล้ว" while the appointment is still pending.
  */
+export type StatusViewer = 'requester' | 'provider' | 'admin';
+
+/** T4-1: provider sees their own actions in first person. */
+const PROVIDER_APPOINTMENT_STATUS: Record<string, string> = {
+  Pending: 'รอคุณยืนยันนัดหมาย',
+  Confirmed: 'คุณยืนยันนัดหมายแล้ว',
+  Rejected: 'คุณปฏิเสธนัดหมาย',
+};
+
 export function displayRequestStatusLabel(
   status: string,
   appointmentStatus?: string | null,
+  viewer: StatusViewer = 'requester',
 ): string {
   if (status === 'Completed' || status === 'InProgress') {
     return requestStatusLabel(status);
+  }
+  if (viewer === 'provider' && appointmentStatus && PROVIDER_APPOINTMENT_STATUS[appointmentStatus]
+      && status !== 'Cancelled' && (appointmentStatus !== 'Pending' || status === 'Scheduled' || status === 'ProviderSelected' || status === 'Selected')) {
+    return PROVIDER_APPOINTMENT_STATUS[appointmentStatus];
   }
   if (appointmentStatus === 'Rejected') {
     return 'ผู้ให้บริการปฏิเสธ';
@@ -133,7 +147,7 @@ export function providerBidRowStatus(item: {
     return { key: 'withdrawn', label: 'ยกเลิกแล้ว', badgeClass: 'badge--muted' };
   }
   if (item.appointmentStatus === 'Rejected') {
-    return { key: 'rejected', label: 'ผู้ให้บริการปฏิเสธ', badgeClass: 'badge--red' };
+    return { key: 'rejected', label: 'คุณปฏิเสธนัดหมาย', badgeClass: 'badge--red' };
   }
   if (item.status === 'Withdrawn') {
     return { key: 'withdrawn', label: 'ถอนแล้ว', badgeClass: 'badge--muted' };
@@ -168,7 +182,10 @@ const APPOINTMENT_STATUS: Record<string, string> = {
   Rejected: 'ผู้ให้บริการปฏิเสธ',
 };
 
-export function appointmentStatusLabel(status: string): string {
+export function appointmentStatusLabel(status: string, viewer: StatusViewer = 'requester'): string {
+  if (viewer === 'provider' && PROVIDER_APPOINTMENT_STATUS[status]) {
+    return PROVIDER_APPOINTMENT_STATUS[status];
+  }
   return APPOINTMENT_STATUS[status] ?? status;
 }
 

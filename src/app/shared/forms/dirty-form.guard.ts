@@ -58,6 +58,7 @@ export class DirtyFormGuardState {
       return;
     }
     event.preventDefault();
+    event.returnValue = '';
   };
 }
 

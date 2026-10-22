@@ -52,6 +52,8 @@ export class ThaiDatetimeField {
   readonly requireFuture = input(false);
   readonly valueChange = output<string>();
   readonly validityChange = output<boolean>();
+  /** L-15: raw typed text (date + time) so partial edits still count as dirty. */
+  readonly rawChange = output<string>();
 
   protected readonly dateText = signal('');
   protected readonly timeText = signal('');
@@ -100,6 +102,9 @@ export class ThaiDatetimeField {
   public errorMessage(): string {
     if (!this.dateText().trim() || !this.timeText().trim()) {
       return 'กรุณาเลือกวันที่และเวลา';
+    }
+    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/u.test(this.dateText().trim()) && !this.parseDateParts(this.dateText())) {
+      return 'วันที่ไม่ถูกต้อง';
     }
     const iso = this.toIsoLocal();
     if (this.requireFuture()) {
@@ -150,6 +155,7 @@ export class ThaiDatetimeField {
     const iso = this.toIsoLocal();
     this.syncingFromParent = true;
     this.valueChange.emit(iso);
+    this.rawChange.emit(`${this.dateText().trim()} ${this.timeText().trim()}`.trim());
     this.syncingFromParent = false;
     this.validityChange.emit(this.isValid());
   }
@@ -187,6 +193,10 @@ export class ThaiDatetimeField {
       y -= 543;
     }
     if (y < 2000 || y > 2100) {
+      return null;
+    }
+    // L-16: strict calendar check — 31/02, 30/02, 29/02 (non-leap) must not roll over to March
+    if (d > new Date(y, mo, 0).getDate()) {
       return null;
     }
     return { d, m: mo, y };
