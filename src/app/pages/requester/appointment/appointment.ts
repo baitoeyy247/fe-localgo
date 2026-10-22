@@ -32,6 +32,11 @@ import { ThaiDatetimeField } from '../../../shared/ui/thai-datetime-field';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { formatPrice } from '../../../shared/format-price';
 import { GLOSSARY } from '../../../shared/glossary';
+import {
+  cancelAppointmentConfirmMessage,
+  cancelAppointmentToast,
+  formatDatetimeConfirmLine,
+} from '../../../shared/confirm-copy';
 import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
 import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
 import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
@@ -200,7 +205,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
     const cur = this.formSnapshot();
     const lines: string[] = [];
     if (prev && prev.scheduledAt !== cur.scheduledAt) {
-      lines.push('วันและเวลา: มีการเปลี่ยนแปลง');
+      lines.push(formatDatetimeConfirmLine('วันและเวลา', prev.scheduledAt, cur.scheduledAt));
     }
     if (prev && prev.addressText !== cur.addressText) {
       lines.push(`สถานที่: ${prev.addressText || '—'} → ${cur.addressText || '—'}`);
@@ -337,7 +342,8 @@ export class AppointmentPage implements OnInit, OnDestroy {
     if (req) {
       this.request.set({ ...req, status: 'Cancelled' });
     }
-    this.toast.show('ยกเลิกนัดหมายแล้ว');
+    const title = req?.title?.trim() || 'งาน';
+    this.toast.show(cancelAppointmentToast(existing.scheduledAt, title));
     try {
       await firstValueFrom(this.api.updateAppointmentStatus(existing.id, 'Cancelled'));
       this.cache.invalidateAll();
@@ -495,6 +501,15 @@ export class AppointmentPage implements OnInit, OnDestroy {
       return 'ยกเลิกนัดหมาย';
     }
     return 'ยกเลิกการเลือกข้อเสนอ';
+  }
+
+  protected cancelAppointmentConfirmMessage(): string {
+    const appt = this.appointment();
+    const title = this.request()?.title?.trim() || 'งาน';
+    if (!appt) {
+      return 'ต้องการยกเลิกนัดหมายใช่หรือไม่';
+    }
+    return cancelAppointmentConfirmMessage(appt.scheduledAt, title);
   }
 
   protected openCancelDialog(): void {

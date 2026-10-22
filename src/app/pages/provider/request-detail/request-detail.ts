@@ -26,11 +26,20 @@ import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { JOB_COMPLETED_REVIEW_NOTICE } from './request-detail.copy';
 import { AuthService } from '../../../core/auth.service';
 import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
+import { RequestFlowCacheService } from '../../../core/request-flow-cache.service';
 import { ToastService } from '../../../core/toast.service';
 import { formatDistanceMeters, haversineMeters } from '../../../shared/geo-distance';
 import { UserLocationService } from '../../../core/user-location.service';
 import { canStartJobAt } from '../../../shared/appointment-start-window';
 import { GLOSSARY } from '../../../shared/glossary';
+import {
+  providerCompleteJobToast,
+  providerConfirmAppointmentToast,
+  providerStartJobToast,
+  rejectAppointmentToast,
+  withdrawBidConfirmMessage,
+  withdrawBidToast,
+} from '../../../shared/confirm-copy';
 
 @Component({
   selector: 'app-provider-request-detail-page',
@@ -137,6 +146,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly userLocation = inject(UserLocationService);
   private readonly cache = inject(MarketplaceCacheService);
+  private readonly flowCache = inject(RequestFlowCacheService);
   private readonly toast = inject(ToastService);
 
   async ngOnInit(): Promise<void> {
@@ -281,23 +291,45 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     await this.router.navigate(['/provider/bid'], { queryParams: { requestId: id } });
   }
 
+  protected withdrawConfirmMessage(): string {
+    const bid = this.myBid();
+    const title = this.request()?.title?.trim() || 'งาน';
+    const price = bid?.priceText?.trim() || '—';
+    return withdrawBidConfirmMessage(title, price);
+  }
+
   protected async withdrawMyBid(): Promise<void> {
     const bid = this.myBid();
     if (!bid || !this.canWithdrawBid() || this.withdrawBusy()) {
       return;
     }
     this.withdrawBusy.set(true);
+    const title = this.request()?.title?.trim() || 'งาน';
+    const price = bid.priceText?.trim() || '—';
+    const current = this.request();
+    if (current) {
+      const next: ServiceRequestDetail = {
+        ...current,
+        bids: (current.bids ?? []).map((b) =>
+          b.id === bid.id ? { ...b, status: 'Withdrawn' } : b,
+        ),
+      };
+      this.request.set(next);
+      this.flowCache.putRequest(next);
+      this.loading.set(false);
+    }
     try {
       await firstValueFrom(this.api.withdrawBid(bid.id));
       this.withdrawOpen.set(false);
-      this.withdrawBusy.set(false);
       this.cache.invalidateMatching();
-      this.toast.show(GLOSSARY.bidWithdrawn);
-      await this.load();
+      this.toast.show(withdrawBidToast(title, price));
+      void this.load({ background: true });
     } catch (e) {
-      this.withdrawBusy.set(false);
       this.error.set(apiErrorMessage(e, 'ถอนข้อเสนอไม่สำเร็จ'));
       scrollToFirstError();
+      void this.load({ background: true });
+    } finally {
+      this.withdrawBusy.set(false);
     }
   }
 
@@ -516,7 +548,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       return;
     }
     this.acting.set(true);
-    this.actingLabel.set('กำลังปฏิเสธนัด…');
+    this.actingLabel.set(GLOSSARY.rejectingAppointment);
     this.error.set(null);
     this.rejectOpen.set(false);
     try {
@@ -525,7 +557,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       );
       this.appointment.set(updated);
       this.cache.invalidateAll();
-      this.toast.show('ปฏิเสธนัดแล้ว');
+      this.toast.show(rejectAppointmentToast());
       const current = this.request();
       if (current) {
         this.request.set({ ...current, appointmentStatus: updated.status });
@@ -540,7 +572,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       }
     } catch (e) {
       this.appointment.set(appt);
-      this.error.set(apiErrorMessage(e, 'ปฏิเสธนัดไม่สำเร็จ'));
+      this.error.set(apiErrorMessage(e, 'ปฏิเสธนัดหมายไม่สำเร็จ'));
       scrollToFirstError();
     } finally {
       this.acting.set(false);
@@ -551,7 +583,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.openAdvanceConfirm('Confirmed', {
       allowed: () => this.canConfirmAppointment(),
       busyLabel: 'กำลังยืนยัน…',
-      notice: 'ยืนยันรับนัดหมายแล้ว — กดเริ่มงานเมื่อถึงเวลานัด',
+      notice: 'ยืนยันนัดหมายแล้ว — กดเริ่มงานเมื่อถึงเวลานัด',
       errorFallback: 'ยืนยันนัดหมายไม่สำเร็จ',
     });
   }
@@ -577,7 +609,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   protected advanceConfirmTitle(): string {
     const status = this.advanceConfirmConfig?.status;
     if (status === 'Confirmed') {
-      return 'ยืนยันรับนัดหมาย?';
+      return `${GLOSSARY.confirmReceiveAppointment}?`;
     }
     if (status === 'InProgress') {
       return 'เริ่มงานตามนัด?';
@@ -591,7 +623,8 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   protected advanceConfirmMessage(): string {
     const status = this.advanceConfirmConfig?.status;
     if (status === 'Confirmed') {
-      return 'ยืนยันรับนัดหมายตามวัน เวลา และสถานที่ที่ลูกค้าส่งมา';
+      const when = formatScheduledAt(this.appointment()?.scheduledAt);
+      return `ยืนยันนัดหมาย ${when} ตามสถานที่ที่ลูกค้าส่งมา`;
     }
     if (status === 'InProgress') {
       return 'เริ่มงานตามนัดหมายนี้';
@@ -680,6 +713,14 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
         }
       }
       this.notice.set(options.notice ?? null);
+      const jobTitle = current?.title?.trim() || 'งาน';
+      if (status === 'Confirmed') {
+        this.toast.show(providerConfirmAppointmentToast(updated.scheduledAt));
+      } else if (status === 'InProgress') {
+        this.toast.show(providerStartJobToast(jobTitle));
+      } else if (status === 'Completed') {
+        this.toast.show(providerCompleteJobToast(jobTitle));
+      }
     } catch (e) {
       this.appointment.set(appt);
       this.error.set(apiErrorMessage(e, options.errorFallback));

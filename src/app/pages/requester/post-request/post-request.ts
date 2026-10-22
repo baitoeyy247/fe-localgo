@@ -23,6 +23,7 @@ import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
 import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
 import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 import { GLOSSARY } from '../../../shared/glossary';
+import { formatDatetimeConfirmLine } from '../../../shared/confirm-copy';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { RequestFlowCacheService } from '../../../core/request-flow-cache.service';
 import { ServiceRequestDetail } from '../../../core/models';
@@ -209,7 +210,7 @@ export class PostRequestPage implements OnInit {
       lines.push(`หัวข้อ: ${prev.title || '—'} → ${cur.title || '—'}`);
     }
     if (prev && prev.preferredAt !== cur.preferredAt) {
-      lines.push('วันและเวลา: มีการเปลี่ยนแปลง');
+      lines.push(formatDatetimeConfirmLine('วันและเวลา', prev.preferredAt, cur.preferredAt));
     }
     if (prev && prev.budgetMode !== cur.budgetMode) {
       lines.push('งบประมาณ: เปลี่ยนรูปแบบ');

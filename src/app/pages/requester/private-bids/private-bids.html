@@ -35,7 +35,7 @@
       <a class="btn btn-primary" routerLink="/requester/post">ประกาศงาน</a>
     </div>
   } @else if (loading() && !request()) {
-    <app-skeleton-card [slow]="hint.slow()" variant="list" [count]="2" [topOffset]="true" />
+    <app-skeleton-card [slow]="hint.slow()" preset="bids" />
   } @else if (bids().length === 0) {
     <div class="state">
       <div class="em">⏳</div>

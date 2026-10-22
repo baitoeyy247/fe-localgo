@@ -104,22 +104,22 @@
             <p class="muted">นัดนี้ปิดแล้ว ไม่ต้องดำเนินการเพิ่ม</p>
           } @else if (canConfirmAppointment()) {
             <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" [class.is-busy]="acting()" [disabled]="acting()" (click)="openConfirmAppointment()">
-              {{ acting() ? actingLabel() : 'ยืนยันรับนัดหมาย' }}
+              {{ acting() ? actingLabel() : GLOSSARY.confirmReceiveAppointment }}
             </button>
             <button class="btn btn-danger-o btn-block" type="button" style="margin-top: 8px" [disabled]="acting()" (click)="rejectOpen.set(true)">
-              ปฏิเสธนัด
+              {{ GLOSSARY.rejectAppointment }}
             </button>
           } @else if (appt.status === 'Confirmed') {
             @if (startWindowHint()) {
               <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" disabled>เริ่มงาน</button>
             } @else {
               <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" [class.is-busy]="acting()" [disabled]="acting()" (click)="openStartJob()">
-                {{ acting() ? actingLabel() : 'เริ่มงาน' }}
+                {{ acting() ? actingLabel() : GLOSSARY.startJob }}
               </button>
             }
           } @else if (canCompleteJob()) {
             <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" [class.is-busy]="acting()" [disabled]="acting()" (click)="openCompleteJob()">
-              {{ acting() ? actingLabel() : 'งานเสร็จสิ้น' }}
+              {{ acting() ? actingLabel() : GLOSSARY.completeJob }}
             </button>
           }
         } @else if (appointmentError()) {
@@ -150,7 +150,7 @@
         }
         @if (canWithdrawBid() && !isTerminal()) {
           <button type="button" class="btn btn-danger-o btn-block" style="margin-top: 8px" [disabled]="acting()" (click)="withdrawOpen.set(true)">
-            ถอนข้อเสนอ
+            {{ GLOSSARY.withdrawBid }}
           </button>
         }
       </article>
@@ -176,9 +176,9 @@
   />
   <app-confirm-sheet
     [open]="rejectOpen()"
-    title="ปฏิเสธนัดนี้?"
-    message="ลูกค้าจะเห็นสถานะผู้ให้บริการปฏิเสธ และเลือกผู้ให้บริการรายอื่นหรือจองใหม่ได้"
-    confirmLabel="ปฏิเสธนัด"
+    [title]="GLOSSARY.rejectAppointmentTitle"
+    message="ลูกค้าจะเห็นสถานะผู้ให้บริการปฏิเสธนัดหมาย และเลือกผู้ให้บริการรายอื่นหรือจองใหม่ได้"
+    [confirmLabel]="GLOSSARY.rejectAppointment"
     [cancelLabel]="GLOSSARY.dialogCancel"
     [danger]="true"
     [busy]="acting()"
@@ -189,9 +189,9 @@
   />
   <app-confirm-sheet
     [open]="withdrawOpen()"
-    title="ถอนข้อเสนอราคา?"
-    message="ลูกค้าจะไม่เห็นข้อเสนอนี้อีก คุณสามารถส่งข้อเสนอใหม่ได้หากงานยังเปิดรับ"
-    confirmLabel="ถอนข้อเสนอ"
+    [title]="GLOSSARY.withdrawBidTitle"
+    [message]="withdrawConfirmMessage()"
+    [confirmLabel]="GLOSSARY.withdrawBid"
     [danger]="true"
     [busy]="withdrawBusy()"
     [cancelLabel]="GLOSSARY.withdrawDialogCancel"

@@ -1,6 +1,6 @@
 <app-page-shell title="ข้อเสนอของฉัน" backLink="/provider">
   @if (loading()) {
-    <app-skeleton-card [slow]="hint.slow()" [count]="2" />
+    <app-skeleton-card [slow]="hint.slow()" preset="provider-my-bids" />
   } @else if (error()) {
     <app-error-state [message]="error()!" (retry)="load()" />
   } @else if (items().length === 0) {

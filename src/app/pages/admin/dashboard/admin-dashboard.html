@@ -72,8 +72,14 @@
               <td>{{ adminUserStatusLabel(userStatus(u)) }}</td>
               <td>
                 @if (canToggleUserStatus(u)) {
-                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="acting()" (click)="requestToggleUser(u)">
-                    {{ userStatus(u) === 'Suspended' ? 'เปิดใช้งาน' : 'ระงับ' }}
+                  <button
+                    type="button"
+                    class="btn btn-ghost btn-sm"
+                    [disabled]="acting()"
+                    [attr.aria-label]="userStatus(u) === 'Suspended' ? 'เปิดใช้งานบัญชี ' + (u.displayName ?? u.lineUserId ?? 'ผู้ใช้') : suspendButtonAriaLabel(u)"
+                    (click)="requestToggleUser(u)"
+                  >
+                    {{ userStatus(u) === 'Suspended' ? 'เปิดใช้งาน' : GLOSSARY.adminSuspend }}
                   </button>
                 } @else if (auth.user()?.id === u.id) {
                   <span class="muted">บัญชีของคุณ</span>
@@ -212,8 +218,8 @@
   <app-confirm-sheet
     [open]="suspendConfirmOpen()"
     title="ระงับบัญชีผู้ใช้?"
-    [message]="suspendTarget() ? 'ระงับบัญชี ' + (suspendTarget()!.displayName || suspendTarget()!.lineUserId || 'ผู้ใช้') + ' — ผู้ใช้จะไม่สามารถเข้าสู่ระบบได้จนกว่าจะเปิดใช้งานอีกครั้ง' : ''"
-    confirmLabel="ระงับบัญชี"
+    [message]="suspendConfirmMessage()"
+    [confirmLabel]="GLOSSARY.adminSuspendAccount"
     cancelLabel="ยกเลิก"
     [danger]="true"
     [busy]="acting()"

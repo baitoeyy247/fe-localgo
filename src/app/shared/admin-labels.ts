@@ -10,7 +10,7 @@ const SYSTEM_ROLE: Record<string, string> = {
 
 const NOTIFICATION_EVENT: Record<string, string> = {
   NewMatchingRequest: 'งานใหม่ตรงบริการของคุณ',
-  NewBidReceived: 'มีข้อเสนอราคาใหม่',
+  NewBidReceived: 'มีข้อเสนอใหม่',
   BidSelected: 'ลูกค้าเลือกข้อเสนอ',
   AppointmentCreated: 'มีนัดหมายใหม่',
   AppointmentConfirmed: 'ยืนยันนัดหมาย',

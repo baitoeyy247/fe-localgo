@@ -1,6 +1,6 @@
 <app-page-shell [title]="title()" [backLink]="backLink()">
   @if (loading()) {
-    <app-skeleton-card [count]="2" />
+    <app-skeleton-card preset="appointment-detail" />
   } @else if (forbidden()) {
     <app-not-found-state
       title="ไม่พบหรือไม่มีสิทธิ์เข้าถึง"
@@ -42,7 +42,7 @@
     @if (role() === 'requester') {
       @if (a.status === 'Rejected') {
         <div class="state">
-          <p class="muted">ผู้ให้บริการปฏิเสธนัด — คุณสามารถจองใหม่หรือหาผู้ให้บริการรายอื่น</p>
+          <p class="muted">ผู้ให้บริการปฏิเสธนัดหมาย — คุณสามารถจองใหม่หรือหาผู้ให้บริการรายอื่น</p>
           <a class="btn btn-primary btn-block" routerLink="/requester/search">หาผู้ให้บริการอื่น</a>
           <a class="btn btn-secondary btn-block" routerLink="/requester/post">จองใหม่ / ประกาศงาน</a>
         </div>

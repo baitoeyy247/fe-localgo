@@ -5,7 +5,7 @@
   </div>
 
   @if (loading()) {
-    <app-skeleton-card [slow]="hint.slow()" [timedOut]="hint.timedOut()" [count]="3" (retry)="reload()" />
+    <app-skeleton-card [slow]="hint.slow()" [timedOut]="hint.timedOut()" preset="provider-requests" (retry)="reload()" />
   } @else if (error()) {
     <app-error-state [message]="error()!" (retry)="reload()" />
   } @else if (setupIssue()) {
@@ -19,7 +19,7 @@
     @if (pendingConfirmCount() > 0 && tab() === 'pending') {
       <div class="banner warn" role="status">
         <span
-          ><b>มีงานรอยืนยันนัด {{ pendingConfirmCount() }} รายการ</b><br />กดยืนยันรับนัดในแท็บรอยืนยัน</span
+          ><b>มีงานรอยืนยันนัดหมาย {{ pendingConfirmCount() }} รายการ</b><br />กด{{ GLOSSARY.confirmReceiveAppointment }}ในแท็บรอยืนยัน</span
         >
       </div>
     }

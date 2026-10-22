@@ -19,6 +19,13 @@ import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
 import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
+import {
+  bidSubmittedToast,
+  formatBidDescriptionConfirmLine,
+  formatBidPriceConfirmLine,
+  withdrawBidConfirmMessage,
+  withdrawBidToast,
+} from '../../../shared/confirm-copy';
 
 export const BID_DESCRIPTION_MAX = 2000;
 
@@ -237,10 +244,13 @@ export class SubmitBidPage implements OnInit, OnDestroy {
     const cur = this.formSnapshot();
     const lines: string[] = [];
     if (prev && prev.priceText !== cur.priceText) {
-      lines.push(`ราคา: ${prev.priceText || '—'} → ${cur.priceText} บาท`);
+      lines.push(formatBidPriceConfirmLine(prev.priceText, cur.priceText));
     }
-    if (prev && prev.description !== cur.description) {
-      lines.push('รายละเอียด: มีการแก้ไข');
+    if (prev) {
+      const descLine = formatBidDescriptionConfirmLine(prev.description, cur.description);
+      if (descLine) {
+        lines.push(descLine);
+      }
     }
     this.saveConfirmMessage.set(this.formGuard.buildSaveMessage(lines));
     this.saveConfirmOpen.set(true);
@@ -273,28 +283,33 @@ export class SubmitBidPage implements OnInit, OnDestroy {
     this.submitting.set(true);
     this.error.set(null);
     const price = this.priceText().trim();
+    const payload = {
+      priceText: price,
+      description: this.description().trim() || undefined,
+    };
+    const bidId = this.existingBidId();
+    const isUpdate = !!bidId;
+    const optimistic = this.buildOptimisticDetail(requestId, providerId, payload, bidId);
+    this.flowCache.putRequest(optimistic);
+    this.formGuard.markSaved(this.formSnapshot());
+    this.toast.show(bidSubmittedToast(price, isUpdate));
+    await this.router.navigate(['/provider/requests', requestId], {
+      state: { notice: GLOSSARY.bidSubmitted, requestDetail: optimistic },
+    });
     try {
-      const payload = {
-        priceText: price,
-        description: this.description().trim() || undefined,
-      };
-      const bidId = this.existingBidId();
-      let detail = this.request();
       if (bidId) {
         await firstValueFrom(this.api.updateBid(bidId, payload));
       } else {
         await firstValueFrom(this.api.submitBid(requestId, payload));
       }
       this.cache.invalidateMatching();
-      detail = await firstValueFrom(this.api.getRequest(requestId));
-      this.formGuard.markSaved(this.formSnapshot());
-      this.toast.show(`ส่งข้อเสนอ ${price} บาทแล้ว`);
-      await this.router.navigate(['/provider/requests', requestId], {
-        state: { notice: GLOSSARY.bidSubmitted, requestDetail: detail },
-      });
+      const detail = await firstValueFrom(this.api.getRequest(requestId));
+      this.flowCache.putRequest(detail);
     } catch (e) {
       const recovered = await this.recoverAfterSubmitError(requestId, providerId, e);
       if (recovered) {
+        const isUpdate = !!this.existingBidId();
+        this.toast.show(bidSubmittedToast(price, isUpdate));
         await this.router.navigate(['/provider/requests', requestId], {
           state: { notice: 'ระบบบันทึกข้อเสนอแล้ว แม้ตอบกลับผิดพลาด กรุณาตรวจสอบสถานะล่าสุด' },
         });
@@ -307,6 +322,13 @@ export class SubmitBidPage implements OnInit, OnDestroy {
     }
   }
 
+  protected withdrawConfirmMessage(): string {
+    const r = this.request();
+    const price = this.priceText().trim() || '—';
+    const title = r?.title?.trim() || 'งาน';
+    return withdrawBidConfirmMessage(title, price);
+  }
+
   protected async withdrawBid(): Promise<void> {
     const bidId = this.existingBidId();
     if (!bidId || this.withdrawing()) {
@@ -314,12 +336,14 @@ export class SubmitBidPage implements OnInit, OnDestroy {
     }
     this.withdrawing.set(true);
     const requestId = this.session.providerRequestId;
+    const title = this.request()?.title?.trim() || 'งาน';
+    const price = this.priceText().trim() || '—';
     try {
       await firstValueFrom(this.api.withdrawBid(bidId));
       this.withdrawOpen.set(false);
       this.cache.invalidateMatching();
       this.formGuard.markSaved(this.formSnapshot());
-      this.toast.show(GLOSSARY.bidWithdrawn);
+      this.toast.show(withdrawBidToast(title, price));
       if (requestId) {
         await this.router.navigate(['/provider/requests', requestId]);
       } else {
@@ -364,5 +388,38 @@ export class SubmitBidPage implements OnInit, OnDestroy {
 
   private isActiveBidStatus(status: string): boolean {
     return status === 'Submitted' || status === 'Pending' || status === 'Selected';
+  }
+
+  private buildOptimisticDetail(
+    requestId: string,
+    providerId: string,
+    payload: { priceText: string; description?: string },
+    existingBidId: string | null,
+  ): ServiceRequestDetail {
+    const base = this.request();
+    if (!base) {
+      throw new Error('missing request');
+    }
+    const bids = [...(base.bids ?? [])];
+    if (existingBidId) {
+      const idx = bids.findIndex((b) => b.id === existingBidId);
+      if (idx >= 0) {
+        bids[idx] = {
+          ...bids[idx],
+          priceText: payload.priceText,
+          description: payload.description ?? bids[idx].description,
+        };
+      }
+    } else {
+      bids.push({
+        id: `optimistic-${Date.now()}`,
+        providerId,
+        providerName: base.bids?.find((b) => b.providerId === providerId)?.providerName ?? 'ฉัน',
+        priceText: payload.priceText,
+        description: payload.description ?? '',
+        status: 'Submitted',
+      });
+    }
+    return { ...base, id: requestId, bids, status: base.status === 'Open' ? 'HasOffers' : base.status };
   }
 }

@@ -1,7 +1,14 @@
-import { Component, input, output } from '@angular/core';
+import { NgClass } from '@angular/common';
+import { Component, computed, input, output } from '@angular/core';
+import {
+  SKELETON_PAGE_PRESETS,
+  type SkeletonPagePreset,
+} from './skeleton-layout.constants';
 
 @Component({
   selector: 'app-skeleton-card',
+  standalone: true,
+  imports: [NgClass],
   template: `
     @if (timedOut()) {
       <div class="state" role="alert">
@@ -14,13 +21,14 @@ import { Component, input, output } from '@angular/core';
       @if (slow()) {
         <p class="muted" style="text-align: center" role="status">กำลังเชื่อมต่อเซิร์ฟเวอร์…</p>
       }
-      <div
-        class="skeleton-stack"
-        [class.skeleton-stack--detail]="variant() === 'detail'"
-        [class.skeleton-stack--form]="variant() === 'form'"
-        [class.skeleton-stack--top-offset]="topOffset()"
-      >
-        @if (variant() === 'form') {
+      <div class="skeleton-stack" [ngClass]="stackClasses()">
+        @if (showHeaderChrome()) {
+          <div class="skeleton-header-chrome" aria-hidden="true">
+            <div class="skel skeleton-header-chrome__title"></div>
+            <div class="skel skeleton-header-chrome__line"></div>
+          </div>
+        }
+        @if (effectiveVariant() === 'form') {
           @for (i of formFields(); track i) {
             <div class="skeleton-form-field" aria-hidden="true">
               <div class="skel skeleton-form-field__label"></div>
@@ -31,10 +39,10 @@ import { Component, input, output } from '@angular/core';
         } @else {
           @for (i of items(); track i) {
             <div class="card skeleton-card" aria-hidden="true">
-              <div class="skel" [style.height.px]="variant() === 'detail' ? 24 : 20" style="width: 60%"></div>
+              <div class="skel" [style.height.px]="effectiveVariant() === 'detail' ? 24 : 20" style="width: 60%"></div>
               <div class="skel" style="height: 14px; margin-top: 12px"></div>
               <div class="skel" style="height: 14px; width: 80%; margin-top: 8px"></div>
-              @if (variant() === 'detail') {
+              @if (effectiveVariant() === 'detail') {
                 <div class="skel" style="height: 120px; width: 100%; margin-top: 12px; border-radius: 12px"></div>
               }
             </div>
@@ -49,14 +57,46 @@ export class SkeletonCard {
   readonly slow = input(false);
   /** After ~10s — show retry instead of skeleton. */
   readonly timedOut = input(false);
+  /** Page-specific layout (overrides count / variant / topOffset when set). */
+  readonly preset = input<SkeletonPagePreset | undefined>(undefined);
   readonly count = input(2);
   readonly variant = input<'list' | 'detail' | 'form'>('list');
   /** Nudge skeleton down to align with real content below flow bars / banners. */
   readonly topOffset = input(false);
   readonly retry = output<void>();
 
+  protected readonly effectiveCount = computed(() => {
+    const p = this.preset();
+    return p ? SKELETON_PAGE_PRESETS[p].count : this.count();
+  });
+
+  protected readonly effectiveVariant = computed(() => {
+    const p = this.preset();
+    return p ? SKELETON_PAGE_PRESETS[p].variant : this.variant();
+  });
+
+  protected readonly showHeaderChrome = computed(() => {
+    const p = this.preset();
+    return p ? SKELETON_PAGE_PRESETS[p].headerChrome : false;
+  });
+
+  protected stackClasses(): Record<string, boolean> {
+    const p = this.preset();
+    const variant = this.effectiveVariant();
+    const classes: Record<string, boolean> = {
+      'skeleton-stack--detail': variant === 'detail',
+      'skeleton-stack--form': variant === 'form',
+    };
+    if (p) {
+      classes[`skeleton-stack--${SKELETON_PAGE_PRESETS[p].stackModifier}`] = true;
+    } else if (this.topOffset()) {
+      classes['skeleton-stack--top-offset'] = true;
+    }
+    return classes;
+  }
+
   protected items(): number[] {
-    return Array.from({ length: this.count() }, (_, i) => i);
+    return Array.from({ length: this.effectiveCount() }, (_, i) => i);
   }
 
   protected formFields(): number[] {

@@ -1,4 +1,4 @@
-<app-page-shell title="เสนอราคา" [backLink]="backLink()">
+<app-page-shell [title]="GLOSSARY.submitBid" [backLink]="backLink()">
   @if (loading() && !request()) {
     <app-skeleton-card [slow]="hint.slow()" variant="form" [count]="1" [topOffset]="true" />
   } @else if (loadError()) {
@@ -27,7 +27,7 @@
     </div>
 
     <label class="field">
-      <span>ราคาเสนอ <span class="req">*</span></span>
+      <span>{{ GLOSSARY.priceLabel }} <span class="req">*</span></span>
       <div class="input-with-unit">
         <input
           class="input-price"
@@ -42,7 +42,7 @@
     </label>
 
     <label class="field">
-      <span>รายละเอียดข้อเสนอ</span>
+      <span>{{ GLOSSARY.bidDetailLabel }}</span>
       <textarea
         class="input"
         rows="4"
@@ -67,8 +67,8 @@
             ? 'กำลังอัปเดต…'
             : 'กำลังส่ง…'
           : existingBidId()
-            ? 'อัปเดตข้อเสนอราคา'
-            : 'ส่งข้อเสนอราคา'
+            ? GLOSSARY.updateBid
+            : GLOSSARY.submitBid
       }}
     </button>
     @if (existingBidId()) {
@@ -100,9 +100,9 @@
   />
   <app-confirm-sheet
     [open]="withdrawOpen()"
-    title="ถอนข้อเสนอราคา?"
-    message="ลูกค้าจะไม่เห็นข้อเสนอนี้อีก คุณสามารถส่งข้อเสนอใหม่ได้หากงานยังเปิดรับ"
-    confirmLabel="ถอนข้อเสนอ"
+    [title]="GLOSSARY.withdrawBidTitle"
+    [message]="withdrawConfirmMessage()"
+    [confirmLabel]="GLOSSARY.withdrawBid"
     [danger]="true"
     [busy]="withdrawing()"
     [cancelLabel]="GLOSSARY.withdrawDialogCancel"

@@ -14,6 +14,7 @@ import { ToastService } from '../../../core/toast.service';
 import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
 import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
 import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
+import { GLOSSARY } from '../../../shared/glossary';
 
 @Component({
   selector: 'app-add-service-page',
@@ -28,6 +29,7 @@ import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
   templateUrl: './add-service.html',
 })
 export class AddServicePage implements OnInit {
+  protected readonly GLOSSARY = GLOSSARY;
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly categories = signal<Category[]>([]);
   protected readonly selectedCategoryId = signal<string | null>(null);
@@ -152,7 +154,7 @@ export class AddServicePage implements OnInit {
       lines.push(`ราคาเริ่มต้น: ${prev.basePriceText || '—'} → ${cur.basePriceText || '—'}`);
     }
     if (prev && JSON.stringify(prev.branchIds) !== JSON.stringify(cur.branchIds)) {
-      lines.push('จุดให้บริการ: มีการเปลี่ยนแปลง');
+      lines.push(`${GLOSSARY.serviceBranch}: มีการเปลี่ยนแปลง`);
     }
     this.saveConfirmMessage.set(this.formGuard.buildSaveMessage(lines));
     this.saveConfirmOpen.set(true);

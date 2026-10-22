@@ -15,6 +15,7 @@ import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
 import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
 import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 import { GLOSSARY } from '../../../shared/glossary';
+import { buildReviewConfirmMessage } from '../../../shared/confirm-copy';
 
 @Component({
   selector: 'app-review-page',
@@ -144,16 +145,8 @@ export class ReviewPage implements OnInit {
     if (!this.hasChanges()) {
       return;
     }
-    const prev = this.baselineSummary;
     const cur = this.formSnapshot();
-    const lines: string[] = [];
-    if (prev && prev.rating !== cur.rating) {
-      lines.push(`คะแนน: ${prev.rating || '—'} → ${cur.rating} ดาว`);
-    }
-    if (prev && prev.comment !== cur.comment) {
-      lines.push('ความคิดเห็น: มีการแก้ไข');
-    }
-    this.saveConfirmMessage.set(this.formGuard.buildSaveMessage(lines));
+    this.saveConfirmMessage.set(buildReviewConfirmMessage(this.baselineSummary, cur));
     this.saveConfirmOpen.set(true);
   }
 

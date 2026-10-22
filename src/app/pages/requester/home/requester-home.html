@@ -11,7 +11,7 @@
   }
 
   @if (loading()) {
-    <app-skeleton-card [slow]="hint.slow()" [count]="2" />
+    <app-skeleton-card [slow]="hint.slow()" preset="requester-home" />
   } @else if (error()) {
     <app-error-state [message]="error()!" (retry)="load()" />
   } @else {

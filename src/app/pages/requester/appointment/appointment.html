@@ -164,7 +164,7 @@
   <app-confirm-sheet
     [open]="confirmCancelOpen()"
     title="ยกเลิกนัดหมาย?"
-    message="ต้องการยกเลิกนัดหมายใช่หรือไม่"
+    [message]="cancelAppointmentConfirmMessage()"
     [confirmLabel]="GLOSSARY.cancelAppointment"
     [cancelLabel]="GLOSSARY.dialogCancel"
     [danger]="true"

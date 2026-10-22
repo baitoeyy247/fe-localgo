@@ -71,7 +71,7 @@
   <app-confirm-sheet
     [open]="deleteOpen()"
     title="ลบบริการนี้?"
-    message="ลบถาวร — งานที่อ้างอิงบริการนี้อาจได้รับผลกระทบ"
+    [message]="deleteServiceConfirmMessage()"
     confirmLabel="ลบบริการ"
     cancelLabel="ไม่ลบ"
     [danger]="true"

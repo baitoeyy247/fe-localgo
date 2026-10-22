@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { GLOSSARY } from '../i18n/glossary';
 import { adminGuard } from './core/admin.guard';
 import { authGuard } from './core/auth.guard';
 import { dirtyFormCanDeactivate } from './shared/forms/dirty-form.guard';
@@ -150,7 +151,7 @@ export const routes: Routes = [
   },
   {
     path: 'provider/coverage',
-    title: 'พื้นที่ให้บริการ | LocalGo',
+    title: `${GLOSSARY.coverageAreaTitle} | LocalGo`,
     canActivate: [authGuard],
     ...formGuard,
     loadComponent: () => import('./pages/provider/coverage/coverage').then((m) => m.CoveragePage),
@@ -189,7 +190,7 @@ export const routes: Routes = [
   },
   {
     path: 'provider/bid',
-    title: 'ส่งข้อเสนอราคา | LocalGo',
+    title: `${GLOSSARY.submitBid} | LocalGo`,
     canActivate: [authGuard],
     ...formGuard,
     loadComponent: () =>

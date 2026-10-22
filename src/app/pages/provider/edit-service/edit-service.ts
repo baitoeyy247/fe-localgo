@@ -14,6 +14,8 @@ import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
 import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
 import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
+import { GLOSSARY } from '../../../shared/glossary';
+import { deleteServiceConfirmMessage, deleteServiceToast } from '../../../shared/confirm-copy';
 
 @Component({
   selector: 'app-edit-service-page',
@@ -28,6 +30,7 @@ import { SkeletonCard } from '../../../shared/ui/skeleton-card';
   templateUrl: './edit-service.html',
 })
 export class EditServicePage implements OnInit {
+  protected readonly GLOSSARY = GLOSSARY;
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly service = signal<ProviderService | null>(null);
   protected readonly categories = signal<Category[]>([]);
@@ -152,7 +155,7 @@ export class EditServicePage implements OnInit {
       lines.push(`ราคา: ${prev.basePriceText || '—'} → ${cur.basePriceText || '—'}`);
     }
     if (prev && JSON.stringify(prev.branchIds) !== JSON.stringify(cur.branchIds)) {
-      lines.push('จุดให้บริการ: มีการเปลี่ยนแปลง');
+      lines.push(`${GLOSSARY.serviceBranch}: มีการเปลี่ยนแปลง`);
     }
     this.saveConfirmMessage.set(this.formGuard.buildSaveMessage(lines));
     this.saveConfirmOpen.set(true);
@@ -207,17 +210,22 @@ export class EditServicePage implements OnInit {
     }
   }
 
+  protected deleteServiceConfirmMessage(): string {
+    return deleteServiceConfirmMessage(this.title().trim() || this.service()?.title?.trim() || 'บริการ');
+  }
+
   protected async deleteService(): Promise<void> {
     const p = this.provider();
     const svc = this.service();
     if (!p || !svc || this.deleting()) {
       return;
     }
+    const serviceTitle = this.title().trim() || svc.title?.trim() || 'บริการ';
     this.deleting.set(true);
     try {
       await firstValueFrom(this.api.deleteService(p.id, svc.id));
       this.formGuard.markSaved(this.formSnapshot());
-      this.toast.show('ลบบริการแล้ว');
+      this.toast.show(deleteServiceToast(serviceTitle));
       await this.router.navigateByUrl('/provider/manage');
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'ลบบริการไม่สำเร็จ'));

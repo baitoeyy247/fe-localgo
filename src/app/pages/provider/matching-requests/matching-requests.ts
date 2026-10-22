@@ -21,6 +21,7 @@ import { formatDistanceMeters } from '../../../shared/geo-distance';
 import { formatPrice } from '../../../shared/format-price';
 import { formatBudgetDisplay } from '../../../shared/format-budget';
 import { normalizeList } from '../../../shared/normalize-list';
+import { GLOSSARY } from '../../../shared/glossary';
 
 type SetupIssue = 'no-profile' | 'missing-branches' | 'missing-services';
 type JobTab = 'pending' | 'bidWaiting' | 'active' | 'completed' | 'cancelled' | 'rejected';
@@ -67,6 +68,7 @@ type JobTab = 'pending' | 'bidWaiting' | 'active' | 'completed' | 'cancelled' | 
   ],
 })
 export class MatchingRequestsPage implements OnInit, OnDestroy {
+  protected readonly GLOSSARY = GLOSSARY;
   protected readonly matchingRequests = signal<ServiceRequestSummary[]>([]);
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly loading = signal(true);
