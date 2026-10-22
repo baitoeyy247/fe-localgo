@@ -1,6 +1,19 @@
 <app-page-shell [title]="title()" [backLink]="backLink()">
   @if (loading()) {
-    <app-skeleton-card preset="appointment-detail" />
+    <div class="skeleton-stack skeleton-stack--appointment-detail" role="status" aria-live="polite">
+      <span class="sr-only">กำลังโหลด…</span>
+      <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+        <div class="row between" style="align-items: flex-start">
+          <p style="margin: 0"><span class="ghost">ผู้ให้บริการ: ชื่อผู้ให้บริการ</span></p>
+          <span class="badge ghost">สถานะ</span>
+        </div>
+      </div>
+      <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+        <p style="margin: 0 0 8px"><span class="ghost">วันเวลานัด: 00 ต.ค. 0000 00:00</span></p>
+        <p style="margin: 0 0 8px"><span class="ghost">สถานที่: ที่อยู่นัดหมาย</span></p>
+        <p style="margin: 0"><span class="ghost">ราคา: 000 บาท</span></p>
+      </div>
+    </div>
   } @else if (forbidden()) {
     <app-not-found-state
       title="ไม่พบหรือไม่มีสิทธิ์เข้าถึง"

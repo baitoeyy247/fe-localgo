@@ -30,6 +30,8 @@ import {
 
 export const BID_DESCRIPTION_MAX = 2000;
 
+import { priceError, PRICE_ERROR } from '../../../shared/field-limits';
+
 @Component({
   selector: 'app-submit-bid-page',
   imports: [PageShell, RouterLink, SkeletonCard, ErrorState, ConfirmSaveDialog, ConfirmSheet],
@@ -51,6 +53,9 @@ export class SubmitBidPage implements OnInit, OnDestroy {
   protected readonly blockReasonCode = signal<string | null>(null);
   protected readonly truncated = signal(false);
   protected readonly maxLength = BID_DESCRIPTION_MAX;
+  /** M-5: blur-time price error (shared validator with service price). */
+  protected readonly priceErr = signal<string | null>(null);
+  protected readonly priceErrorFor = (v: string): string | null => (v.trim() ? priceError(v) : PRICE_ERROR);
   protected readonly hint = new SlowLoadHint();
   protected readonly saveConfirmOpen = signal(false);
   protected readonly saveConfirmMessage = signal('');
@@ -239,7 +244,7 @@ export class SubmitBidPage implements OnInit, OnDestroy {
       return;
     }
     if (!isValidBidPrice(this.priceText())) {
-      this.error.set('ราคาต้องเป็นจำนวนเต็มตั้งแต่ 1 ถึง 1000000 (ตัวเลขเท่านั้น)');
+      this.error.set(PRICE_ERROR);
       scrollToFirstError();
       return;
     }

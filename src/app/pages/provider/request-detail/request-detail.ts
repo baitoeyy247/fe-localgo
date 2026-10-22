@@ -703,21 +703,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     const previousAppt = appt;
     const previousRequest = this.request();
     const jobTitle = previousRequest?.title?.trim() || 'งาน';
-    const optimisticAppt: AppointmentDetail = { ...appt, status };
-    this.appointment.set(optimisticAppt);
-    if (previousRequest) {
-      const nextRequestStatus =
-        status === 'InProgress'
-          ? 'InProgress'
-          : status === 'Completed'
-            ? 'Completed'
-            : previousRequest.status;
-      this.request.set({
-        ...previousRequest,
-        status: nextRequestStatus,
-        appointmentStatus: status,
-      });
-    }
+    // L-14: no optimistic status change — update only after a 2xx response.
     try {
       const updated = await firstValueFrom(this.api.updateAppointmentStatus(appt.id, status));
       this.appointment.set(updated);

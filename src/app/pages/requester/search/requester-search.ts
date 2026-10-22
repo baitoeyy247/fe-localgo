@@ -13,16 +13,20 @@ import { UserLocationService } from '../../../core/user-location.service';
 import { formatDistanceMeters } from '../../../shared/geo-distance';
 import { searchRadiusCaption, searchRadiusKmLabel } from '../../../shared/search-area-radius';
 import { MapView } from '../../../demo/map-view';
+import { ErrorState } from '../../../shared/ui/error-state';
+import { apiErrorMessage } from '../../../core/api-error.util';
 
 @Component({
   selector: 'app-requester-search-page',
-  imports: [PageShell, RouterLink, LocationPickerModal, RequesterBottomNav, MapView],
+  imports: [PageShell, RouterLink, LocationPickerModal, RequesterBottomNav, MapView, ErrorState],
   templateUrl: './requester-search.html',
 })
 export class RequesterSearchPage implements OnInit {
   protected readonly providers = signal<ProviderSummary[]>([]);
   protected readonly categories = signal<Category[]>([]);
   protected readonly loading = signal(false);
+  /** A5-1: set when categories/search GET fails — never shown as "0 ราย". */
+  protected readonly loadError = signal<string | null>(null);
   /** True after the first search in this visit (auto or manual). */
   protected readonly hasSearched = signal(false);
   protected readonly keyword = signal('');
@@ -61,8 +65,7 @@ export class RequesterSearchPage implements OnInit {
       this.pickerOpen.set(true);
     }
 
-    const cats = await firstValueFrom(this.api.listCategories());
-    this.categories.set(cats);
+    await this.loadCategories();
 
     const qp = this.route.snapshot.queryParamMap;
     const catId = qp.get('categoryId');
@@ -154,8 +157,31 @@ export class RequesterSearchPage implements OnInit {
     });
   }
 
+  private async loadCategories(): Promise<void> {
+    try {
+      const cats = await firstValueFrom(this.api.listCategories());
+      this.categories.set(cats);
+    } catch (e) {
+      this.loadError.set(apiErrorMessage(e, 'โหลดข้อมูลไม่สำเร็จ'));
+    }
+  }
+
+  protected async retryLoad(): Promise<void> {
+    this.loadError.set(null);
+    if (!this.categories().length) {
+      await this.loadCategories();
+      if (this.loadError()) {
+        return;
+      }
+    }
+    if (!this.needsLocationPick()) {
+      await this.reload();
+    }
+  }
+
   private async reload(): Promise<void> {
     this.loading.set(true);
+    this.loadError.set(null);
     const area = this.selectedArea();
     try {
       const results = await firstValueFrom(
@@ -169,6 +195,10 @@ export class RequesterSearchPage implements OnInit {
       );
       this.providers.set(results);
       this.hasSearched.set(true);
+    } catch (e) {
+      this.providers.set([]);
+      this.hasSearched.set(false);
+      this.loadError.set(apiErrorMessage(e, 'โหลดข้อมูลไม่สำเร็จ'));
     } finally {
       this.loading.set(false);
     }

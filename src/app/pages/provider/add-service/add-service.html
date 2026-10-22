@@ -22,11 +22,13 @@
     </label>
     <label class="field">
       <span>ชื่อบริการ <span class="req">*</span></span>
-      <input class="input" placeholder="เช่น ซักอบรีด รับส่งถึงที่" (input)="updateTitle($any($event.target).value)" />
+      <input class="input" placeholder="เช่น ซักอบรีด รับส่งถึงที่" [attr.maxlength]="LIMITS.serviceName" [value]="title()" (input)="updateTitle($any($event.target).value)" />
+      <app-char-counter [value]="title()" [max]="LIMITS.serviceName" label="ชื่อบริการ" />
     </label>
     <label class="field">
       <span>รายละเอียด</span>
-      <textarea class="input" rows="3" (input)="updateDescription($any($event.target).value)"></textarea>
+      <textarea class="input" rows="3" [attr.maxlength]="LIMITS.serviceDescription" [value]="description()" (input)="updateDescription($any($event.target).value)"></textarea>
+      <app-char-counter [value]="description()" [max]="LIMITS.serviceDescription" label="รายละเอียดบริการ" />
     </label>
     <label class="field">
       <span>ราคาเริ่มต้น</span>
@@ -36,11 +38,18 @@
           type="text"
           placeholder="40"
           inputmode="numeric"
+          maxlength="7"
+          [class.err]="!!priceErr()"
+          [value]="basePriceText()"
           (input)="updateBasePrice($any($event.target).value)"
+          (blur)="checkPrice()"
         />
         <span class="input-with-unit__suffix">บาท</span>
       </div>
-      <small class="muted">เช่น 40 บาท/กก. — พิมพ์ตัวเลขหรือช่วงราคา</small>
+      <small class="muted">จำนวนเต็ม 1–1,000,000 บาท (ไม่บังคับ)</small>
+      @if (priceErr(); as msg) {
+        <p class="error-text" role="alert">{{ msg }}</p>
+      }
     </label>
 
     <div class="sec-title">

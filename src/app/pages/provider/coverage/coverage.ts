@@ -24,9 +24,12 @@ import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { GLOSSARY } from '../../../shared/glossary';
 import { destructiveSheetDismissDeleteArea } from '../../../shared/confirm-copy';
 
+import { CharCounter } from '../../../shared/ui/char-counter';
+import { FIELD_LIMITS, priceError, PRICE_ERROR } from '../../../shared/field-limits';
+
 @Component({
   selector: 'app-coverage-page',
-  imports: [
+  imports: [CharCounter, 
     PageShell,
     RouterLink,
     LocationPickerModal,
@@ -48,6 +51,7 @@ export class CoveragePage implements OnInit {
   protected readonly loadError = signal(false);
   protected readonly toast = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
+  protected readonly LIMITS = FIELD_LIMITS;
   protected readonly formOpen = signal(false);
   protected readonly disableTarget = signal<ProviderBranch | null>(null);
   protected readonly deleteTarget = signal<ProviderBranch | null>(null);
@@ -146,6 +150,19 @@ export class CoveragePage implements OnInit {
   }
 
   protected askSaveBranch(): void {
+    // M-6b: trim + validate before the confirm sheet opens.
+    const trimmed = this.editingName().trim();
+    this.editingName.set(trimmed);
+    if (!trimmed) {
+      this.error.set(GLOSSARY.branchNameRequired);
+      scrollToFirstError();
+      return;
+    }
+    if (trimmed.length > FIELD_LIMITS.branchName) {
+      this.error.set(`ชื่อพื้นที่ต้องไม่เกิน ${FIELD_LIMITS.branchName} ตัวอักษร`);
+      scrollToFirstError();
+      return;
+    }
     if (!this.hasFormChanges()) {
       this.error.set('ไม่มีการเปลี่ยนแปลง');
       return;

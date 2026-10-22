@@ -15,7 +15,6 @@ import {
 import { formatScheduledAt } from '../../../shared/datetime.util';
 import { SlowLoadHint } from '../../../shared/load-state';
 import { ErrorState } from '../../../shared/ui/error-state';
-import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { GLOSSARY } from '../../../shared/glossary';
 
 const FILTER_CHIPS: { key: ProviderBidFilterKey; label: string }[] = [
@@ -35,9 +34,7 @@ const FILTER_CHIPS: { key: ProviderBidFilterKey; label: string }[] = [
     RouterLink,
     ProviderBottomNav,
     NgClass,
-    ErrorState,
-    SkeletonCard,
-  ],
+    ErrorState, ],
   templateUrl: './my-bids.html',
 })
 export class ProviderMyBidsPage implements OnInit, OnDestroy {

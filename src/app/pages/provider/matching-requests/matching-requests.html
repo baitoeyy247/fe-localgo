@@ -5,7 +5,24 @@
   </div>
 
   @if (loading()) {
-    <app-skeleton-card [slow]="hint.slow()" [timedOut]="hint.timedOut()" preset="provider-requests" (retry)="reload()" />
+    @if (hint.timedOut()) {
+      <app-skeleton-card [timedOut]="true" (retry)="reload()" />
+    } @else {
+      <div class="sec-title" aria-hidden="true">งานเปิดรับข้อเสนอ</div>
+      <div class="skeleton-stack skeleton-stack--provider-requests" role="status" aria-live="polite">
+        <span class="sr-only">กำลังโหลด…</span>
+        @for (i of [0, 1]; track i) {
+          <article class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+            <div class="row between" style="align-items: flex-start">
+              <b class="ghost">ชื่องานที่ตรงกับบริการ</b>
+              <span class="badge ghost">สถานะ</span>
+            </div>
+            <p class="muted" style="margin: 4px 0 0"><span class="ghost">หมวดหมู่ · 0.0 กม.</span></p>
+            <span class="btn btn-primary btn-block ghost" style="margin-top: 8px">เสนอราคา</span>
+          </article>
+        }
+      </div>
+    }
   } @else if (error()) {
     <app-error-state [message]="error()!" (retry)="reload()" />
   } @else if (setupIssue()) {

@@ -16,6 +16,8 @@
 
   @if (loading()) {
     <app-skeleton-card preset="post-form" />
+  } @else if (loadError()) {
+    <app-error-state [message]="loadError()!" (retry)="loadCategories()" />
   } @else {
   <div class="post-request-form">
   <label class="field" [class.field--error]="!!fieldErrors()['title']">

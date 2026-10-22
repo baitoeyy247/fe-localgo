@@ -10,7 +10,6 @@ import { formatScheduledAt } from '../../shared/datetime.util';
 import { formatPrice } from '../../shared/format-price';
 import { ErrorState } from '../../shared/ui/error-state';
 import { NotFoundState } from '../../shared/ui/not-found-state';
-import { SkeletonCard } from '../../shared/ui/skeleton-card';
 import { ConfirmSheet } from '../../shared/ui/confirm-sheet';
 import { GLOSSARY } from '../../shared/glossary';
 import {
@@ -22,7 +21,7 @@ import { ToastService } from '../../core/toast.service';
 
 @Component({
   selector: 'app-appointment-by-id-page',
-  imports: [PageShell, RouterLink, ErrorState, NotFoundState, SkeletonCard, ConfirmSheet],
+  imports: [PageShell, RouterLink, ErrorState, NotFoundState, ConfirmSheet],
   templateUrl: './appointment-by-id.html',
 })
 export class AppointmentByIdPage implements OnInit {

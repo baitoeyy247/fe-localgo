@@ -1,11 +1,23 @@
 <app-page-shell title="รายละเอียดงาน" [backLink]="'/provider/requests'">
   @if ((loading() && !request()) || (!request() && !notFound() && !error())) {
-    <app-skeleton-card
-      [slow]="hint.slow()"
-      [timedOut]="hint.timedOut()"
-      preset="provider-request-detail"
-      (retry)="load()"
-    />
+    @if (hint.timedOut()) {
+      <app-skeleton-card [timedOut]="true" (retry)="load()" />
+    } @else {
+      <div class="skeleton-stack skeleton-stack--provider-request-detail" role="status" aria-live="polite">
+        <span class="sr-only">กำลังโหลด…</span>
+        <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+          <div class="row between" style="align-items: flex-start">
+            <b class="ghost">ชื่องานที่เปิดรับ</b>
+            <span class="badge ghost">สถานะ</span>
+          </div>
+          <p class="muted" style="margin: 4px 0 0"><span class="ghost">หมวดหมู่</span></p>
+        </div>
+        <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+          <span class="muted ghost">รายละเอียด</span>
+          <p style="margin: 8px 0 0"><span class="ghost">รายละเอียดงานที่ผู้รับบริการระบุไว้</span></p>
+        </div>
+      </div>
+    }
   } @else if (notFound()) {
     <app-not-found-state
       title="ไม่พบงานนี้"

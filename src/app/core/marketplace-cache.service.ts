@@ -112,14 +112,14 @@ export class MarketplaceCacheService {
   }
 
   private refreshMyRequests(): Observable<ServiceRequestSummary[]> {
+    const previous = this.myRequests;
     const stream$ = this.api.listMyRequests().pipe(
       tap((data) => {
         this.myRequests = { at: Date.now(), data, stream$ };
       }),
       catchError((err) => {
-        if (this.myRequests) {
-          return of(this.myRequests.data);
-        }
+        // A5-1: never mask a failed GET as an empty list; restore the last good entry and rethrow.
+        this.myRequests = previous && previous.at > 0 ? previous : null;
         throw err;
       }),
       shareReplay(1),
@@ -133,14 +133,14 @@ export class MarketplaceCacheService {
   }
 
   private refreshMatching(): Observable<ServiceRequestSummary[]> {
+    const previous = this.matching;
     const stream$ = this.api.listMatchingRequests(true).pipe(
       tap((data) => {
         this.matching = { at: Date.now(), data, stream$ };
       }),
       catchError((err) => {
-        if (this.matching) {
-          return of(this.matching.data);
-        }
+        // A5-1: never mask a failed GET as an empty list; restore the last good entry and rethrow.
+        this.matching = previous && previous.at > 0 ? previous : null;
         throw err;
       }),
       shareReplay(1),

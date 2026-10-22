@@ -96,7 +96,8 @@
         <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px">
           <label class="field">
             <span>ชื่อพื้นที่ <span class="req">*</span></span>
-            <input class="input" [value]="editingName()" (input)="editingName.set($any($event.target).value); touchForm()" />
+            <input class="input" [attr.maxlength]="LIMITS.branchName" [value]="editingName()" (input)="editingName.set($any($event.target).value); touchForm()" />
+            <app-char-counter [value]="editingName()" [max]="LIMITS.branchName" label="ชื่อพื้นที่" />
           </label>
           <label class="field">
             <span>รัศมี (กม.) — {{ editingRadiusKm() }}</span>

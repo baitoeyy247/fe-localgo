@@ -18,9 +18,12 @@ import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
 import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 import { ErrorState } from '../../../shared/ui/error-state';
 
+import { CharCounter } from '../../../shared/ui/char-counter';
+import { FIELD_LIMITS, priceError, PRICE_ERROR } from '../../../shared/field-limits';
+
 @Component({
   selector: 'app-provider-profile-setup-page',
-  imports: [ErrorState, PageShell, ProviderSetupBar, ProviderBottomNav, SkeletonCard, ConfirmSaveDialog],
+  imports: [CharCounter, ErrorState, PageShell, ProviderSetupBar, ProviderBottomNav, SkeletonCard, ConfirmSaveDialog],
   templateUrl: './provider-profile.html',
 })
 export class ProviderProfileSetupPage implements OnInit {
@@ -38,6 +41,7 @@ export class ProviderProfileSetupPage implements OnInit {
   protected readonly contactPhone = signal('');
   protected readonly typeOptions = PROVIDER_TYPE_OPTIONS;
   protected readonly error = signal<string | null>(null);
+  protected readonly LIMITS = FIELD_LIMITS;
   protected readonly fieldErrors = signal<Record<string, string>>({});
   protected readonly saveConfirmOpen = signal(false);
   protected readonly saveConfirmMessage = signal('');

@@ -15,7 +15,6 @@ import { resolveRequesterRequestId } from '../../../shared/requester-request-flo
 import { redirectProviderFromRequesterRoute } from '../../../shared/requester-deep-link-guard';
 import { SlowLoadHint } from '../../../shared/load-state';
 import { ErrorState } from '../../../shared/ui/error-state';
-import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 import { formatPrice } from '../../../shared/format-price';
 import { shouldShowLineNotificationHint } from '../../../shared/line-notification-hint';
@@ -30,9 +29,7 @@ import { MarketplaceCacheService } from '../../../core/marketplace-cache.service
     RequesterBottomNav,
     RequesterFlowBar,
     RouterLink,
-    ErrorState,
-    SkeletonCard,
-    ConfirmSheet,
+    ErrorState, ConfirmSheet,
   ],
   templateUrl: './private-bids.html',
 })
@@ -82,11 +79,20 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
       }
     }
 
-    const requestId = await resolveRequesterRequestId(this.api, this.session, {
-      queryRequestId,
-      strategy: 'bids',
-      cache: this.marketplaceCache,
-    });
+    let requestId: string | null;
+    this.loadError.set(null);
+    try {
+      requestId = await resolveRequesterRequestId(this.api, this.session, {
+        queryRequestId,
+        strategy: 'bids',
+        cache: this.marketplaceCache,
+      });
+    } catch (e) {
+      // A5-1: GET failure must not render "ยังไม่มีงานที่เปิดรับข้อเสนอ".
+      this.loadError.set(apiErrorMessage(e, 'โหลดข้อมูลไม่สำเร็จ'));
+      this.loading.set(false);
+      return;
+    }
     if (!requestId) {
       this.loading.set(false);
       return;

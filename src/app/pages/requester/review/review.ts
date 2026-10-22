@@ -10,6 +10,7 @@ import { MarketplaceCacheService } from '../../../core/marketplace-cache.service
 import { ToastService } from '../../../core/toast.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
+import { ErrorState } from '../../../shared/ui/error-state';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
 import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
@@ -19,7 +20,7 @@ import { buildReviewConfirmMessage } from '../../../shared/confirm-copy';
 
 @Component({
   selector: 'app-review-page',
-  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, SkeletonCard, RouterLink, ConfirmSaveDialog],
+  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, SkeletonCard, RouterLink, ConfirmSaveDialog, ErrorState],
   templateUrl: './review.html',
 })
 export class ReviewPage implements OnInit {
@@ -34,6 +35,8 @@ export class ReviewPage implements OnInit {
   protected readonly statusHint = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly loading = signal(true);
+  /** A5-1: GET failure → error state with retry. */
+  protected readonly loadError = signal<string | null>(null);
   protected readonly saveConfirmOpen = signal(false);
   protected readonly saveConfirmMessage = signal('');
   protected readonly discardConfirmOpen = signal(false);
@@ -48,8 +51,13 @@ export class ReviewPage implements OnInit {
   private readonly formGuard = new UseDirtyGuard(this.dirty);
   private baselineSummary: ReturnType<typeof this.formSnapshot> | null = null;
 
+  protected async retryLoad(): Promise<void> {
+    await this.ngOnInit();
+  }
+
   async ngOnInit(): Promise<void> {
     this.loading.set(true);
+    this.loadError.set(null);
     const queryRequestId = this.route.snapshot.queryParamMap.get('requestId');
     const requestId = queryRequestId ?? this.session.requesterRequestId;
     if (queryRequestId) {
@@ -97,8 +105,8 @@ export class ReviewPage implements OnInit {
       const p = await firstValueFrom(this.api.getProvider(resolved));
       this.providerName.set(p.name);
     } catch (e) {
-      this.statusHint.set(apiErrorMessage(e, 'โหลดสถานะงานไม่สำเร็จ — ลองกลับมาอีกครั้ง'));
-      this.providerName.set('โหลดชื่อไม่สำเร็จ');
+      this.canSubmit.set(false);
+      this.loadError.set(apiErrorMessage(e, 'โหลดข้อมูลไม่สำเร็จ'));
     } finally {
       this.loading.set(false);
       this.captureBaseline();

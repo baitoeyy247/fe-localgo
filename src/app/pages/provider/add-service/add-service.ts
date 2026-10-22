@@ -19,9 +19,12 @@ import { GLOSSARY } from '../../../shared/glossary';
 import { formatConfirmFieldLine } from '../../../shared/confirm-copy';
 import { ErrorState } from '../../../shared/ui/error-state';
 
+import { CharCounter } from '../../../shared/ui/char-counter';
+import { FIELD_LIMITS, priceError, PRICE_ERROR } from '../../../shared/field-limits';
+
 @Component({
   selector: 'app-add-service-page',
-  imports: [ErrorState, 
+  imports: [CharCounter, ErrorState, 
     PageShell,
     RouterLink,
     ProviderSetupBar,
@@ -44,6 +47,41 @@ export class AddServicePage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly loadError = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly LIMITS = FIELD_LIMITS;
+  /** M-5: price validator shared with bid price (integer 1–1,000,000). */
+  protected readonly priceErr = signal<string | null>(null);
+  private originalPriceText = '';
+
+  protected checkPrice(): boolean {
+    const raw = this.basePriceText().trim();
+    // Legacy free-text prices already saved are left alone unless edited.
+    const err = raw && raw === this.originalPriceText ? null : priceError(raw);
+    this.priceErr.set(err);
+    return !err;
+  }
+
+  /** M-6b: trim + validate before opening the save confirm sheet. */
+  private validateBeforeSheet(): boolean {
+    const t = this.title().trim();
+    this.title.set(t);
+    if (!t) {
+      this.error.set('กรุณาระบุชื่อบริการ');
+      scrollToFirstError();
+      return false;
+    }
+    if (t.length > FIELD_LIMITS.serviceName) {
+      this.error.set(`ชื่อบริการต้องไม่เกิน ${FIELD_LIMITS.serviceName} ตัวอักษร`);
+      scrollToFirstError();
+      return false;
+    }
+    if (!this.checkPrice()) {
+      this.error.set(PRICE_ERROR);
+      scrollToFirstError();
+      return false;
+    }
+    this.error.set(null);
+    return true;
+  }
   protected readonly saveConfirmOpen = signal(false);
   protected readonly saveConfirmMessage = signal('');
   protected readonly discardConfirmOpen = signal(false);
@@ -155,11 +193,15 @@ export class AddServicePage implements OnInit {
 
   protected updateBasePrice(value: string): void {
     this.basePriceText.set(value);
+    this.priceErr.set(null);
     this.touchForm();
   }
 
   protected askSave(): void {
     if (!this.hasChanges()) {
+      return;
+    }
+    if (!this.validateBeforeSheet()) {
       return;
     }
     const prev = this.baselineSummary;

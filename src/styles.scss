@@ -1850,3 +1850,29 @@ button.primary[disabled] {
   white-space: nowrap;
   border: 0;
 }
+
+/* R35 M-1 — ghost skeletons: real card markup with placeholder text, so the
+   skeleton has the same padding/line-height/height as the loaded card. */
+.skeleton-card--ghost {
+  min-height: 0 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+.ghost {
+  color: transparent !important;
+  background: linear-gradient(90deg, #eee 25%, #f6f6f6 50%, #eee 75%);
+  background-size: 200% 100%;
+  animation: sh 1.2s infinite;
+  border-radius: var(--r-sm, 6px);
+  border-color: transparent !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+.ghost * {
+  color: transparent !important;
+}
+span.ghost,
+b.ghost {
+  display: inline-block;
+}

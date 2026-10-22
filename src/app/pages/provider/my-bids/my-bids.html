@@ -1,6 +1,33 @@
 <app-page-shell title="ข้อเสนอของฉัน" backLink="/provider">
+  @if (loading() || (!error() && items().length > 0)) {
+    <div class="chips" role="tablist" aria-label="กรองตามสถานะ">
+      @for (chip of chips; track chip.key) {
+        <button type="button" class="chip" [class.on]="filter() === chip.key" [disabled]="loading()" (click)="setFilter(chip.key)">
+          {{ chip.label }}
+        </button>
+      }
+    </div>
+  }
   @if (loading()) {
-    <app-skeleton-card [slow]="hint.slow()" preset="provider-my-bids" />
+    <div class="skeleton-stack skeleton-stack--provider-my-bids" role="status" aria-live="polite">
+      <span class="sr-only">กำลังโหลด…</span>
+      @for (i of [0, 1]; track i) {
+        <article class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+          <div class="row between" style="align-items: flex-start">
+            <span class="grow">
+              <b class="ghost">ชื่องานที่เสนอราคา</b><br />
+              <span class="muted ghost">{{ GLOSSARY.bidOfferedPriceLabel }} <span class="price" style="font-size: 16px">000 บาท</span></span><br />
+              <span class="muted ghost" style="font-size: 13px">ส่งเมื่อ 00 ต.ค. 00:00</span>
+            </span>
+            <span class="badge ghost">สถานะ</span>
+          </div>
+          <span class="btn btn-secondary btn-sm btn-block ghost" style="margin-top: 12px">ดูรายละเอียด</span>
+        </article>
+      }
+    </div>
+    @if (hint.slow()) {
+      <p class="muted">กำลังโหลดนานกว่าปกติ…</p>
+    }
   } @else if (error()) {
     <app-error-state [message]="error()!" (retry)="load()" />
   } @else if (items().length === 0) {
@@ -11,13 +38,6 @@
       <a class="btn btn-primary" routerLink="/provider/requests">ดูงานที่ตรงกับบริการ</a>
     </div>
   } @else {
-    <div class="chips" role="tablist" aria-label="กรองตามสถานะ">
-      @for (chip of chips; track chip.key) {
-        <button type="button" class="chip" [class.on]="filter() === chip.key" (click)="setFilter(chip.key)">
-          {{ chip.label }}
-        </button>
-      }
-    </div>
 
     @if (filtered().length === 0) {
       <p class="muted">ไม่มีรายการในตัวกรองนี้</p>

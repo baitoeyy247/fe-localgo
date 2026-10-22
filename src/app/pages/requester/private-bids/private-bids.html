@@ -35,7 +35,25 @@
       <a class="btn btn-primary" routerLink="/requester/post">ประกาศงาน</a>
     </div>
   } @else if (loading() && !request()) {
-    <app-skeleton-card [slow]="hint.slow()" preset="bids" />
+    <div class="skeleton-stack skeleton-stack--bids" role="status" aria-live="polite">
+      <span class="sr-only">กำลังโหลด…</span>
+      <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+        <div class="row between">
+          <b class="ghost">ชื่องานของฉัน</b>
+          <span class="badge ghost">เปิดรับข้อเสนอ</span>
+        </div>
+        <p class="muted" style="margin: 4px 0 0; font-size: 13px"><span class="ghost">⏱ หมดอายุอัตโนมัติหากไม่มีความคืบหน้า</span></p>
+      </div>
+      <div class="sec-title" aria-hidden="true"><span class="ghost">ข้อเสนอ 0 รายการ</span></div>
+      <article class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+        <div class="row">
+          <span class="avatar ghost">?</span>
+          <span class="grow"><b class="ghost">ชื่อผู้ให้บริการ</b><br /><span class="muted ghost">★ 0.0 · 0 รีวิว</span></span>
+          <span class="price ghost">000</span>
+        </div>
+        <span class="btn btn-ghost btn-sm ghost" style="margin-top: 12px">ดูโปรไฟล์ผู้ให้บริการ</span>
+      </article>
+    </div>
   } @else if (bids().length === 0) {
     <div class="state">
       <div class="em">⏳</div>

@@ -17,12 +17,11 @@ import { AuthService } from '../../../core/auth.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { SlowLoadHint } from '../../../shared/load-state';
 import { ErrorState } from '../../../shared/ui/error-state';
-import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 
 @Component({
   selector: 'app-requester-home-page',
-  imports: [PageShell, RouterLink, RequesterBottomNav, NgClass, ErrorState, SkeletonCard, ConfirmSheet],
+  imports: [PageShell, RouterLink, RequesterBottomNav, NgClass, ErrorState, ConfirmSheet],
   templateUrl: './requester-home.html',
 })
 export class RequesterHomePage implements OnInit, OnDestroy {

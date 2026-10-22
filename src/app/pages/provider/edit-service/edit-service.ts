@@ -23,9 +23,12 @@ import {
 import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { ErrorState } from '../../../shared/ui/error-state';
 
+import { CharCounter } from '../../../shared/ui/char-counter';
+import { FIELD_LIMITS, priceError, PRICE_ERROR } from '../../../shared/field-limits';
+
 @Component({
   selector: 'app-edit-service-page',
-  imports: [ErrorState, 
+  imports: [CharCounter, ErrorState, 
     PageShell,
     RouterLink,
     ProviderBottomNav,
@@ -49,6 +52,41 @@ export class EditServicePage implements OnInit {
   protected readonly loading = signal(true);
   protected readonly loadError = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly LIMITS = FIELD_LIMITS;
+  /** M-5: price validator shared with bid price (integer 1–1,000,000). */
+  protected readonly priceErr = signal<string | null>(null);
+  private originalPriceText = '';
+
+  protected checkPrice(): boolean {
+    const raw = this.basePriceText().trim();
+    // Legacy free-text prices already saved are left alone unless edited.
+    const err = raw && raw === this.originalPriceText ? null : priceError(raw);
+    this.priceErr.set(err);
+    return !err;
+  }
+
+  /** M-6b: trim + validate before opening the save confirm sheet. */
+  private validateBeforeSheet(): boolean {
+    const t = this.title().trim();
+    this.title.set(t);
+    if (!t) {
+      this.error.set('กรุณาระบุชื่อบริการ');
+      scrollToFirstError();
+      return false;
+    }
+    if (t.length > FIELD_LIMITS.serviceName) {
+      this.error.set(`ชื่อบริการต้องไม่เกิน ${FIELD_LIMITS.serviceName} ตัวอักษร`);
+      scrollToFirstError();
+      return false;
+    }
+    if (!this.checkPrice()) {
+      this.error.set(PRICE_ERROR);
+      scrollToFirstError();
+      return false;
+    }
+    this.error.set(null);
+    return true;
+  }
   protected readonly deleteOpen = signal(false);
   protected readonly deleting = signal(false);
   protected readonly saveConfirmOpen = signal(false);
@@ -102,6 +140,7 @@ export class EditServicePage implements OnInit {
       this.title.set(svc.title);
       this.description.set(svc.description ?? '');
       this.basePriceText.set(svc.basePriceText ?? '');
+      this.originalPriceText = (svc.basePriceText ?? '').trim();
       const linked = svc.branchIds?.length
         ? new Set(svc.branchIds)
         : new Set(mine.branches.filter((b) => b.isActive).map((b) => b.id));
@@ -168,6 +207,9 @@ export class EditServicePage implements OnInit {
 
   protected askSave(): void {
     if (!this.hasChanges()) {
+      return;
+    }
+    if (!this.validateBeforeSheet()) {
       return;
     }
     const prev = this.baselineSummary;

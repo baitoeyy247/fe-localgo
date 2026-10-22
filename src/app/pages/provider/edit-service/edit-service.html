@@ -23,11 +23,13 @@
     </label>
     <label class="field">
       <span>ชื่อบริการ <span class="req">*</span></span>
-      <input class="input" [value]="title()" (input)="title.set($any($event.target).value); touchForm()" />
+      <input class="input" [attr.maxlength]="LIMITS.serviceName" [value]="title()" (input)="title.set($any($event.target).value); touchForm()" />
+      <app-char-counter [value]="title()" [max]="LIMITS.serviceName" label="ชื่อบริการ" />
     </label>
     <label class="field">
       <span>รายละเอียด</span>
-      <textarea class="input" rows="3" [value]="description()" (input)="description.set($any($event.target).value); touchForm()"></textarea>
+      <textarea class="input" rows="3" [attr.maxlength]="LIMITS.serviceDescription" [value]="description()" (input)="description.set($any($event.target).value); touchForm()"></textarea>
+      <app-char-counter [value]="description()" [max]="LIMITS.serviceDescription" label="รายละเอียดบริการ" />
     </label>
     <label class="field">
       <span>ราคาเริ่มต้น</span>
@@ -35,11 +37,18 @@
         <input
           class="input-price"
           type="text"
+          inputmode="numeric"
+          maxlength="7"
+          [class.err]="!!priceErr()"
           [value]="basePriceText()"
-          (input)="basePriceText.set($any($event.target).value); touchForm()"
+          (input)="basePriceText.set($any($event.target).value); priceErr.set(null); touchForm()"
+          (blur)="checkPrice()"
         />
         <span class="input-with-unit__suffix">บาท</span>
       </div>
+      @if (priceErr(); as msg) {
+        <p class="error-text" role="alert">{{ msg }}</p>
+      }
     </label>
     @for (branch of provider()!.branches; track branch.id) {
       @if (branch.isActive) {

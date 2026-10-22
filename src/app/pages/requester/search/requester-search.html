@@ -58,7 +58,7 @@
 
   <div class="sec-title">
     ผู้ให้บริการที่ตอบโจทย์ตอนนี้
-    @if (hasSearched()) {
+    @if (hasSearched() && !loadError()) {
       <span class="muted">{{ providers().length }} ราย</span>
     }
   </div>
@@ -67,6 +67,8 @@
     <div class="search-layout__list">
       @if (loading()) {
         <p class="muted" style="text-align: center">กำลังค้นหา…</p>
+      } @else if (loadError()) {
+        <app-error-state [message]="loadError()!" (retry)="retryLoad()" />
       } @else if (!hasSearched()) {
         <div class="state">
           <div class="em">📍</div>

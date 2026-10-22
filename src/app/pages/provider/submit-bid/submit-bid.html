@@ -36,11 +36,16 @@
           inputmode="numeric"
           pattern="[0-9]*"
           maxlength="7"
+          [class.err]="!!priceErr()"
           [value]="priceText()"
-          (input)="updatePrice($any($event.target).value)"
+          (input)="updatePrice($any($event.target).value); priceErr.set(null)"
+          (blur)="priceErr.set(priceErrorFor(priceText()))"
         />
         <span class="input-with-unit__suffix">บาท</span>
       </div>
+      @if (priceErr(); as msg) {
+        <p class="error-text" role="alert">{{ msg }}</p>
+      }
     </label>
 
     <label class="field">

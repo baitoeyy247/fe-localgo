@@ -11,7 +11,22 @@
   }
 
   @if (loading()) {
-    <app-skeleton-card [slow]="hint.slow()" preset="requester-home" />
+    <div class="skeleton-stack skeleton-stack--requester-home" role="status" aria-live="polite">
+      <span class="sr-only">กำลังโหลด…</span>
+      @for (i of [0, 1]; track i) {
+        <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+          <div class="row between">
+            <b class="ghost">ชื่องานของฉัน</b>
+            <span class="badge ghost">สถานะ</span>
+          </div>
+          <p class="muted" style="margin: 4px 0 12px"><span class="ghost">หมวดหมู่ · ข้อเสนอ 0</span></p>
+          <div class="row requester-job-actions">
+            <span class="btn btn-primary btn-sm grow ghost">ดูข้อเสนอ</span>
+            <span class="btn btn-ghost btn-sm grow ghost">ดูรายละเอียด</span>
+          </div>
+        </div>
+      }
+    </div>
   } @else if (error()) {
     <app-error-state [message]="error()!" (retry)="load()" />
   } @else {

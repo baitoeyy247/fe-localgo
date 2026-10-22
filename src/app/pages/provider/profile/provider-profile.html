@@ -34,6 +34,7 @@
         placeholder="ชื่อร้าน / บริษัท / ชื่อเล่น"
         (input)="updateName($any($event.target).value)"
       />
+      <app-char-counter [value]="name()" [max]="LIMITS.providerName" label="ชื่อที่แสดง" />
       @if (fieldErrors()['name']; as msg) {
         <p class="error-text">{{ msg }}</p>
       }
@@ -41,11 +42,12 @@
     <label class="field">
       <span>รายละเอียด</span>
       <textarea class="input" rows="3" maxlength="2000" [value]="description()" aria-label="รายละเอียด" (input)="updateDescription($any($event.target).value)"></textarea>
-      <small class="muted">{{ description().length }}/2000</small>
+      <app-char-counter [value]="description()" [max]="LIMITS.providerDescription" label="รายละเอียด" />
     </label>
     <label class="field">
       <span>LINE ติดต่อ</span>
       <input class="input" [value]="contactLineId()" aria-label="LINE" maxlength="64" placeholder="@username" (input)="updateContactLine($any($event.target).value)" />
+      <app-char-counter [value]="contactLineId()" [max]="LIMITS.providerLine" label="LINE" />
       <small class="muted">ใส่ LINE ID หรือ @username ที่ลูกค้าติดต่อได้ (ไม่บังคับ)</small>
     </label>
     <label class="field">

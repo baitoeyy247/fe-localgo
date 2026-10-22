@@ -25,6 +25,7 @@ import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 import { GLOSSARY } from '../../../shared/glossary';
 import { formatConfirmFieldLine, formatDatetimeConfirmLine } from '../../../shared/confirm-copy';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
+import { ErrorState } from '../../../shared/ui/error-state';
 import { RequestFlowCacheService } from '../../../core/request-flow-cache.service';
 import { ServiceRequestDetail } from '../../../core/models';
 
@@ -38,6 +39,7 @@ import { ServiceRequestDetail } from '../../../core/models';
     ThaiDatetimeField,
     ConfirmSaveDialog,
     SkeletonCard,
+    ErrorState,
   ],
   templateUrl: './post-request.html',
 })
@@ -58,6 +60,8 @@ export class PostRequestPage implements OnInit {
   protected readonly saveConfirmMessage = signal('');
   protected readonly discardConfirmOpen = signal(false);
   protected readonly loading = signal(true);
+  /** A5-1: categories GET failed — form is hidden, error state + retry shown. */
+  protected readonly loadError = signal<string | null>(null);
   protected readonly requestLocation = signal<{
     title: string;
     subtitle: string;
@@ -100,13 +104,24 @@ export class PostRequestPage implements OnInit {
       this.pickerOpen.set(true);
     }
 
-    const categories = await firstValueFrom(this.api.listCategories());
-    this.categories.set(categories);
-    if (categories[0]) {
-      this.selectedCategoryId.set(categories[0].id);
+    await this.loadCategories();
+  }
+
+  protected async loadCategories(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set(null);
+    try {
+      const categories = await firstValueFrom(this.api.listCategories());
+      this.categories.set(categories);
+      if (categories[0] && !this.selectedCategoryId()) {
+        this.selectedCategoryId.set(categories[0].id);
+      }
+      this.captureBaseline();
+    } catch (e) {
+      this.loadError.set(apiErrorMessage(e, 'โหลดข้อมูลไม่สำเร็จ'));
+    } finally {
+      this.loading.set(false);
     }
-    this.captureBaseline();
-    this.loading.set(false);
   }
 
   private formSnapshot(): {

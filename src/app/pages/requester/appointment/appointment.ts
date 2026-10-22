@@ -42,9 +42,12 @@ import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
 import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
 import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 
+import { CharCounter } from '../../../shared/ui/char-counter';
+import { FIELD_LIMITS, priceError, PRICE_ERROR } from '../../../shared/field-limits';
+
 @Component({
   selector: 'app-appointment-page',
-  imports: [
+  imports: [CharCounter, 
     PageShell,
     RequesterBottomNav,
     RequesterFlowBar,
@@ -70,6 +73,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
   protected readonly saving = signal(false);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
+  protected readonly LIMITS = FIELD_LIMITS;
   protected readonly success = signal<string | null>(null);
   protected readonly pickerOpen = signal(false);
   protected readonly mapLat = signal<number | null>(null);
@@ -134,11 +138,21 @@ export class AppointmentPage implements OnInit, OnDestroy {
       }
     }
 
-    const requestId = await resolveRequesterRequestId(this.api, this.session, {
-      queryRequestId,
-      strategy: 'appointment',
-      cache: this.cache,
-    });
+    let requestId: string | null;
+    this.loadError.set(null);
+    try {
+      requestId = await resolveRequesterRequestId(this.api, this.session, {
+        queryRequestId,
+        strategy: 'appointment',
+        cache: this.cache,
+      });
+    } catch (e) {
+      // A5-1: GET failure must not render "ยังไม่มีงานที่จะนัดหมาย".
+      this.noWork.set(false);
+      this.loadError.set(apiErrorMessage(e, 'โหลดข้อมูลไม่สำเร็จ'));
+      this.loading.set(false);
+      return;
+    }
     if (!requestId) {
       this.noWork.set(true);
       this.loading.set(false);
