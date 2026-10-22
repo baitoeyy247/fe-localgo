@@ -99,14 +99,18 @@ test.describe('QA28 M-1 skeleton layout shift', () => {
         routeCase.loadedSelector ?? '.page-content .card:not(.skeleton-card)';
 
       const skeleton = page.locator(skeletonSelector).first();
-      await page.goto(path, { waitUntil: 'domcontentloaded' });
-      if (!(await skeleton.isVisible().catch(() => false))) {
-        await page.reload({ waitUntil: 'domcontentloaded' });
+      const loaded = page.locator(loadedSelector).first();
+      const waitSkeleton = skeleton.waitFor({ state: 'visible', timeout: 30_000 });
+      if (routeCase.name === 'provider-requests') {
+        await page.goto(path, { waitUntil: 'domcontentloaded' });
+        await expect(loaded).toBeVisible({ timeout: 60_000 });
+        await Promise.all([waitSkeleton, page.getByRole('button', { name: 'รีเฟรช' }).click()]);
+      } else {
+        await Promise.all([waitSkeleton, page.goto(path, { waitUntil: 'domcontentloaded' })]);
       }
-      await expect(skeleton).toBeVisible({ timeout: 25_000 });
       const skeletonBox = await contentBox(page, skeletonSelector);
 
-      await expect(page.locator(loadedSelector).first()).toBeVisible({ timeout: 60_000 });
+      await expect(loaded).toBeVisible({ timeout: 60_000 });
       const loadedBox = await contentBox(page, loadedSelector);
 
       const preset = SKELETON_PAGE_PRESETS[routeCase.preset];
