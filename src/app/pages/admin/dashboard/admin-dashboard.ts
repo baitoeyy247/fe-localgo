@@ -263,14 +263,15 @@ export class AdminDashboardPage implements OnInit {
       const kept = (result as { keptUsers?: number }).keptUsers ?? 10;
       const deletedReq = (result as { deletedRequests?: number }).deletedRequests ?? 0;
       const seeded = (result as { sampleReviewsSeeded?: number }).sampleReviewsSeeded ?? 0;
-      this.toast.show(ADMIN_RESET_TOAST);
       this.marketplaceCache.invalidateAll();
       this.usersPage.set(1);
-      this.dashboard.update((d) => optimisticAdminDashboardAfterReset(d));
+      this.dashboard.set(optimisticAdminDashboardAfterReset(this.dashboard(), kept));
       this.requests.set([]);
       this.appointments.set([]);
       this.notifications.set([]);
-      void this.refreshAfterMutation();
+      this.toast.show(ADMIN_RESET_TOAST, 4000);
+      await this.refreshAfterMutation();
+      this.dashboard.update((d) => (d ? optimisticAdminDashboardAfterReset(d, kept) : d));
       this.notice.set(
         `รีเซ็ตสำเร็จ — ลบงาน ${deletedReq} รายการ · คงบัญชีทดสอบ ${kept} บัญชี · สร้างรีวิวตัวอย่าง ${seeded} รายการ`,
       );

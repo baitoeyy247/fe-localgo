@@ -1,5 +1,5 @@
 <app-page-shell title="รายละเอียดงาน" [backLink]="'/provider/requests'">
-  @if (loading() || (!request() && !notFound() && !error())) {
+  @if ((loading() && !request()) || (!request() && !notFound() && !error())) {
     <app-skeleton-card
       [slow]="hint.slow()"
       [timedOut]="hint.timedOut()"

@@ -188,12 +188,11 @@ export class AuthService {
     }
     this.setSession(response.accessToken, response.user, 'dev');
     this.locations.reloadFromStorage(options?.personaKey ?? null);
-    this.cache.preloadHome();
   }
 
   /** Ping API after role switch to reduce cold-start wait on first screen. */
   warmApi(): void {
-    this.cache.preloadHome();
+    this.cache.preloadHome(this.userSignal()?.activeRole ?? null);
   }
 
   /** Dev/SIT personas — may skip appointment start-window UX for playtesting. */
@@ -257,7 +256,7 @@ export class AuthService {
     sessionStorage.setItem(USER_KEY, JSON.stringify(user));
     sessionStorage.setItem(AUTH_MODE_KEY, mode);
     // Warm home lists so first paint after wake is under ~3s when API is up.
-    this.cache.preloadHome();
+    this.cache.preloadHome(user.activeRole ?? null);
   }
 
   async loginAsAdmin(): Promise<void> {

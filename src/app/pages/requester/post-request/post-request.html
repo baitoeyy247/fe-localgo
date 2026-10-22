@@ -1,15 +1,19 @@
 <app-page-shell title="ประกาศงาน" backLink="/requester">
-  <app-requester-flow-bar active="post" />
+  @if (!loading()) {
+    <app-requester-flow-bar active="post" />
 
-  <div class="banner info">
-    <span><b>โพสต์แล้วรอรับราคา</b><br />กำหนดจุดรับงานให้ชัด แล้วเปิดรับข้อเสนอจากผู้ให้บริการรอบพื้นที่นั้น</span>
-  </div>
-  @if (requestLocation().title === 'ยังไม่ได้เลือกตำแหน่ง') {
-    <div class="banner warn" role="status">
+    <div class="banner info">
       <span
-        ><b>ยังไม่มีตำแหน่งงาน</b><br />อนุญาต GPS หรือเลือกบนแผนที่ก่อนโพสต์ — ไม่ใช้กรุงเทพเป็นค่าเริ่มต้นโดยอัตโนมัติ</span
+        ><b>โพสต์แล้วรอรับราคา</b><br />กำหนด{{ GLOSSARY.jobLocationHint }}ให้ชัด แล้วเปิดรับข้อเสนอจากผู้ให้บริการรอบพื้นที่นั้น</span
       >
     </div>
+    @if (requestLocation().title === 'ยังไม่ได้เลือกตำแหน่ง') {
+      <div class="banner warn" role="status">
+        <span
+          ><b>ยังไม่มีตำแหน่งงาน</b><br />อนุญาต GPS หรือเลือกบนแผนที่ก่อนโพสต์ — ไม่ใช้กรุงเทพเป็นค่าเริ่มต้นโดยอัตโนมัติ</span
+        >
+      </div>
+    }
   }
 
   @if (loading()) {
@@ -132,7 +136,13 @@
   @if (error() && !fieldErrors()['title'] && !fieldErrors()['budget'] && !fieldErrors()['preferredAt']) {
     <p class="error-text">{{ error() }}</p>
   }
-  <button class="btn btn-primary btn-block" type="button" [class.is-busy]="posting()" [disabled]="posting() || !hasChanges()" (click)="askSave()">
+  <button
+    class="btn btn-primary btn-block post-request-submit"
+    type="button"
+    [class.is-busy]="posting()"
+    [disabled]="posting() || !hasChanges()"
+    (click)="askSave()"
+  >
     {{ posting() ? 'กำลังประกาศ…' : 'ประกาศงาน' }}
   </button>
   </div>
@@ -157,7 +167,7 @@
   <app-location-picker-modal
     [open]="pickerOpen()"
     heading="เลือกตำแหน่งสำหรับประกาศงาน"
-    description="เปิดแผนที่เต็มจอเพื่อปักจุดรับงานให้ตรงที่สุด แล้วกดยืนยันเพื่อใช้พิกัดนี้กับประกาศงาน"
+    [description]="GLOSSARY.mapPinJobLocationDescription"
     [locationTitle]="requestLocation().title"
     [locationSubtitle]="requestLocation().subtitle"
     [searchText]="requestLocation().title"

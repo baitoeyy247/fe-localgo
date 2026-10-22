@@ -38,11 +38,19 @@ export class MarketplaceCacheService {
     return this.refreshMatching();
   }
 
-  /** Warm home data after login / persona switch. */
-  preloadHome(): void {
+  /** Warm home data after login / persona switch (role-aware — skip matching on requester-only). */
+  preloadHome(activeRole?: string | null): void {
     this.api.pingHealth().subscribe({ error: () => undefined });
+    if (activeRole === 'Provider') {
+      this.getMyProvider().subscribe({ error: () => undefined });
+      this.refreshMatching().subscribe({ error: () => undefined });
+      return;
+    }
+    if (activeRole === 'Requester') {
+      this.refreshMyRequests().subscribe({ error: () => undefined });
+      return;
+    }
     this.refreshMyRequests().subscribe({ error: () => undefined });
-    this.refreshMatching().subscribe({ error: () => undefined });
     this.getMyProvider().subscribe({ error: () => undefined });
   }
 

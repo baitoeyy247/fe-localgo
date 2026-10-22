@@ -774,7 +774,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
   private applyRequestLocation(detail: ServiceRequestDetail): void {
     const fromPost = detail.addressText?.trim();
     this.addressText.set(
-      fromPost || detail.description?.trim()?.slice(0, 120) || 'จุดรับงานตามประกาศ',
+      fromPost || detail.description?.trim()?.slice(0, 120) || GLOSSARY.jobLocationFromPost,
     );
     if (typeof detail.latitude === 'number' && typeof detail.longitude === 'number') {
       this.mapLat.set(detail.latitude);

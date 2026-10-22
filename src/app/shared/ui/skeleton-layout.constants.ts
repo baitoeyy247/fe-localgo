@@ -33,7 +33,10 @@ export type SkeletonPresetLayout = {
   headerChromeHeightPx: number;
   /** Filter tabs / chips block (provider inbox). */
   filterChrome: boolean;
+  filterChromeMode?: 'inbox' | 'chips';
   filterChromeHeightPx: number;
+  /** When true, `.skeleton-stack` uses padding-top = contentFirstCardTopPx (in-page chrome hidden while loading). */
+  padToContentFirstCard: boolean;
   /** Section title row above cards (coverage list header). */
   sectionChrome: boolean;
   sectionChromeHeightPx: number;
@@ -53,6 +56,7 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     filterChromeHeightPx: 0,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
+    padToContentFirstCard: false,
   },
   bids: {
     count: 3,
@@ -62,12 +66,13 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     cardHeightsPx: [82, 178, 147],
     stackOffsetPx: 0,
     contentFirstCardTopPx: 190,
-    headerChrome: true,
-    headerChromeHeightPx: 61,
+    headerChrome: false,
+    headerChromeHeightPx: 0,
     filterChrome: false,
     filterChromeHeightPx: 0,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
+    padToContentFirstCard: true,
   },
   'provider-requests': {
     count: 3,
@@ -78,39 +83,43 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     contentFirstCardTopPx: 278,
     headerChrome: false,
     headerChromeHeightPx: 0,
-    filterChrome: true,
-    filterChromeHeightPx: 206,
+    filterChrome: false,
+    filterChromeHeightPx: 0,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
+    padToContentFirstCard: true,
   },
   'provider-my-bids': {
     count: 2,
     variant: 'list',
     stackModifier: 'provider-my-bids',
     firstCardHeightPx: 194,
-    stackOffsetPx: 130,
+    stackOffsetPx: 0,
     contentFirstCardTopPx: 130,
     headerChrome: false,
     headerChromeHeightPx: 0,
-    filterChrome: false,
-    filterChromeHeightPx: 0,
+    filterChrome: true,
+    filterChromeMode: 'chips',
+    filterChromeHeightPx: 44,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
+    padToContentFirstCard: true,
   },
   'appointment-detail': {
     count: 2,
     variant: 'detail',
     stackModifier: 'appointment-detail',
     firstCardHeightPx: 72,
-    cardHeightsPx: [72, 160],
+    cardHeightsPx: [72, 125],
     stackOffsetPx: 0,
-    contentFirstCardTopPx: 76,
+    contentFirstCardTopPx: 72,
     headerChrome: false,
     headerChromeHeightPx: 0,
     filterChrome: false,
     filterChromeHeightPx: 0,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
+    padToContentFirstCard: true,
   },
   'request-detail': {
     count: 2,
@@ -125,13 +134,14 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     filterChromeHeightPx: 0,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
+    padToContentFirstCard: false,
   },
   'provider-request-detail': {
     count: 3,
     variant: 'detail',
     stackModifier: 'provider-request-detail',
-    firstCardHeightPx: 84,
-    cardHeightsPx: [84, 224, 185],
+    firstCardHeightPx: 110,
+    cardHeightsPx: [110, 224, 185],
     stackOffsetPx: 0,
     contentFirstCardTopPx: 72,
     headerChrome: false,
@@ -140,6 +150,7 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     filterChromeHeightPx: 0,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
+    padToContentFirstCard: true,
   },
   coverage: {
     count: 1,
@@ -153,14 +164,15 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     filterChrome: false,
     filterChromeHeightPx: 0,
     sectionChrome: true,
-    sectionChromeHeightPx: 44,
+    sectionChromeHeightPx: 32,
+    padToContentFirstCard: true,
   },
   'post-form': {
     count: 1,
     variant: 'form',
     stackModifier: 'post-form',
     firstCardHeightPx: SKELETON_FORM_FIELD_HEIGHT_PX,
-    stackOffsetPx: 433,
+    stackOffsetPx: 0,
     contentFirstCardTopPx: 731,
     headerChrome: false,
     headerChromeHeightPx: 0,
@@ -168,6 +180,7 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     filterChromeHeightPx: 0,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
+    padToContentFirstCard: true,
   },
 };
 

@@ -73,6 +73,23 @@ export const GLOSSARY = {
   addCoverageBeforeService: 'เพิ่มพื้นที่ให้บริการในขั้นตอนพื้นที่ก่อน',
   addCoverageBeforeMatching: 'เพิ่มพื้นที่ให้บริการก่อนรับงานใหม่',
   addCoverageCta: 'เพิ่มพื้นที่ให้บริการ',
+  jobLocationHint: 'ตำแหน่งรับงาน',
+  jobLocationCurrentTitle: 'ตำแหน่งรับงานปัจจุบัน',
+  jobLocationFromPost: 'ตำแหน่งรับงานตามประกาศ',
+  mapPinJobLocationDescription:
+    'เปิดแผนที่เต็มจอเพื่อปักตำแหน่งรับงานให้ตรงที่สุด แล้วกดยืนยันเพื่อใช้พิกัดนี้กับประกาศงาน',
+  confirmAddServiceTitle: 'เพิ่มบริการนี้?',
+  confirmAddServiceConfirm: 'เพิ่มบริการ',
+  coverageSavedToast: (name: string, radiusKm: number) =>
+    `บันทึกพื้นที่ให้บริการ '${name}' แล้ว · รัศมี ${radiusKm} กม.`,
+  coverageAddedToast: (name: string, radiusKm: number) =>
+    `เพิ่มพื้นที่ให้บริการ '${name}' แล้ว · รัศมี ${radiusKm} กม.`,
+  coverageRemovedToast: 'ลบพื้นที่ให้บริการแล้ว',
+  coverageAddNewCta: 'เพิ่มพื้นที่ให้บริการ',
+  coverageDeactivateTitle: 'ปิดใช้งานพื้นที่นี้?',
+  coverageDeactivateConfirm: 'ปิดพื้นที่',
+  coverageDeleteTitle: 'ลบพื้นที่ให้บริการ?',
+  coverageDeleteConfirm: 'ลบพื้นที่',
   noCoverageSpecified: 'ยังไม่ระบุพื้นที่ให้บริการ',
   adminSuspend: 'ระงับ',
   adminSuspendAccount: 'ระงับบัญชี',

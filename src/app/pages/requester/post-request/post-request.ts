@@ -58,8 +58,14 @@ export class PostRequestPage implements OnInit {
   protected readonly saveConfirmMessage = signal('');
   protected readonly discardConfirmOpen = signal(false);
   protected readonly loading = signal(true);
-  protected readonly requestLocation = signal({
-    title: 'จุดรับงานปัจจุบัน',
+  protected readonly requestLocation = signal<{
+    title: string;
+    subtitle: string;
+    radiusKm: number;
+    lat: number;
+    lng: number;
+  }>({
+    title: GLOSSARY.jobLocationCurrentTitle,
     subtitle: 'พิกัดเริ่มต้นของประกาศนี้',
     radiusKm: 5,
     lat: 0,
@@ -174,7 +180,7 @@ export class PostRequestPage implements OnInit {
 
   protected showCoords(): boolean {
     const loc = this.requestLocation();
-    return loc.title === 'พื้นที่ค้นหาเริ่มต้น' || loc.title === 'จุดรับงานปัจจุบัน';
+    return loc.title === 'พื้นที่ค้นหาเริ่มต้น' || loc.title === GLOSSARY.jobLocationCurrentTitle;
   }
 
   protected openPicker(): void {

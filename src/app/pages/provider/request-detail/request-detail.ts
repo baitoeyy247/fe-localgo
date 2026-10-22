@@ -158,8 +158,16 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       this.toast.show(navState.notice.trim());
       this.notice.set(null);
     }
+    const id = this.route.snapshot.paramMap.get('id');
+    const cached = id ? this.flowCache.peekRequest(id) : null;
     if (navState?.requestDetail?.id) {
       this.request.set(navState.requestDetail);
+      this.loading.set(false);
+      void this.load({ background: true });
+      return;
+    }
+    if (cached) {
+      this.request.set(cached);
       this.loading.set(false);
       void this.load({ background: true });
       return;
@@ -187,15 +195,19 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.categoryBlocked.set(null);
     this.hint.begin();
     try {
-      const [detail, myProvider] = await Promise.all([
+      const [detail, myProvider, apptFromApi] = await Promise.all([
         firstValueFrom(this.api.getRequest(id)),
         firstValueFrom(
           this.cache
             .getMyProvider()
             .pipe(catchError((err) => (isNotFoundError(err) ? of(null as ProviderDetail | null) : Promise.reject(err)))),
         ),
+        firstValueFrom(
+          this.api.getAppointment(id).pipe(catchError(() => of(null as AppointmentDetail | null))),
+        ),
       ]);
       this.request.set(detail);
+      this.flowCache.putRequest(detail);
       const hasMyBidHistory =
         !!myProvider && !!detail.bids?.some((b) => b.providerId === myProvider.id);
       const needsBidAccess =
@@ -221,11 +233,9 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
         }
       }
       this.myProvider.set(myProvider);
-      let appt = detail.appointment ?? null;
+      let appt = detail.appointment ?? apptFromApi;
       if (!appt && (detail.appointmentStatus || this.needsAppointmentFetch(detail, myProvider))) {
-        appt = await firstValueFrom(
-          this.api.getAppointment(id).pipe(catchError(() => of(null as AppointmentDetail | null))),
-        );
+        appt = apptFromApi;
       }
       this.appointment.set(appt);
       this.myBid.set(

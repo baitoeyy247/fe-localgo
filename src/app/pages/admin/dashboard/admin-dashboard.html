@@ -146,7 +146,20 @@
     @if (listsLoading()) {
       <p class="muted" style="text-align: center">กำลังอัปเดตรายการ…</p>
     }
-    <div class="admin-table-wrap admin-wide">
+    <div class="admin-mobile-cards admin-requests-cards">
+      @for (r of requests(); track r.id) {
+        <article class="admin-user-card">
+          <b>{{ r.title }}</b>
+          <div class="admin-user-card__meta">
+            <span>{{ adminRequestStatusLabel(r) }}</span>
+            <span>งบ {{ r.budgetText || '—' }}</span>
+          </div>
+        </article>
+      } @empty {
+        <p class="muted">ไม่มีงาน</p>
+      }
+    </div>
+    <div class="admin-table-wrap admin-wide admin-requests-table">
       <table class="admin-table">
         <thead>
           <tr>
@@ -183,7 +196,31 @@
         <option value="Rejected">ผู้ให้บริการปฏิเสธ</option>
       </select>
     </div>
-    <div class="admin-table-wrap admin-wide">
+    <div class="admin-mobile-cards admin-appointments-cards">
+      @for (a of appointments(); track a.id) {
+        <article class="admin-user-card">
+          <div class="admin-user-card__meta">
+            <span
+              class="badge"
+              [class.badge--muted]="a.status === 'Cancelled'"
+              [class.badge--red]="a.status === 'Rejected'"
+              >{{ appointmentStatusLabel(a.status) }}</span
+            >
+            <span>{{ formatWhen(a.scheduledAt) }}</span>
+          </div>
+          <p class="muted" style="margin: 0">{{ a.addressText || '—' }}</p>
+          @if (a.note) {
+            <p class="muted" style="margin: 0">หมายเหตุ: {{ a.note }}</p>
+          }
+          @if (a.declineReason) {
+            <p class="muted" style="margin: 0">เหตุผล: {{ a.declineReason }}</p>
+          }
+        </article>
+      } @empty {
+        <p class="muted">ไม่มีนัด</p>
+      }
+    </div>
+    <div class="admin-table-wrap admin-wide admin-appointments-table">
       <table class="admin-table">
         <thead>
           <tr>
@@ -220,7 +257,20 @@
     </div>
 
     <div class="sec-title">บันทึกแจ้งเตือนล่าสุด</div>
-    <div class="admin-table-wrap admin-wide">
+    <div class="admin-mobile-cards admin-notifications-cards">
+      @for (n of notifications().slice(0, 12); track $index) {
+        <article class="admin-user-card">
+          <b>{{ notificationEventLabel(n) }}</b>
+          <div class="admin-user-card__meta">
+            <span>{{ notificationDeliveryLabel(n) }}</span>
+            <span>{{ formatNotificationWhen(n) }}</span>
+          </div>
+        </article>
+      } @empty {
+        <p class="muted">ยังไม่มีบันทึกแจ้งเตือน</p>
+      }
+    </div>
+    <div class="admin-table-wrap admin-wide admin-notifications-table">
       <table class="admin-table admin-table--notifications">
         <thead>
           <tr>

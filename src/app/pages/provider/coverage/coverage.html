@@ -19,7 +19,7 @@
 
     <div class="sec-title">
       พื้นที่ให้บริการ ({{ branches().length }})
-      <button type="button" class="btn btn-primary btn-sm" (click)="startNewBranch()">เพิ่มจุดใหม่</button>
+      <button type="button" class="btn btn-primary btn-sm" (click)="startNewBranch()">{{ GLOSSARY.addCoverageCta }}</button>
     </div>
 
     <div class="card-list-gap">
@@ -58,7 +58,7 @@
           <div class="row" style="margin-top: 12px" (click)="$event.stopPropagation()">
             <button type="button" class="btn btn-ghost btn-sm" (click)="editBranch(branch)">แก้ไข</button>
             @if (branch.isActive) {
-              <button type="button" class="btn btn-danger-o btn-sm" (click)="askDeactivateBranch(branch)">ปิดจุด</button>
+              <button type="button" class="btn btn-danger-o btn-sm" (click)="askDeactivateBranch(branch)">{{ GLOSSARY.coverageDeactivateConfirm }}</button>
             } @else {
               <button type="button" class="btn btn-secondary btn-sm" [disabled]="disabling()" (click)="activateBranch(branch)">
                 เปิดใช้งาน
@@ -68,17 +68,17 @@
           </div>
         </article>
       } @empty {
-        <p class="muted">ยังไม่มีจุด — กดเพิ่มจุดใหม่</p>
+        <p class="muted">{{ GLOSSARY.noCoverageSpecified }} — กด{{ GLOSSARY.addCoverageCta }}</p>
       }
     </div>
 
     @if (formOpen()) {
       <div class="card">
-        <b>{{ isEditingExisting() ? 'แก้ไขจุด: ' + editingName() : 'เพิ่มจุดใหม่' }}</b>
+        <b>{{ isEditingExisting() ? 'แก้ไขพื้นที่: ' + editingName() : GLOSSARY.addCoverageCta }}</b>
         <p class="muted" style="margin: 4px 0 0">ค่าเริ่มต้น — แก้ไขได้ (ตำแหน่งจาก GPS หรือแผนที่)</p>
         <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px">
           <label class="field">
-            <span>ชื่อจุด <span class="req">*</span></span>
+            <span>ชื่อพื้นที่ <span class="req">*</span></span>
             <input class="input" [value]="editingName()" (input)="editingName.set($any($event.target).value); touchForm()" />
           </label>
           <label class="field">
@@ -94,13 +94,13 @@
             />
           </label>
           <label class="row branch-check" style="justify-content: space-between">
-            <span>เปิดใช้งานจุดนี้</span>
+            <span>เปิดใช้งานพื้นที่นี้</span>
             <input type="checkbox" [checked]="editingActive()" (change)="editingActive.set($any($event.target).checked); touchForm()" />
           </label>
           <p class="muted">{{ pickerTitle() }}</p>
           <button type="button" class="btn btn-secondary btn-sm" style="width: fit-content" (click)="openPicker()">เลือกบนแผนที่</button>
           <button type="button" class="btn btn-primary btn-block" [class.is-busy]="saving()" [disabled]="saving() || !hasFormChanges()" (click)="askSaveBranch()">
-            {{ saving() ? 'กำลังบันทึก…' : isEditingExisting() ? 'บันทึกการแก้ไข' : 'เพิ่มจุดนี้' }}
+            {{ saving() ? 'กำลังบันทึก…' : isEditingExisting() ? 'บันทึกการแก้ไข' : GLOSSARY.addCoverageCta }}
           </button>
           <button type="button" class="btn btn-ghost btn-block" (click)="closeForm()">ปิดฟอร์ม</button>
         </div>
@@ -150,9 +150,9 @@
   />
   <app-confirm-sheet
     [open]="!!disableTarget()"
-    title="ปิดใช้งานจุดนี้?"
-    [message]="disableTarget() ? 'ปิดจุด &quot;' + disableTarget()!.name + '&quot; ชั่วคราว — กดเปิดใช้งานบนการ์ดได้ทุกเมื่อ' : ''"
-    confirmLabel="ปิดจุด"
+    [title]="GLOSSARY.coverageDeactivateTitle"
+    [message]="disableTarget() ? 'ปิดพื้นที่ &quot;' + disableTarget()!.name + '&quot; ชั่วคราว — กดเปิดใช้งานบนการ์ดได้ทุกเมื่อ' : ''"
+    [confirmLabel]="GLOSSARY.coverageDeactivateConfirm"
     cancelLabel="ยกเลิก"
     [danger]="true"
     [busy]="disabling()"
@@ -161,9 +161,9 @@
   />
   <app-confirm-sheet
     [open]="!!deleteTarget()"
-    title="ลบพื้นที่ให้บริการ?"
-    [message]="deleteTarget() ? 'ลบจุด &quot;' + deleteTarget()!.name + '&quot; ถาวร — กู้คืนไม่ได้' : ''"
-    confirmLabel="ลบจุด"
+    [title]="GLOSSARY.coverageDeleteTitle"
+    [message]="deleteTarget() ? 'ลบพื้นที่ &quot;' + deleteTarget()!.name + '&quot; ถาวร — กู้คืนไม่ได้' : ''"
+    [confirmLabel]="GLOSSARY.coverageDeleteConfirm"
     cancelLabel="ยกเลิก"
     [danger]="true"
     [busy]="deleting()"

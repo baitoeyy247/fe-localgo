@@ -24,8 +24,15 @@ describe('admin reset optimistic dashboard', () => {
     });
   });
 
-  it('leaves null dashboard unchanged', () => {
-    expect(optimisticAdminDashboardAfterReset(null)).toBeNull();
+  it('defaults user counts when dashboard was null', () => {
+    expect(optimisticAdminDashboardAfterReset(null)).toEqual({
+      users: 10,
+      providers: 5,
+      publishedRequests: 0,
+      completedRequests: 0,
+      expiredRequests: 0,
+      pendingNotifications: 0,
+    });
   });
 
   it('uses expected reset toast copy', () => {

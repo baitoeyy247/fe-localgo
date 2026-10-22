@@ -223,10 +223,10 @@ export class CoveragePage implements OnInit {
       const branchId = this.editingBranchId();
       if (branchId) {
         await firstValueFrom(this.api.updateBranch(p.id, branchId, body));
-        this.toastService.show(`บันทึกจุด '${name}' แล้ว · รัศมี ${this.editingRadiusKm()} กม.`);
+        this.toastService.show(GLOSSARY.coverageSavedToast(name, this.editingRadiusKm()));
       } else {
         await firstValueFrom(this.api.addBranch(p.id, body));
-        this.toastService.show(`เพิ่มจุด '${name}' แล้ว · รัศมี ${this.editingRadiusKm()} กม.`);
+        this.toastService.show(GLOSSARY.coverageAddedToast(name, this.editingRadiusKm()));
       }
       this.formGuard.markSaved(this.branchFormState());
       this.formSnapshot = JSON.stringify(this.branchFormState());
@@ -313,7 +313,7 @@ export class CoveragePage implements OnInit {
     this.error.set(null);
     try {
       await firstValueFrom(this.api.deleteBranch(p.id, branch.id));
-      this.showToast('ลบจุดแล้ว');
+      this.showToast(GLOSSARY.coverageRemovedToast);
       this.deleteTarget.set(null);
       if (this.editingBranchId() === branch.id) {
         this.editingBranchId.set(null);
@@ -321,7 +321,7 @@ export class CoveragePage implements OnInit {
       }
       await this.reload();
     } catch (e) {
-      this.error.set(e instanceof Error ? e.message : 'ลบจุดไม่สำเร็จ');
+      this.error.set(e instanceof Error ? e.message : 'ลบพื้นที่ให้บริการไม่สำเร็จ');
     } finally {
       this.deleting.set(false);
     }

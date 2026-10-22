@@ -33,7 +33,7 @@ async function loginPersona(page: Page, displayName: string, role: 'Requester' |
   await page.getByRole('button', { name: displayName }).click();
   await expect(page.getByText('สวัสดี')).toBeVisible({ timeout: 30_000 });
   const roleLabel = role === 'Requester' ? 'ผู้รับบริการ' : 'ผู้ให้บริการ';
-  await page.getByRole('button', { name: new RegExp(roleLabel) }).click();
+  await page.locator('button.card.row').filter({ hasText: roleLabel }).first().click();
   await page.waitForURL(role === 'Requester' ? '**/requester**' : '**/provider**', {
     timeout: 30_000,
   });
@@ -118,7 +118,7 @@ test.describe('QA28 M-1 skeleton layout shift', () => {
 
       const skeletonSelector =
         routeCase.skeletonSelector ??
-        '.page-content .skeleton-stack .skeleton-card:first-of-type, .page-content .skeleton-stack .skeleton-card:nth-child(2)';
+        '.page-content .skeleton-stack .skeleton-card:first-of-type, .page-content .skeleton-stack .skeleton-form-field:first-of-type';
       const loadedSelector =
         routeCase.loadedSelector ?? '.page-content .card:not(.skeleton-card)';
 

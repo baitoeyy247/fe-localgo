@@ -2,6 +2,8 @@ import { NgClass } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
 import {
   SKELETON_PAGE_PRESETS,
+  SKELETON_STACK_GAP_PX,
+  skeletonFirstCardOffsetPx,
   type SkeletonPagePreset,
 } from './skeleton-layout.constants';
 
@@ -21,7 +23,7 @@ import {
       @if (slow()) {
         <p class="muted" style="text-align: center" role="status">กำลังเชื่อมต่อเซิร์ฟเวอร์…</p>
       }
-      <div class="skeleton-stack" [ngClass]="stackClasses()">
+      <div class="skeleton-stack" [ngClass]="stackClasses()" [style]="stackStyle()">
         @if (showSectionChrome()) {
           <div class="skeleton-section-chrome" aria-hidden="true">
             <div class="skel skeleton-section-chrome__title"></div>
@@ -35,15 +37,23 @@ import {
           </div>
         }
         @if (showFilterChrome()) {
-          <div class="skeleton-filter-chrome" aria-hidden="true">
-            <div class="skel skeleton-filter-chrome__banner"></div>
-            <p class="skel skeleton-filter-chrome__hint"></p>
+          <div
+            class="skeleton-filter-chrome"
+            [class.skeleton-filter-chrome--chips]="filterChromeMode() === 'chips'"
+            aria-hidden="true"
+          >
+            @if (filterChromeMode() !== 'chips') {
+              <div class="skel skeleton-filter-chrome__banner"></div>
+              <p class="skel skeleton-filter-chrome__hint"></p>
+            }
             <div class="skeleton-filter-chrome__chips">
               @for (i of filterChips(); track i) {
                 <div class="skel skeleton-filter-chrome__chip"></div>
               }
             </div>
-            <div class="skel skeleton-filter-chrome__sec-title"></div>
+            @if (filterChromeMode() !== 'chips') {
+              <div class="skel skeleton-filter-chrome__sec-title"></div>
+            }
           </div>
         }
         @if (effectiveVariant() === 'form') {
@@ -110,6 +120,11 @@ export class SkeletonCard {
     return p ? SKELETON_PAGE_PRESETS[p].filterChrome : false;
   });
 
+  protected readonly filterChromeMode = computed(() => {
+    const p = this.preset();
+    return p ? (SKELETON_PAGE_PRESETS[p].filterChromeMode ?? 'inbox') : 'inbox';
+  });
+
   protected readonly showSectionChrome = computed(() => {
     const p = this.preset();
     return p ? SKELETON_PAGE_PRESETS[p].sectionChrome : false;
@@ -128,7 +143,11 @@ export class SkeletonCard {
       'skeleton-stack--form': variant === 'form',
     };
     if (p) {
-      classes[`skeleton-stack--${SKELETON_PAGE_PRESETS[p].stackModifier}`] = true;
+      const spec = SKELETON_PAGE_PRESETS[p];
+      classes[`skeleton-stack--${spec.stackModifier}`] = true;
+      if (spec.padToContentFirstCard) {
+        classes['skeleton-stack--pad-content-first-card'] = true;
+      }
     } else if (this.topOffset()) {
       classes['skeleton-stack--top-offset'] = true;
     }
@@ -145,5 +164,20 @@ export class SkeletonCard {
 
   protected filterChips(): number[] {
     return [0, 1, 2, 3];
+  }
+
+  protected stackStyle(): Record<string, string> | null {
+    const p = this.preset();
+    if (!p) {
+      return null;
+    }
+    const spec = SKELETON_PAGE_PRESETS[p];
+    if (!spec.padToContentFirstCard) {
+      return null;
+    }
+    const chromeAboveCard = skeletonFirstCardOffsetPx(p as SkeletonPagePreset);
+    const gapBeforeCard = chromeAboveCard > 0 ? SKELETON_STACK_GAP_PX : 0;
+    const pad = Math.max(0, spec.contentFirstCardTopPx - chromeAboveCard - gapBeforeCard);
+    return { '--sk-content-first-card-top': `${pad}px` };
   }
 }
