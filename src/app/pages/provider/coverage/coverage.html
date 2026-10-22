@@ -2,7 +2,24 @@
   <app-provider-setup-bar active="coverage" />
 
   @if (loading()) {
-    <app-skeleton-card preset="coverage" />
+    <div role="status" aria-live="polite">
+      <span class="sr-only">กำลังโหลด…</span>
+      <div class="sec-title" aria-hidden="true">
+        พื้นที่ให้บริการ
+        <button type="button" class="btn btn-primary btn-sm" disabled>{{ GLOSSARY.addCoverageCta }}</button>
+      </div>
+      <div class="card-list-gap" aria-hidden="true">
+        @for (i of [0, 1]; track i) {
+          <article class="card coverage-card" style="min-height: 132px">
+            <div class="skel" style="height: 18px; width: 55%"></div>
+            <div class="skel" style="height: 14px; width: 35%; margin-top: 8px"></div>
+            <div class="skel" style="height: 36px; width: 60%; margin-top: 16px"></div>
+          </article>
+        }
+      </div>
+    </div>
+  } @else if (loadError()) {
+    <app-error-state (retry)="reload()" />
   } @else if (!provider()) {
     <div class="state">
       <div class="em">👤</div>

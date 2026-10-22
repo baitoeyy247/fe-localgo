@@ -34,6 +34,8 @@
           type="text"
           placeholder="120"
           inputmode="numeric"
+          pattern="[0-9]*"
+          maxlength="7"
           [value]="priceText()"
           (input)="updatePrice($any($event.target).value)"
         />

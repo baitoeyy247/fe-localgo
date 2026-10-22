@@ -238,6 +238,11 @@ export class SubmitBidPage implements OnInit, OnDestroy {
       scrollToFirstError();
       return;
     }
+    if (!isValidBidPrice(this.priceText())) {
+      this.error.set('ราคาต้องเป็นจำนวนเต็มตั้งแต่ 1 ถึง 1000000 (ตัวเลขเท่านั้น)');
+      scrollToFirstError();
+      return;
+    }
     if (!this.hasChanges() && !this.existingBidId()) {
       this.error.set('ไม่มีการเปลี่ยนแปลง');
       return;
@@ -314,15 +319,23 @@ export class SubmitBidPage implements OnInit, OnDestroy {
         state: { notice: submittedNotice, requestDetail: detail },
       });
     } catch (e) {
-      const recovered = await this.recoverAfterSubmitError(requestId, providerId, e);
+      // H-1: 5xx is never treated as success. Only a network timeout (status 0) triggers a
+      // refetch, and success is claimed only when the server state matches what we sent.
+      const recovered = await this.recoverAfterSubmitError(requestId, providerId, e, payload.priceText);
       if (recovered) {
+        this.cache.invalidateMatching();
+        this.formGuard.markSaved(this.formSnapshot());
         await this.router.navigate(['/provider/requests', requestId], {
-          state: {
-            notice: 'ระบบบันทึกข้อเสนอแล้ว แม้ตอบกลับผิดพลาด กรุณาตรวจสอบสถานะล่าสุด',
-          },
+          state: { notice: bidSubmittedToast(price, isUpdate), requestDetail: recovered },
         });
       } else {
-        const msg = apiErrorMessage(e, 'ส่งข้อเสนอไม่สำเร็จ');
+        const status = e instanceof HttpErrorResponse ? e.status : -1;
+        const msg =
+          status === 0 || status >= 500
+            ? isUpdate
+              ? 'ระบบขัดข้องชั่วคราว ข้อเสนอยังไม่ถูกแก้ไข'
+              : 'ระบบขัดข้องชั่วคราว ข้อเสนอยังไม่ถูกส่ง'
+            : apiErrorMessage(e, 'ส่งข้อเสนอไม่สำเร็จ');
         this.error.set(msg);
         this.toast.show(msg);
         scrollToFirstError();
@@ -373,32 +386,36 @@ export class SubmitBidPage implements OnInit, OnDestroy {
     requestId: string,
     providerId: string,
     error: unknown,
-  ): Promise<boolean> {
-    if (!(error instanceof HttpErrorResponse) || !this.isRecoverableSubmitError(error.status)) {
-      return false;
+    sentPrice: string,
+  ): Promise<ServiceRequestDetail | null> {
+    if (!(error instanceof HttpErrorResponse) || error.status !== 0) {
+      return null;
     }
     try {
       const detail = await firstValueFrom(this.api.getRequest(requestId));
-      this.request.set(detail);
       const myBid = detail.bids?.find((bid) => bid.providerId === providerId);
-      if (!myBid || !this.isActiveBidStatus(myBid.status)) {
-        return false;
+      if (!myBid || !this.isActiveBidStatus(myBid.status) || myBid.priceText.trim() !== sentPrice) {
+        return null;
       }
+      this.request.set(detail);
+      this.flowCache.putRequest(detail);
       this.existingBidId.set(myBid.id);
-      this.priceText.set(myBid.priceText);
-      this.description.set(myBid.description ?? '');
-      this.captureBaseline();
-      return true;
+      return detail;
     } catch {
-      return false;
+      return null;
     }
-  }
-
-  private isRecoverableSubmitError(status: number): boolean {
-    return status === 0 || status === 409 || status >= 500;
   }
 
   private isActiveBidStatus(status: string): boolean {
     return status === 'Submitted' || status === 'Pending' || status === 'Selected';
   }
+}
+
+export function isValidBidPrice(value: string): boolean {
+  const v = value.trim();
+  if (!/^\d+$/.test(v)) {
+    return false;
+  }
+  const n = Number(v);
+  return Number.isInteger(n) && n >= 1 && n <= 1_000_000;
 }

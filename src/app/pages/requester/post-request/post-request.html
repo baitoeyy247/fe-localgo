@@ -33,8 +33,10 @@
       [class.err]="!!fieldErrors()['title']"
       aria-label="หัวข้องาน"
       placeholder="เช่น ต้องการซักผ้าด่วน 5 กก."
+      maxlength="100"
       (input)="updateTitle($any($event.target).value)"
     />
+    <small class="muted" [class.error-text]="title().length >= 100">{{ title().length }}/100</small>
     @if (fieldErrors()['title']; as msg) {
       <p class="error-text">{{ msg }}</p>
     }

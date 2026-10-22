@@ -15,7 +15,8 @@ import { SKELETON_PAGE_PRESETS, type SkeletonPagePreset } from './skeleton-layou
         <button type="button" class="btn btn-primary" (click)="retry.emit()">ลองใหม่</button>
       </div>
     } @else {
-      <div class="skeleton-stack" [ngClass]="stackClasses()">
+      <div class="skeleton-stack" [ngClass]="stackClasses()" role="status" aria-live="polite">
+        <span class="sr-only">กำลังโหลด…</span>
         @if (showFlowChrome()) {
           <div class="skeleton-flow-chrome" aria-hidden="true">
             @for (i of flowSteps(); track i) {

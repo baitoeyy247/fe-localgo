@@ -3,6 +3,8 @@
 
   @if (loading()) {
     <app-skeleton-card variant="form" [count]="1" [topOffset]="true" />
+  } @else if (loadError()) {
+    <app-error-state (retry)="reload()" />
   } @else {
     <label class="field" [class.field--error]="!!fieldErrors()['providerType']">
       <span>ประเภทผู้ให้บริการ <span class="req">*</span></span>
@@ -28,6 +30,7 @@
         [class.err]="!!fieldErrors()['name']"
         [value]="name()"
         aria-label="ชื่อที่แสดง"
+        maxlength="120"
         placeholder="ชื่อร้าน / บริษัท / ชื่อเล่น"
         (input)="updateName($any($event.target).value)"
       />
@@ -37,16 +40,20 @@
     </label>
     <label class="field">
       <span>รายละเอียด</span>
-      <textarea class="input" rows="3" [value]="description()" aria-label="รายละเอียด" (input)="updateDescription($any($event.target).value)"></textarea>
+      <textarea class="input" rows="3" maxlength="2000" [value]="description()" aria-label="รายละเอียด" (input)="updateDescription($any($event.target).value)"></textarea>
+      <small class="muted">{{ description().length }}/2000</small>
     </label>
     <label class="field">
       <span>LINE ติดต่อ</span>
-      <input class="input" [value]="contactLineId()" aria-label="LINE" placeholder="@username" (input)="updateContactLine($any($event.target).value)" />
+      <input class="input" [value]="contactLineId()" aria-label="LINE" maxlength="64" placeholder="@username" (input)="updateContactLine($any($event.target).value)" />
       <small class="muted">ใส่ LINE ID หรือ @username ที่ลูกค้าติดต่อได้ (ไม่บังคับ)</small>
     </label>
     <label class="field">
       <span>เบอร์โทร</span>
-      <input class="input" [value]="contactPhone()" aria-label="เบอร์โทร" (input)="updateContactPhone($any($event.target).value)" />
+      <input class="input" type="tel" inputmode="numeric" maxlength="10" [class.err]="!!fieldErrors()['contactPhone']" [value]="contactPhone()" aria-label="เบอร์โทร" (input)="updateContactPhone($any($event.target).value)" />
+      @if (fieldErrors()['contactPhone']; as msg) {
+        <p class="error-text">{{ msg }}</p>
+      }
     </label>
     @if (error()) {
       <p class="error-text">{{ error() }}</p>

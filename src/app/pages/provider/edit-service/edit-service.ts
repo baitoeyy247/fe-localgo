@@ -21,10 +21,11 @@ import {
   destructiveSheetDismissDeleteService,
 } from '../../../shared/confirm-copy';
 import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
+import { ErrorState } from '../../../shared/ui/error-state';
 
 @Component({
   selector: 'app-edit-service-page',
-  imports: [
+  imports: [ErrorState, 
     PageShell,
     RouterLink,
     ProviderBottomNav,
@@ -46,6 +47,7 @@ export class EditServicePage implements OnInit {
   protected readonly selectedBranchIds = signal<Set<string>>(new Set());
   protected readonly saving = signal(false);
   protected readonly loading = signal(true);
+  protected readonly loadError = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly deleteOpen = signal(false);
   protected readonly deleting = signal(false);
@@ -64,6 +66,22 @@ export class EditServicePage implements OnInit {
   private baselineSummary: ReturnType<typeof this.formSnapshot> | null = null;
 
   async ngOnInit(): Promise<void> {
+    await this.reload();
+  }
+
+  /** A5-1: initial load failure shows the shared error state; the form is not rendered or saved. */
+  protected async reload(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set(false);
+    try {
+      await this.loadInitial();
+    } catch {
+      this.loadError.set(true);
+      this.loading.set(false);
+    }
+  }
+
+  private async loadInitial(): Promise<void> {
     const serviceId = this.route.snapshot.paramMap.get('serviceId');
     if (!serviceId) {
       this.loading.set(false);

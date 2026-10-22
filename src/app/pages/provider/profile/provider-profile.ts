@@ -16,10 +16,11 @@ import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
 import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
 import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
+import { ErrorState } from '../../../shared/ui/error-state';
 
 @Component({
   selector: 'app-provider-profile-setup-page',
-  imports: [PageShell, ProviderSetupBar, ProviderBottomNav, SkeletonCard, ConfirmSaveDialog],
+  imports: [ErrorState, PageShell, ProviderSetupBar, ProviderBottomNav, SkeletonCard, ConfirmSaveDialog],
   templateUrl: './provider-profile.html',
 })
 export class ProviderProfileSetupPage implements OnInit {
@@ -27,6 +28,7 @@ export class ProviderProfileSetupPage implements OnInit {
   private readonly dirty = inject(DirtyFormGuardState);
   private readonly formGuard = new UseDirtyGuard(this.dirty);
   protected readonly loading = signal(true);
+  protected readonly loadError = signal(false);
   protected readonly saving = signal(false);
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly providerType = signal('');
@@ -46,6 +48,22 @@ export class ProviderProfileSetupPage implements OnInit {
   private readonly router = inject(Router);
 
   async ngOnInit(): Promise<void> {
+    await this.reload();
+  }
+
+  /** A5-1: initial load failure shows the shared error state; the form is not rendered or saved. */
+  protected async reload(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set(false);
+    try {
+      await this.loadInitial();
+    } catch {
+      this.loadError.set(true);
+      this.loading.set(false);
+    }
+  }
+
+  private async loadInitial(): Promise<void> {
     try {
       const mine = await firstValueFrom(this.marketplaceCache.getMyProvider());
       this.provider.set(mine);
@@ -121,6 +139,18 @@ export class ProviderProfileSetupPage implements OnInit {
 
   protected askSave(): void {
     if (!this.hasChanges()) {
+      return;
+    }
+    const phone = this.contactPhone().trim();
+    const preErrors: Record<string, string> = {};
+    if (!this.name().trim()) {
+      preErrors['name'] = 'กรุณาระบุชื่อที่แสดง';
+    }
+    if (phone && !/^0\d{9}$/.test(phone)) {
+      preErrors['contactPhone'] = 'เบอร์โทรต้องเป็นตัวเลข 10 หลัก ขึ้นต้นด้วย 0';
+    }
+    if (Object.keys(preErrors).length > 0) {
+      this.fieldErrors.set(preErrors);
       return;
     }
     const prev = this.baselineSummary;

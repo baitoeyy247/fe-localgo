@@ -3,6 +3,8 @@
 
   @if (loading()) {
     <app-skeleton-card variant="form" [count]="1" [topOffset]="true" />
+  } @else if (loadError()) {
+    <app-error-state (retry)="reload()" />
   } @else if (!provider()) {
     <div class="state">
       <div class="em">👤</div>

@@ -1,6 +1,6 @@
 /* LocalGo redesign — LINE-like green theme (no trademarks) */
 :root{
-  --primary:#06C755;--primary-pressed:#05B04C;--primary-tint:#E6F9EE;--primary-dark:#038A3A;
+  --primary:#03782F;--primary-pressed:#02652A;--primary-tint:#E6F9EE;--primary-dark:#026A2D;
   --bg:#FFFFFF;--bg-2:#F5F5F5;--text:#111111;--text-2:#8A8A8A;--text-2-strong:#6B6B6B;--divider:#E5E5E5;
   --danger:#FF334B;--danger-tint:#FFECEE;--warning:#FFB300;--warning-tint:#FFF6DD;--info:#2D7FF9;--info-tint:#EAF2FF;
   --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:20px;--s6:24px;--s8:32px;--s10:40px;

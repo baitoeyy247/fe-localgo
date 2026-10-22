@@ -209,6 +209,12 @@ export class PostRequestPage implements OnInit {
     if (!this.hasChanges()) {
       return;
     }
+    const preErrors = this.validateLocal();
+    if (Object.keys(preErrors).length > 0) {
+      this.fieldErrors.set(preErrors);
+      scrollToFirstError();
+      return;
+    }
     const prev = this.baselineSummary;
     const cur = this.formSnapshot();
     const lines: string[] = [];
@@ -301,8 +307,11 @@ export class PostRequestPage implements OnInit {
 
   private validateLocal(): Record<string, string> {
     const errors: Record<string, string> = {};
-    if (!this.title().trim()) {
+    const trimmedTitle = this.title().trim();
+    if (!trimmedTitle) {
       errors['title'] = 'กรุณาระบุหัวข้องาน';
+    } else if (trimmedTitle.length > 100) {
+      errors['title'] = 'หัวข้องานต้องไม่เกิน 100 ตัวอักษร';
     }
     const iso = this.preferredAt().trim();
     if (!iso) {

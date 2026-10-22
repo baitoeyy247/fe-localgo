@@ -12,10 +12,11 @@ import { providerTypeLabel } from '../../../shared/status-labels';
 import { formatPrice } from '../../../shared/format-price';
 import { formatVerifiedRatingLine } from '../../../shared/format-verified-rating';
 import { GLOSSARY } from '../../../shared/glossary';
+import { ErrorState } from '../../../shared/ui/error-state';
 
 @Component({
   selector: 'app-provider-profile-page',
-  imports: [PageShell, RouterLink, MapView, SkeletonCard],
+  imports: [ErrorState, PageShell, RouterLink, MapView, SkeletonCard],
   templateUrl: './provider-profile.html',
 })
 export class ProviderProfilePage implements OnInit {
@@ -23,6 +24,7 @@ export class ProviderProfilePage implements OnInit {
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly reviews = signal<ReviewItem[]>([]);
   protected readonly loading = signal(true);
+  protected readonly loadError = signal(false);
   protected readonly preferredServiceId = signal<string | null>(null);
   protected readonly selectedServiceId = signal<string | null>(null);
   protected readonly showAllServices = signal(false);
@@ -44,6 +46,22 @@ export class ProviderProfilePage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    await this.reload();
+  }
+
+  /** A5-1: initial load failure shows the shared error state; the form is not rendered or saved. */
+  protected async reload(): Promise<void> {
+    this.loading.set(true);
+    this.loadError.set(false);
+    try {
+      await this.loadInitial();
+    } catch {
+      this.loadError.set(true);
+      this.loading.set(false);
+    }
+  }
+
+  private async loadInitial(): Promise<void> {
     const id = this.route.snapshot.paramMap.get('id');
     this.preferredServiceId.set(this.route.snapshot.queryParamMap.get('serviceId'));
     if (!id) {

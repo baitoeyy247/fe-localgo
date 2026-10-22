@@ -4,7 +4,6 @@ import { MapView } from '../../../demo/map-view';
 import { DirtyFormGuardState, summarizeChanges } from '../../../shared/forms/dirty-form.guard';
 import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 import { ToastService } from '../../../core/toast.service';
-import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -20,6 +19,7 @@ import { MarketplaceCacheService } from '../../../core/marketplace-cache.service
 import { ProviderBranch, ProviderDetail } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { UserLocationService } from '../../../core/user-location.service';
+import { ErrorState } from '../../../shared/ui/error-state';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { GLOSSARY } from '../../../shared/glossary';
 import { destructiveSheetDismissDeleteArea } from '../../../shared/confirm-copy';
@@ -34,7 +34,7 @@ import { destructiveSheetDismissDeleteArea } from '../../../shared/confirm-copy'
     ProviderBottomNav,
     ConfirmSheet,
     MapView,
-    SkeletonCard,
+    ErrorState,
   ],
   templateUrl: './coverage.html',
 })
@@ -45,6 +45,7 @@ export class CoveragePage implements OnInit {
   protected readonly branches = signal<ProviderBranch[]>([]);
   protected readonly saving = signal(false);
   protected readonly loading = signal(true);
+  protected readonly loadError = signal(false);
   protected readonly toast = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly formOpen = signal(false);
@@ -81,7 +82,7 @@ export class CoveragePage implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.reload();
-    if (!this.editingBranchId() && this.branches().length === 0) {
+    if (!this.loadError() && this.provider() && !this.editingBranchId() && this.branches().length === 0) {
       await this.startNewBranch();
     }
   }
@@ -378,8 +379,9 @@ export class CoveragePage implements OnInit {
     }, 2800);
   }
 
-  private async reload(): Promise<void> {
+  protected async reload(): Promise<void> {
     this.loading.set(true);
+    this.loadError.set(false);
     try {
       const mine = await firstValueFrom(this.marketplaceCache.getMyProvider());
       this.provider.set(mine);
@@ -397,7 +399,7 @@ export class CoveragePage implements OnInit {
         this.provider.set(null);
         this.branches.set([]);
       } else {
-        throw e;
+        this.loadError.set(true);
       }
     } finally {
       this.loading.set(false);

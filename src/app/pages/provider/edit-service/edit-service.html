@@ -1,6 +1,8 @@
 <app-page-shell title="แก้ไขบริการ" backLink="/provider/manage">
   @if (loading()) {
     <app-skeleton-card variant="form" [count]="1" [topOffset]="true" />
+  } @else if (loadError()) {
+    <app-error-state (retry)="reload()" />
   } @else if (!service()) {
     <div class="state">
       <div class="em">🛠</div>

@@ -1,6 +1,8 @@
 <app-page-shell [title]="pageTitle()" backLink="/requester/search" [hideNavPad]="!!provider()">
   @if (loading()) {
     <app-skeleton-card variant="detail" [count]="2" [topOffset]="true" />
+  } @else if (loadError()) {
+    <app-error-state (retry)="reload()" />
   } @else if (provider(); as p) {
     <div class="card-list-gap">
     @if (fromSearch() && primaryService(); as focused) {
