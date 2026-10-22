@@ -1,9 +1,10 @@
-/** QA30 M-1 — skeleton layout targets (CLS @ 375×800 & 320×800, API delay ~2.5s). */
+/** QA31 M-1 — skeleton layout targets (CLS @ 320–430×800, API delay ~2.5s). */
 
 export const SKELETON_STACK_GAP_PX = 12;
 export const SKELETON_FORM_FIELD_HEIGHT_PX = 52;
 export const SKELETON_CLS_TOLERANCE_PX = 8;
 export const SKELETON_E2E_API_DELAY_MS = 2500;
+export const SKELETON_E2E_VIEWPORT_WIDTHS = [320, 375, 390, 412, 430] as const;
 
 export type SkeletonPagePreset =
   | 'requester-home'
@@ -30,6 +31,7 @@ export type SkeletonPresetLayout = {
   requestSummaryChrome: boolean;
   requestSummaryHeightPx: number;
   headerChrome: boolean;
+  headerChromeVariant?: 'card' | 'sec-title';
   headerChromeHeightPx: number;
   filterChrome: boolean;
   filterChromeMode?: 'inbox' | 'chips';
@@ -61,16 +63,17 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     count: 2,
     variant: 'list',
     stackModifier: 'bids',
-    firstCardHeightPx: 82,
-    cardHeightsPx: [82, 178],
+    firstCardHeightPx: 178,
+    cardHeightsPx: [178, 178],
     stackOffsetPx: 0,
-    contentFirstCardTopPx: 190,
+    contentFirstCardTopPx: 230,
     flowChrome: false,
     flowChromeHeightPx: 0,
     requestSummaryChrome: true,
     requestSummaryHeightPx: 82,
-    headerChrome: false,
-    headerChromeHeightPx: 0,
+    headerChrome: true,
+    headerChromeVariant: 'sec-title',
+    headerChromeHeightPx: 26,
     filterChrome: false,
     filterChromeHeightPx: 0,
     sectionChrome: false,
@@ -81,8 +84,9 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     variant: 'list',
     stackModifier: 'provider-requests',
     firstCardHeightPx: 166,
+    cardHeightsPx: [166, 166],
     stackOffsetPx: 0,
-    contentFirstCardTopPx: 189,
+    contentFirstCardTopPx: 222,
     flowChrome: false,
     flowChromeHeightPx: 0,
     requestSummaryChrome: false,
@@ -91,17 +95,18 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     headerChromeHeightPx: 0,
     filterChrome: true,
     filterChromeMode: 'inbox',
-    filterChromeHeightPx: 117,
-    sectionChrome: false,
-    sectionChromeHeightPx: 0,
+    filterChromeHeightPx: 154,
+    sectionChrome: true,
+    sectionChromeHeightPx: 44,
   },
   'provider-my-bids': {
     count: 2,
     variant: 'list',
     stackModifier: 'provider-my-bids',
     firstCardHeightPx: 194,
+    cardHeightsPx: [194, 194],
     stackOffsetPx: 0,
-    contentFirstCardTopPx: 130,
+    contentFirstCardTopPx: 74,
     flowChrome: false,
     flowChromeHeightPx: 0,
     requestSummaryChrome: false,
@@ -176,7 +181,7 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     stackModifier: 'coverage',
     firstCardHeightPx: 320,
     stackOffsetPx: 0,
-    contentFirstCardTopPx: 233,
+    contentFirstCardTopPx: 245,
     flowChrome: false,
     flowChromeHeightPx: 0,
     requestSummaryChrome: false,
@@ -245,6 +250,8 @@ export type SkeletonE2ERouteCase = {
   preset: SkeletonPagePreset;
   loadedSelector?: string;
   skeletonSelector?: string;
+  /** When set, assert second skeleton/loaded card alignment (list/detail presets). */
+  assertSecondCard?: boolean;
 };
 
 export const SKELETON_E2E_ROUTE_CASES: SkeletonE2ERouteCase[] = [
@@ -253,37 +260,47 @@ export const SKELETON_E2E_ROUTE_CASES: SkeletonE2ERouteCase[] = [
     path: '/requester/bids',
     personaKey: 'req-01',
     preset: 'bids',
-    loadedSelector: '.page-content article.card, .page-content .card:not(.skeleton-card)',
+    loadedSelector: '.page-content article.card',
+    assertSecondCard: true,
   },
   {
     name: 'appointment-detail',
     path: ({ appointmentId }) => `/requester/appointments/${appointmentId ?? 'e2e-placeholder'}`,
     personaKey: 'req-01',
     preset: 'appointment-detail',
+    loadedSelector: '.page-content .card:not(.skeleton-card)',
+    assertSecondCard: true,
   },
   {
     name: 'provider-requests',
     path: '/provider/requests',
     personaKey: 'prov-01',
     preset: 'provider-requests',
+    loadedSelector: '.page-content article.card',
+    assertSecondCard: true,
   },
   {
     name: 'provider-my-bids',
     path: '/provider/my-bids',
     personaKey: 'prov-01',
     preset: 'provider-my-bids',
+    loadedSelector: '.page-content article.card',
+    assertSecondCard: true,
   },
   {
     name: 'provider-request-detail',
     path: ({ providerRequestId }) => `/provider/requests/${providerRequestId ?? 'e2e-placeholder'}`,
     personaKey: 'prov-01',
     preset: 'provider-request-detail',
+    loadedSelector: '.page-content .card:not(.skeleton-card)',
+    assertSecondCard: true,
   },
   {
     name: 'provider-coverage',
     path: '/provider/coverage',
     personaKey: 'prov-01',
     preset: 'coverage',
+    loadedSelector: '.page-content article.coverage-card, .page-content article.card',
   },
   {
     name: 'requester-post',
@@ -294,3 +311,18 @@ export const SKELETON_E2E_ROUTE_CASES: SkeletonE2ERouteCase[] = [
     loadedSelector: '.post-request-form .field',
   },
 ];
+
+const SKELETON_E2E_ALIGN_ROUTE_NAMES = [
+  'requester-bids',
+  'appointment-detail',
+  'provider-requests',
+  'provider-my-bids',
+  'provider-request-detail',
+  'provider-coverage',
+] as const;
+
+/** Six SIT routes in QA31 M-1 scope (excludes post-form). */
+export const SKELETON_E2E_ALIGN_ROUTE_CASES: SkeletonE2ERouteCase[] =
+  SKELETON_E2E_ALIGN_ROUTE_NAMES.map(
+    (name) => SKELETON_E2E_ROUTE_CASES.find((c) => c.name === name)!,
+  );

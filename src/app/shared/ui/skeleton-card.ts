@@ -36,9 +36,15 @@ import { SKELETON_PAGE_PRESETS, type SkeletonPagePreset } from './skeleton-layou
           </div>
         }
         @if (showHeaderChrome()) {
-          <div class="skeleton-header-chrome" aria-hidden="true">
+          <div
+            class="skeleton-header-chrome"
+            [class.skeleton-header-chrome--sec-title]="headerChromeVariant() === 'sec-title'"
+            aria-hidden="true"
+          >
             <div class="skel skeleton-header-chrome__title"></div>
-            <div class="skel skeleton-header-chrome__line"></div>
+            @if (headerChromeVariant() !== 'sec-title') {
+              <div class="skel skeleton-header-chrome__line"></div>
+            }
           </div>
         }
         @if (showFilterChrome()) {
@@ -126,6 +132,11 @@ export class SkeletonCard {
   protected readonly showHeaderChrome = computed(() => {
     const p = this.preset();
     return p ? SKELETON_PAGE_PRESETS[p].headerChrome : false;
+  });
+
+  protected readonly headerChromeVariant = computed(() => {
+    const p = this.preset();
+    return p ? (SKELETON_PAGE_PRESETS[p].headerChromeVariant ?? 'card') : 'card';
   });
 
   protected readonly showFilterChrome = computed(() => {

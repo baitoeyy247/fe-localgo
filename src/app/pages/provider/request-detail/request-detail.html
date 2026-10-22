@@ -84,7 +84,7 @@
       <article class="card">
         <b>รายละเอียดนัดหมาย</b>
         @if (appointmentLoading()) {
-          <p class="muted" style="margin-top: 8px">กำลังโหลดรายละเอียดนัด…</p>
+          <p class="muted" style="margin-top: 8px">กำลังโหลดรายละเอียดนัดหมาย…</p>
         } @else if (appointment(); as appt) {
           @if (appointmentActionHint(); as hint) {
             <p class="muted" style="margin-top: 8px">{{ hint }}</p>
@@ -99,7 +99,7 @@
           }
 
           @if (isTerminal()) {
-            <p class="muted">นัดนี้ปิดแล้ว ไม่ต้องดำเนินการเพิ่ม</p>
+            <p class="muted">นัดหมายนี้ปิดแล้ว ไม่ต้องดำเนินการเพิ่ม</p>
           } @else if (canConfirmAppointment()) {
             <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" [class.is-busy]="acting()" [disabled]="acting()" (click)="openConfirmAppointment()">
               {{ acting() ? actingLabel() : GLOSSARY.confirmReceiveAppointment }}
@@ -192,7 +192,7 @@
     [confirmLabel]="GLOSSARY.withdrawBid"
     [danger]="true"
     [busy]="withdrawBusy()"
-    [cancelLabel]="GLOSSARY.withdrawDialogCancel"
+    [cancelLabel]="withdrawDismissLabel"
     (confirm)="withdrawMyBid()"
     (cancel)="withdrawOpen.set(false)"
   />

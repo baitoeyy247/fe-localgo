@@ -73,7 +73,7 @@
     title="ลบบริการนี้?"
     [message]="deleteServiceConfirmMessage()"
     confirmLabel="ลบบริการ"
-    cancelLabel="ไม่ลบ"
+    [cancelLabel]="deleteDismissLabel"
     [danger]="true"
     [busy]="deleting()"
     (confirm)="deleteService()"

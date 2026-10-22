@@ -108,7 +108,7 @@
     [confirmLabel]="GLOSSARY.withdrawBid"
     [danger]="true"
     [busy]="withdrawing()"
-    [cancelLabel]="GLOSSARY.withdrawDialogCancel"
+    [cancelLabel]="withdrawDismissLabel"
     (confirm)="withdrawBid()"
     (cancel)="withdrawOpen.set(false)"
   />

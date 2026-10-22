@@ -9,7 +9,8 @@ type CacheEntry<T> = { at: number; data: T; stream$: Observable<T> };
 @Injectable({ providedIn: 'root' })
 export class MarketplaceCacheService {
   private readonly api = inject(LocalGoApiService);
-  private readonly ttlMs = 45_000;
+  /** Session-scoped — invalidated on logout / persona switch / admin reset. */
+  private readonly ttlMs = 24 * 60 * 60 * 1000;
   private myRequests: CacheEntry<ServiceRequestSummary[]> | null = null;
   private matching: CacheEntry<ServiceRequestSummary[]> | null = null;
   private myProvider: CacheEntry<ProviderDetail> | null = null;
@@ -59,6 +60,10 @@ export class MarketplaceCacheService {
 
   invalidateMatching(): void {
     this.matching = null;
+  }
+
+  invalidateMyProvider(): void {
+    this.myProvider = null;
   }
 
   invalidateAll(): void {

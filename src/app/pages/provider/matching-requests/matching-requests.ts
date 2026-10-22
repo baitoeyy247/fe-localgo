@@ -193,7 +193,7 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   /** Single chip per card, from the shared status mapping. */
   protected chipLabel(request: ServiceRequestSummary): string {
     if (request.needsAppointmentConfirm) {
-      return 'รอผู้ให้บริการยืนยันนัด';
+      return 'รอผู้ให้บริการยืนยันนัดหมาย';
     }
     if (request.alreadyBidByMe && this.isBiddable(request)) {
       return 'ส่งราคาแล้ว';
@@ -219,7 +219,7 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
     this.hint.begin();
     try {
       const [mine, items] = await Promise.all([
-        firstValueFrom(this.api.getMyProvider()),
+        firstValueFrom(this.cache.getMyProvider()),
         firstValueFrom(this.cache.listMatchingRequests(true)),
       ]);
       this.provider.set(mine);

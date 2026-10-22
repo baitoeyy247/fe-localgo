@@ -16,6 +16,7 @@ import { GLOSSARY } from '../../shared/glossary';
 import {
   cancelAppointmentConfirmMessage,
   cancelAppointmentToast,
+  destructiveSheetDismissCancelAppointment,
 } from '../../shared/confirm-copy';
 import { ToastService } from '../../core/toast.service';
 
@@ -26,6 +27,7 @@ import { ToastService } from '../../core/toast.service';
 })
 export class AppointmentByIdPage implements OnInit {
   protected readonly GLOSSARY = GLOSSARY;
+  protected readonly cancelAppointmentDismissLabel = destructiveSheetDismissCancelAppointment;
   protected readonly appointment = signal<AppointmentDetail | null>(null);
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly loading = signal(true);

@@ -4,6 +4,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { ProviderDetail } from '../../../core/models';
 import { PROVIDER_TYPE_OPTIONS } from '../../../shared/status-labels';
 import { ProviderSetupBar } from '../../../shared/provider-setup-bar';
@@ -41,11 +42,12 @@ export class ProviderProfileSetupPage implements OnInit {
   protected readonly discardConfirmOpen = signal(false);
   private baselineSummary: ReturnType<typeof this.formSnapshot> | null = null;
   private readonly api = inject(LocalGoApiService);
+  private readonly marketplaceCache = inject(MarketplaceCacheService);
   private readonly router = inject(Router);
 
   async ngOnInit(): Promise<void> {
     try {
-      const mine = await firstValueFrom(this.api.getMyProvider());
+      const mine = await firstValueFrom(this.marketplaceCache.getMyProvider());
       this.provider.set(mine);
       this.providerType.set(mine.providerType);
       this.name.set(mine.name);

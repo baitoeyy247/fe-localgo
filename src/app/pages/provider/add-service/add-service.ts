@@ -6,6 +6,7 @@ import { PageShell } from '../../../demo/page-shell';
 import { ProviderSetupBar } from '../../../shared/provider-setup-bar';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { Category, ProviderDetail } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
@@ -46,6 +47,7 @@ export class AddServicePage implements OnInit {
   protected readonly discardConfirmOpen = signal(false);
 
   private readonly api = inject(LocalGoApiService);
+  private readonly marketplaceCache = inject(MarketplaceCacheService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly dirty = inject(DirtyFormGuardState);
@@ -59,7 +61,7 @@ export class AddServicePage implements OnInit {
       this.selectedCategoryId.set(cats[0].id);
     }
     try {
-      const mine = await firstValueFrom(this.api.getMyProvider());
+      const mine = await firstValueFrom(this.marketplaceCache.getMyProvider());
       this.provider.set(mine);
       const activeBranches = mine.branches.filter((b) => b.isActive);
       this.selectedBranchIds.set(new Set(activeBranches.map((b) => b.id)));

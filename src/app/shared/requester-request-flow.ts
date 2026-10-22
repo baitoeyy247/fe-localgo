@@ -1,20 +1,19 @@
 import { firstValueFrom } from 'rxjs';
 import { LocalGoApiService } from '../core/localgo-api.service';
+import { MarketplaceCacheService } from '../core/marketplace-cache.service';
 import { SessionStateService } from '../core/session-state.service';
 import { ServiceRequestSummary } from '../core/models';
 
 export type RequesterRequestPickStrategy = 'appointment' | 'bids';
 
-export async function canAccessServiceRequest(
+async function loadMyRequests(
   api: LocalGoApiService,
-  requestId: string,
-): Promise<boolean> {
-  try {
-    const mine = await firstValueFrom(api.listMyRequests());
-    return mine.some((r) => r.id === requestId);
-  } catch {
-    return false;
+  cache?: MarketplaceCacheService,
+): Promise<ServiceRequestSummary[]> {
+  if (cache) {
+    return firstValueFrom(cache.listMyRequests());
   }
+  return firstValueFrom(api.listMyRequests());
 }
 
 function pickActiveRequest(
@@ -45,17 +44,30 @@ function pickActiveRequest(
   if (selectedOrScheduled) {
     return selectedOrScheduled;
   }
-  return (
-    mine.find((r) => r.status === 'Open' || r.status === 'HasOffers') ?? mine[0]
-  );
+  return mine.find((r) => r.status === 'Open' || r.status === 'HasOffers') ?? mine[0];
+}
+
+export async function canAccessServiceRequest(
+  api: LocalGoApiService,
+  requestId: string,
+  mine?: ServiceRequestSummary[],
+  cache?: MarketplaceCacheService,
+): Promise<boolean> {
+  try {
+    const list = mine ?? (await loadMyRequests(api, cache));
+    return list.some((r) => r.id === requestId);
+  } catch {
+    return false;
+  }
 }
 
 export async function findActiveRequesterRequestId(
   api: LocalGoApiService,
   strategy: RequesterRequestPickStrategy,
+  cache?: MarketplaceCacheService,
 ): Promise<string | null> {
   try {
-    const mine = await firstValueFrom(api.listMyRequests());
+    const mine = await loadMyRequests(api, cache);
     return pickActiveRequest(mine, strategy)?.id ?? null;
   } catch {
     return null;
@@ -70,14 +82,16 @@ export async function resolveRequesterRequestId(
     queryRequestId?: string | null;
     strategy: RequesterRequestPickStrategy;
     persist?: boolean;
+    cache?: MarketplaceCacheService;
   },
 ): Promise<string | null> {
+  const list = await loadMyRequests(api, options.cache);
   let requestId = options.queryRequestId ?? session.requesterRequestId;
-  if (requestId && !(await canAccessServiceRequest(api, requestId))) {
+  if (requestId && !list.some((r) => r.id === requestId)) {
     requestId = null;
   }
   if (!requestId) {
-    requestId = await findActiveRequesterRequestId(api, options.strategy);
+    requestId = pickActiveRequest(list, options.strategy)?.id ?? null;
   }
   if (requestId && options.persist !== false) {
     session.requesterRequestId = requestId;

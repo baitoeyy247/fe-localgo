@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { AuthService } from '../core/auth.service';
 import { LocalGoApiService } from '../core/localgo-api.service';
+import { MarketplaceCacheService } from '../core/marketplace-cache.service';
 
 /** When a provider opens a requester deep link for their own job, send them to provider UI. */
 export async function redirectProviderFromRequesterRoute(
@@ -10,14 +11,16 @@ export async function redirectProviderFromRequesterRoute(
   auth: AuthService,
   router: Router,
   requestId: string,
+  cache?: MarketplaceCacheService,
 ): Promise<boolean> {
   if (auth.activeRole() !== 'Provider') {
     return false;
   }
 
   try {
+    const provider$ = cache ? cache.getMyProvider() : api.getMyProvider();
     const [myProvider, detail] = await Promise.all([
-      firstValueFrom(api.getMyProvider()),
+      firstValueFrom(provider$),
       firstValueFrom(api.getRequest(requestId)),
     ]);
 

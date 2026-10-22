@@ -258,7 +258,13 @@ export class AdminDashboardPage implements OnInit {
     this.resetConfirmOpen.set(false);
     this.resetting.set(true);
     this.actionError.set(null);
-    this.notice.set(null);
+    this.notice.set('กำลังรีเซ็ต…');
+    const keptGuess = this.dashboard()?.users ?? 10;
+    this.dashboard.set(optimisticAdminDashboardAfterReset(this.dashboard(), keptGuess));
+    this.requests.set([]);
+    this.appointments.set([]);
+    this.notifications.set([]);
+    this.toast.show(ADMIN_RESET_TOAST, 4000);
     try {
       const result = await firstValueFrom(this.api.resetTestData());
       const kept = (result as { keptUsers?: number }).keptUsers ?? 10;
@@ -270,10 +276,6 @@ export class AdminDashboardPage implements OnInit {
       this.dashboard.set(
         dashFromApi ?? optimisticAdminDashboardAfterReset(this.dashboard(), kept),
       );
-      this.requests.set([]);
-      this.appointments.set([]);
-      this.notifications.set([]);
-      this.toast.show(ADMIN_RESET_TOAST, 4000);
       await this.refreshAfterMutation();
       this.dashboard.update((d) => (d ? optimisticAdminDashboardAfterReset(d, kept) : d));
       this.notice.set(

@@ -180,10 +180,11 @@ export class ReviewPage implements OnInit {
       scrollToFirstError();
       return;
     }
-    this.submitting.set(true);
-    this.error.set(null);
     const stars = this.rating();
     const name = this.providerName();
+    this.toast.show(`ส่งรีวิว ${stars} ดาวให้ ${name} แล้ว`);
+    this.submitting.set(true);
+    this.error.set(null);
     try {
       await firstValueFrom(
         this.api.createReview(providerId, {
@@ -196,7 +197,6 @@ export class ReviewPage implements OnInit {
       this.cache.invalidateAll();
       this.formGuard.markSaved(this.formSnapshot());
       this.session.clearRequesterFlow();
-      this.toast.show(`ส่งรีวิว ${stars} ดาวให้ ${name} แล้ว`);
       await this.router.navigateByUrl('/requester');
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'ส่งรีวิวไม่สำเร็จ'));

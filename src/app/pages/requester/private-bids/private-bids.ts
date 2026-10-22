@@ -21,6 +21,7 @@ import { formatPrice } from '../../../shared/format-price';
 import { shouldShowLineNotificationHint } from '../../../shared/line-notification-hint';
 import { GLOSSARY } from '../../../shared/glossary';
 import { RequestFlowCacheService } from '../../../core/request-flow-cache.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 
 @Component({
   selector: 'app-private-bids-page',
@@ -56,6 +57,7 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
   private readonly session = inject(SessionStateService);
   private readonly auth = inject(AuthService);
   private readonly flowCache = inject(RequestFlowCacheService);
+  private readonly marketplaceCache = inject(MarketplaceCacheService);
 
   protected showLineHint(): boolean {
     return shouldShowLineNotificationHint(this.auth);
@@ -73,6 +75,7 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
         this.auth,
         this.router,
         queryRequestId,
+        this.marketplaceCache,
       );
       if (redirected) {
         return;
@@ -82,6 +85,7 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
     const requestId = await resolveRequesterRequestId(this.api, this.session, {
       queryRequestId,
       strategy: 'bids',
+      cache: this.marketplaceCache,
     });
     if (!requestId) {
       this.loading.set(false);

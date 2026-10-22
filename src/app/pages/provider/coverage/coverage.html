@@ -164,7 +164,7 @@
     [title]="GLOSSARY.coverageDeleteTitle"
     [message]="deleteTarget() ? 'ลบพื้นที่ &quot;' + deleteTarget()!.name + '&quot; ถาวร — กู้คืนไม่ได้' : ''"
     [confirmLabel]="GLOSSARY.coverageDeleteConfirm"
-    [cancelLabel]="GLOSSARY.destructiveSheetDismiss"
+    [cancelLabel]="deleteAreaDismissLabel"
     [danger]="true"
     [busy]="deleting()"
     (confirm)="confirmDeleteBranch()"

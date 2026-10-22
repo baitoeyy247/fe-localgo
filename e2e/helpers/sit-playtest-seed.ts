@@ -6,7 +6,7 @@ const API_BASE =
 const CLEANING_CATEGORY_ID = 'eef6548b-0ded-41a1-9d37-e925fdfd89e3';
 const SEED_LAT = 16.1880948;
 const SEED_LNG = 103.2987346;
-const SEED_TITLE = 'QA R30 skeleton seed';
+const SEED_TITLE = 'QA R31 skeleton seed';
 
 export type SitPlaytestIds = {
   requestId?: string;
@@ -19,9 +19,10 @@ async function devLogin(
   personaKey: string,
   displayName: string,
   activeRole: 'Requester' | 'Provider',
+  options?: { asAdmin?: boolean },
 ): Promise<string> {
   const res = await request.post(`${API_BASE}/auth/dev/login`, {
-    data: { personaKey, displayName, activeRole },
+    data: { personaKey, displayName, activeRole, asAdmin: options?.asAdmin ?? false },
   });
   if (!res.ok()) {
     throw new Error(`dev login failed for ${personaKey}: ${res.status()} ${await res.text()}`);
@@ -42,6 +43,7 @@ export async function ensureSitPlaytestMarketplace(
 
   let requestId =
     mine.find((r) => r.title === SEED_TITLE)?.id ??
+    mine.find((r) => r.title.includes('QA R31'))?.id ??
     mine.find((r) => r.title.includes('QA R30'))?.id ??
     mine[0]?.id;
 
@@ -121,4 +123,16 @@ export async function ensureSitPlaytestMarketplace(
   }
 
   return { requestId, appointmentId, providerRequestId };
+}
+
+/** L-13: clear persona marketplace rows after SIT E2E (keeps QA users). */
+export async function cleanupSitPlaytestMarketplace(request: APIRequestContext): Promise<void> {
+  const token = await devLogin(request, 'admin-01', 'QA แอดมิน', 'Requester', { asAdmin: true });
+  const res = await request.post(`${API_BASE}/admin/test-data/reset`, {
+    headers: { Authorization: `Bearer ${token}` },
+    data: {},
+  });
+  if (!res.ok() && res.status() !== 204) {
+    throw new Error(`admin reset failed: ${res.status()} ${await res.text()}`);
+  }
 }

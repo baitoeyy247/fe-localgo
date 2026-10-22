@@ -81,7 +81,7 @@ export class ProviderMyBidsPage implements OnInit, OnDestroy {
   protected ctaLabel(item: ProviderBidListItem): string {
     const view = providerBidRowStatus(item);
     if (view.key === 'confirm') {
-      return 'ยืนยันนัด';
+      return GLOSSARY.confirmAppointment;
     }
     if (view.key === 'inprogress') {
       return 'ดำเนินงาน';

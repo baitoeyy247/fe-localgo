@@ -15,7 +15,12 @@ import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
 import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { GLOSSARY } from '../../../shared/glossary';
-import { deleteServiceConfirmMessage, deleteServiceToast } from '../../../shared/confirm-copy';
+import {
+  deleteServiceConfirmMessage,
+  deleteServiceToast,
+  destructiveSheetDismissDeleteService,
+} from '../../../shared/confirm-copy';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 
 @Component({
   selector: 'app-edit-service-page',
@@ -50,6 +55,8 @@ export class EditServicePage implements OnInit {
 
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(LocalGoApiService);
+  private readonly marketplaceCache = inject(MarketplaceCacheService);
+  protected readonly deleteDismissLabel = destructiveSheetDismissDeleteService;
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly dirty = inject(DirtyFormGuardState);
@@ -65,7 +72,7 @@ export class EditServicePage implements OnInit {
     const cats = await firstValueFrom(this.api.listCategories());
     this.categories.set(cats);
     try {
-      const mine = await firstValueFrom(this.api.getMyProvider());
+      const mine = await firstValueFrom(this.marketplaceCache.getMyProvider());
       this.provider.set(mine);
       const svc = mine.services.find((s) => s.id === serviceId);
       if (!svc) {

@@ -9,6 +9,7 @@ import { LocalGoApiService } from './localgo-api.service';
 import { MarketplaceCacheService } from './marketplace-cache.service';
 import { UserLocationService } from './user-location.service';
 import { SessionStateService } from './session-state.service';
+import { SessionProfileCacheService } from './session-profile-cache.service';
 
 const TOKEN_KEY = 'localgo_access_token';
 const USER_KEY = 'localgo_user';
@@ -37,10 +38,25 @@ export class AuthService {
   private readonly locations = inject(UserLocationService);
   private readonly cache = inject(MarketplaceCacheService);
   private readonly session = inject(SessionStateService);
+  private readonly meCache = inject(SessionProfileCacheService);
 
   ensureSession(): Promise<void> {
     this.bootstrapPromise ??= this.bootstrap();
     return this.bootstrapPromise;
+  }
+
+  /** Non-blocking refresh after routes already have a cached user (L-5). */
+  refreshSessionInBackground(): void {
+    if (!this.tokenSignal()) {
+      return;
+    }
+    void firstValueFrom(this.meCache.getMe())
+      .then((me) => {
+        this.userSignal.set(me);
+        this.meCache.patch(me);
+        sessionStorage.setItem(USER_KEY, JSON.stringify(me));
+      })
+      .catch(() => undefined);
   }
 
   resetBootstrap(): void {
@@ -62,14 +78,16 @@ export class AuthService {
     }
 
     if (this.tokenSignal()) {
+      const stored = this.userSignal();
+      if (stored) {
+        this.meCache.seed(stored);
+        this.refreshSessionInBackground();
+        return;
+      }
       try {
-        const me = await firstValueFrom(this.api.getMe());
+        const me = await firstValueFrom(this.meCache.getMe(true));
         const mode = sessionStorage.getItem(AUTH_MODE_KEY);
-        this.setSession(
-          this.tokenSignal()!,
-          me,
-          mode === 'line' ? 'line' : 'dev',
-        );
+        this.setSession(this.tokenSignal()!, me, mode === 'line' ? 'line' : 'dev');
         return;
       } catch {
         this.clearSession();
@@ -244,19 +262,27 @@ export class AuthService {
     }
     const updated = await firstValueFrom(this.api.updateActiveRole(role));
     this.userSignal.set(updated);
+    this.meCache.patch(updated);
     sessionStorage.setItem(USER_KEY, JSON.stringify(updated));
     return updated;
   }
 
-  setSession(token: string, user: UserProfile, mode: 'line' | 'dev'): void {
+  setSession(
+    token: string,
+    user: UserProfile,
+    mode: 'line' | 'dev',
+    options?: { skipWarm?: boolean },
+  ): void {
     this.tokenSignal.set(token);
     this.userSignal.set(user);
+    this.meCache.seed(user);
     this.authMode.set(mode);
     sessionStorage.setItem(TOKEN_KEY, token);
     sessionStorage.setItem(USER_KEY, JSON.stringify(user));
     sessionStorage.setItem(AUTH_MODE_KEY, mode);
-    // Warm home lists so first paint after wake is under ~3s when API is up.
-    this.cache.preloadHome(user.activeRole ?? null);
+    if (!options?.skipWarm) {
+      this.cache.preloadHome(user.activeRole ?? null);
+    }
   }
 
   async loginAsAdmin(): Promise<void> {
@@ -280,6 +306,7 @@ export class AuthService {
     this.session.clearRequesterFlow();
     this.session.clearProviderRequest();
     this.cache.invalidateAll();
+    this.meCache.clear();
   }
 
   private isLocalDevHost(): boolean {

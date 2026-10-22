@@ -19,6 +19,7 @@ import { formatPrice } from '../../../shared/format-price';
 import { ToastService } from '../../../core/toast.service';
 import { SlowLoadHint } from '../../../shared/load-state';
 import { AuthService } from '../../../core/auth.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 
 @Component({
   selector: 'app-requester-book-page',
@@ -50,6 +51,7 @@ export class RequesterBookPage implements OnInit, OnDestroy {
   private readonly geo = inject(GeoService);
   private readonly toast = inject(ToastService);
   private readonly auth = inject(AuthService);
+  private readonly cache = inject(MarketplaceCacheService);
   private readonly datetimeField = viewChild(ThaiDatetimeField);
   protected readonly selfBookBlocked = signal(false);
 
@@ -65,18 +67,6 @@ export class RequesterBookPage implements OnInit, OnDestroy {
     this.session.currentProviderId = providerId;
 
     try {
-      try {
-        const mine = await firstValueFrom(this.api.getMyProvider());
-        if (mine.id === providerId) {
-          this.selfBookBlocked.set(true);
-          this.error.set('ไม่สามารถจองบริการร้านของตัวเองได้');
-          this.loading.set(false);
-          return;
-        }
-      } catch {
-        /* not a provider account */
-      }
-
       // Prefer last search area — never silent Bangkok default.
       const last = this.userLocation.getLastArea();
       if (last) {
@@ -98,6 +88,7 @@ export class RequesterBookPage implements OnInit, OnDestroy {
         return;
       }
       this.serviceId.set(svc.id);
+      void this.guardSelfBook(providerId);
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'โหลดข้อมูลไม่สำเร็จ'));
     } finally {
@@ -107,6 +98,18 @@ export class RequesterBookPage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.hint.end();
+  }
+
+  private async guardSelfBook(providerId: string): Promise<void> {
+    try {
+      const mine = await firstValueFrom(this.cache.getMyProvider());
+      if (mine.id === providerId) {
+        this.selfBookBlocked.set(true);
+        this.error.set('ไม่สามารถจองบริการร้านของตัวเองได้');
+      }
+    } catch {
+      /* not a provider account */
+    }
   }
 
   protected selectedService() {

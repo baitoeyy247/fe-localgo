@@ -1402,16 +1402,8 @@ label.branch-check input[type='checkbox'],
   min-height: 120px;
 }
 
-.skeleton-stack--bids .skeleton-card:nth-child(1) {
-  min-height: 82px;
-}
-
-.skeleton-stack--bids .skeleton-card:nth-child(2) {
+.skeleton-stack--bids .skeleton-card {
   min-height: 178px;
-}
-
-.skeleton-stack--bids .skeleton-card:nth-child(3) {
-  min-height: 147px;
 }
 
 .skeleton-flow-chrome {
@@ -1429,7 +1421,7 @@ label.branch-check input[type='checkbox'],
 }
 .skeleton-request-summary {
   box-sizing: border-box;
-  min-height: 82px;
+  min-height: 100px;
   padding: 12px 16px;
   background: var(--bg);
   border-radius: var(--r-lg);
@@ -1448,12 +1440,12 @@ label.branch-check input[type='checkbox'],
   width: 45%;
 }
 
-.skeleton-stack--provider-requests .skeleton-card:first-child {
+.skeleton-stack--provider-requests .skeleton-card {
   min-height: 166px;
 }
 
 .skeleton-filter-chrome--provider-inbox {
-  min-height: 117px;
+  min-height: 154px;
 }
 
 .skeleton-stack--provider-my-bids .skeleton-card:first-child {
@@ -1493,7 +1485,7 @@ label.branch-check input[type='checkbox'],
 }
 
 .skeleton-filter-chrome--chips {
-  min-height: 44px;
+  min-height: 62px;
   gap: 0;
 }
 
@@ -1524,9 +1516,23 @@ label.branch-check input[type='checkbox'],
   flex-shrink: 0;
 }
 
-.skeleton-stack--bids .skeleton-header-chrome {
+.skeleton-stack--bids .skeleton-header-chrome:not(.skeleton-header-chrome--sec-title) {
   min-height: 61px;
   height: 61px;
+}
+
+.skeleton-header-chrome--sec-title {
+  min-height: 26px;
+  height: 26px;
+  padding: 0;
+  background: none;
+  box-shadow: none;
+  justify-content: flex-start;
+}
+
+.skeleton-header-chrome--sec-title .skeleton-header-chrome__title {
+  height: 18px;
+  width: 48%;
 }
 
 .skeleton-header-chrome__title {

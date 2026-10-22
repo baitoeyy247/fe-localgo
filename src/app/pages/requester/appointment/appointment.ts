@@ -35,6 +35,7 @@ import { GLOSSARY } from '../../../shared/glossary';
 import {
   cancelAppointmentConfirmMessage,
   cancelAppointmentToast,
+  destructiveSheetDismissCancelAppointment,
   formatDatetimeConfirmLine,
 } from '../../../shared/confirm-copy';
 import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
@@ -59,6 +60,7 @@ import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 })
 export class AppointmentPage implements OnInit, OnDestroy {
   protected readonly GLOSSARY = GLOSSARY;
+  protected readonly cancelAppointmentDismissLabel = destructiveSheetDismissCancelAppointment;
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly appointment = signal<AppointmentDetail | null>(null);
   protected readonly selectedBid = signal<BidItem | null>(null);
@@ -125,6 +127,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
         this.auth,
         this.router,
         queryRequestId,
+        this.cache,
       );
       if (redirected) {
         return;
@@ -134,6 +137,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
     const requestId = await resolveRequesterRequestId(this.api, this.session, {
       queryRequestId,
       strategy: 'appointment',
+      cache: this.cache,
     });
     if (!requestId) {
       this.noWork.set(true);
@@ -277,6 +281,10 @@ export class AppointmentPage implements OnInit, OnDestroy {
       scrollToFirstError();
       return;
     }
+    const whenPreview = this.scheduledAt().trim()
+      ? formatScheduledAt(new Date(this.scheduledAt()).toISOString())
+      : GLOSSARY.appointment;
+    this.toast.show(`บันทึกนัดหมาย ${whenPreview} แล้ว`);
     this.saving.set(true);
     this.error.set(null);
     this.success.set(null);
@@ -324,12 +332,6 @@ export class AppointmentPage implements OnInit, OnDestroy {
       );
       this.cache.invalidateAll();
       this.formGuard.markSaved(this.formSnapshot());
-      const whenLabel = created.scheduledAt
-        ? formatScheduledAt(created.scheduledAt)
-        : this.scheduledAt().trim()
-          ? formatScheduledAt(new Date(this.scheduledAt()).toISOString())
-          : GLOSSARY.appointment;
-      this.toast.show(`บันทึกนัดหมาย ${whenLabel} แล้ว`);
       await this.router.navigate(['/requester/appointments', created.id]);
     } catch (e) {
       this.success.set(null);
@@ -571,10 +573,10 @@ export class AppointmentPage implements OnInit, OnDestroy {
 
   protected appointmentStatusHint(status: string | undefined): string | null {
     if (status === 'Pending') {
-      return 'รอผู้ให้บริการยืนยันนัด';
+      return 'รอผู้ให้บริการยืนยันนัดหมาย';
     }
     if (status === 'Confirmed') {
-      return 'ผู้ให้บริการยืนยันนัดแล้ว — รอเริ่มงาน';
+      return 'ผู้ให้บริการยืนยันนัดหมายแล้ว — รอเริ่มงาน';
     }
     if (status === 'InProgress') {
       return 'ผู้ให้บริการกำลังดำเนินงาน';
@@ -667,7 +669,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
       return null;
     }
     if (!appt && !this.hasActiveAppointment() && this.canCreateAppointment(detail)) {
-      return 'ยังไม่ได้กำหนดนัด';
+      return 'ยังไม่ได้กำหนดนัดหมาย';
     }
     const st = detail.status;
     return st ? displayRequestStatusLabel(st, appt?.status) : null;

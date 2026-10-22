@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { ProviderDetail, ServiceRequestSummary } from '../../../core/models';
 import { AuthService } from '../../../core/auth.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
@@ -31,6 +32,7 @@ export class ProviderHomePage implements OnInit, OnDestroy {
 
   constructor(
     private readonly api: LocalGoApiService,
+    private readonly cache: MarketplaceCacheService,
     protected readonly auth: AuthService,
     private readonly router: Router,
   ) {}
@@ -48,15 +50,12 @@ export class ProviderHomePage implements OnInit, OnDestroy {
     this.error.set(null);
     this.hint.begin();
     try {
-      const [mine, matching] = await Promise.all([
-        firstValueFrom(this.api.getMyProvider()),
-        firstValueFrom(this.api.listMatchingRequests()).catch(() => [] as ServiceRequestSummary[]),
-      ]);
+      const mine = await firstValueFrom(this.cache.getMyProvider());
       this.provider.set(mine);
       this.hasProfile.set(true);
-      this.pendingConfirmCount.set(
-        matching.filter((r) => r.needsAppointmentConfirm).length,
-      );
+      this.loading.set(false);
+      this.hint.end();
+      void this.refreshPendingConfirmCount();
     } catch (e) {
       if (e instanceof HttpErrorResponse && e.status === 404) {
         this.hasProfile.set(false);
@@ -66,6 +65,17 @@ export class ProviderHomePage implements OnInit, OnDestroy {
     } finally {
       this.hint.end();
       this.loading.set(false);
+    }
+  }
+
+  private async refreshPendingConfirmCount(): Promise<void> {
+    try {
+      const matching = await firstValueFrom(this.cache.listMatchingRequests());
+      this.pendingConfirmCount.set(
+        matching.filter((r) => r.needsAppointmentConfirm).length,
+      );
+    } catch {
+      this.pendingConfirmCount.set(0);
     }
   }
 

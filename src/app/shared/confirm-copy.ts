@@ -3,6 +3,12 @@ import { summarizeChanges } from './forms/dirty-form.guard';
 
 export const CONFIRM_TEXT_MAX = 80;
 
+/** Dismiss labels on destructive confirm sheets (L-11). */
+export const destructiveSheetDismissCancelAppointment = 'ไม่ยกเลิก';
+export const destructiveSheetDismissDeleteArea = 'ไม่ลบ';
+export const destructiveSheetDismissDeleteService = 'ไม่ลบ';
+export const destructiveSheetDismissWithdrawBid = 'ไม่ถอน';
+
 /** Truncate long strings in confirm sheets and toasts. */
 export function truncateConfirmText(text: string, max = CONFIRM_TEXT_MAX): string {
   const t = text.trim();

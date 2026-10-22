@@ -65,10 +65,10 @@ export function displayRequestStatusLabel(
   }
   if (status === 'Scheduled' || status === 'ProviderSelected' || status === 'Selected') {
     if (appointmentStatus === 'Confirmed') {
-      return 'ยืนยันนัดแล้ว';
+      return 'ผู้ให้บริการยืนยันนัดหมายแล้ว';
     }
     if (!appointmentStatus || appointmentStatus === 'Pending') {
-      return 'รอผู้ให้บริการยืนยันนัด';
+      return 'รอผู้ให้บริการยืนยันนัดหมาย';
     }
     if (appointmentStatus === 'InProgress') {
       return 'กำลังดำเนินงาน';
@@ -160,8 +160,8 @@ export function providerBidRowStatus(item: {
 }
 
 const APPOINTMENT_STATUS: Record<string, string> = {
-  Pending: 'รอผู้ให้บริการยืนยันนัด',
-  Confirmed: 'ผู้ให้บริการยืนยันนัดแล้ว',
+  Pending: 'รอผู้ให้บริการยืนยันนัดหมาย',
+  Confirmed: 'ผู้ให้บริการยืนยันนัดหมายแล้ว',
   InProgress: 'กำลังดำเนินงาน',
   Completed: 'เสร็จสิ้น',
   Cancelled: 'ยกเลิกแล้ว',

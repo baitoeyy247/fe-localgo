@@ -16,10 +16,12 @@ import { PageShell } from '../../../demo/page-shell';
 import { ProviderSetupBar } from '../../../shared/provider-setup-bar';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { ProviderBranch, ProviderDetail } from '../../../core/models';
 import { UserLocationService } from '../../../core/user-location.service';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { GLOSSARY } from '../../../shared/glossary';
+import { destructiveSheetDismissDeleteArea } from '../../../shared/confirm-copy';
 
 @Component({
   selector: 'app-coverage-page',
@@ -37,6 +39,7 @@ import { GLOSSARY } from '../../../shared/glossary';
 })
 export class CoveragePage implements OnInit {
   protected readonly GLOSSARY = GLOSSARY;
+  protected readonly deleteAreaDismissLabel = destructiveSheetDismissDeleteArea;
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly branches = signal<ProviderBranch[]>([]);
   protected readonly saving = signal(false);
@@ -67,6 +70,7 @@ export class CoveragePage implements OnInit {
 
   constructor(
     private readonly api: LocalGoApiService,
+    private readonly marketplaceCache: MarketplaceCacheService,
     private readonly userLocation: UserLocationService,
     private readonly dirty: DirtyFormGuardState,
     private readonly toastService: ToastService,
@@ -361,7 +365,7 @@ export class CoveragePage implements OnInit {
   private async reload(): Promise<void> {
     this.loading.set(true);
     try {
-      const mine = await firstValueFrom(this.api.getMyProvider());
+      const mine = await firstValueFrom(this.marketplaceCache.getMyProvider());
       this.provider.set(mine);
       this.branches.set(mine.branches);
       const keepId = this.selectedBranchId();

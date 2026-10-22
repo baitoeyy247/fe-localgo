@@ -76,9 +76,15 @@ function injectSkeletonLayoutStyles(): void {
       );
     }
     if (spec.headerChrome && spec.headerChromeHeightPx) {
+      const variant = spec.headerChromeVariant ?? 'card';
       rules.push(
         `.skeleton-stack--${spec.stackModifier} .skeleton-header-chrome { min-height: ${spec.headerChromeHeightPx}px; height: ${spec.headerChromeHeightPx}px; box-sizing: border-box; flex-shrink: 0; }`,
       );
+      if (variant === 'sec-title') {
+        rules.push(
+          `.skeleton-stack--${spec.stackModifier} .skeleton-header-chrome--sec-title { min-height: ${spec.headerChromeHeightPx}px; height: ${spec.headerChromeHeightPx}px; padding: 0; background: none; box-shadow: none; }`,
+        );
+      }
     }
     return rules;
   }).join('\n');

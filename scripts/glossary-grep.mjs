@@ -8,7 +8,6 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const appRoot = path.join(root, 'src', 'app');
-const glossaryPath = path.join(root, 'src', 'i18n', 'glossary.ts');
 
 /** Substrings that must only live in glossary.ts (use GLOSSARY.* in app code). */
 const BANNED = [
@@ -31,6 +30,9 @@ const BANNED = [
   ' · 1 จุด',
   'รอยืนยันนัด',
 ];
+
+/** Raw "นัด" without "นัดหมาย" in UI copy (L-6). */
+const BANNED_NAD_REGEX = /นัด(?!หมาย)/u;
 
 const EXT = new Set(['.ts', '.html', '.scss']);
 
@@ -57,6 +59,9 @@ for (const file of walk(appRoot)) {
     if (text.includes(term)) {
       violations.push(`${path.relative(root, file)}: banned "${term}"`);
     }
+  }
+  if (BANNED_NAD_REGEX.test(text)) {
+    violations.push(`${path.relative(root, file)}: banned bare "นัด" (use นัดหมาย)`);
   }
 }
 

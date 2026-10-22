@@ -23,6 +23,7 @@ import {
   bidSubmittedToast,
   formatBidDescriptionConfirmLine,
   formatBidPriceConfirmLine,
+  destructiveSheetDismissWithdrawBid,
   withdrawBidConfirmMessage,
   withdrawBidToast,
 } from '../../../shared/confirm-copy';
@@ -36,6 +37,7 @@ export const BID_DESCRIPTION_MAX = 2000;
 })
 export class SubmitBidPage implements OnInit, OnDestroy {
   protected readonly GLOSSARY = GLOSSARY;
+  protected readonly withdrawDismissLabel = destructiveSheetDismissWithdrawBid;
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly priceText = signal('');
   protected readonly description = signal('');
@@ -177,7 +179,7 @@ export class SubmitBidPage implements OnInit, OnDestroy {
     try {
       const [detail, myProvider, bidAccess] = await Promise.all([
         firstValueFrom(this.api.getRequest(requestId)),
-        firstValueFrom(this.api.getMyProvider()),
+        firstValueFrom(this.cache.getMyProvider()),
         firstValueFrom(this.api.getBidFormAccess(requestId)),
       ]);
       this.flowCache.putRequest(detail);

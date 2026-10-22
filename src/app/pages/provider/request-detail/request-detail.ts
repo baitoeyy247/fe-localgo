@@ -37,6 +37,7 @@ import {
   providerConfirmAppointmentToast,
   providerStartJobToast,
   rejectAppointmentToast,
+  destructiveSheetDismissWithdrawBid,
   withdrawBidConfirmMessage,
   withdrawBidToast,
 } from '../../../shared/confirm-copy';
@@ -56,6 +57,7 @@ import {
 })
 export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   protected readonly GLOSSARY = GLOSSARY;
+  protected readonly withdrawDismissLabel = destructiveSheetDismissWithdrawBid;
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly myBid = signal<BidItem | null>(null);
   protected readonly myProvider = signal<ProviderDetail | null>(null);
@@ -106,10 +108,10 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       return null;
     }
     if (appt.status === 'Pending') {
-      return 'รอคุณยืนยันนัด';
+      return 'รอคุณยืนยันนัดหมาย';
     }
     if (appt.status === 'Confirmed') {
-      return this.startWindowHint() ?? 'กดเริ่มงานเมื่อถึงเวลานัด';
+      return this.startWindowHint() ?? 'กดเริ่มงานเมื่อถึงเวลานัดหมาย';
     }
     if (appt.status === 'InProgress') {
       return 'กำลังดำเนินงาน — กดเมื่องานเสร็จ';
@@ -265,7 +267,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       const appt = await firstValueFrom(this.api.getAppointment(requestId));
       this.appointment.set(appt);
       if (!appt && this.request()?.status === 'Scheduled') {
-        this.appointmentError.set('ยังโหลดรายละเอียดนัดไม่พบ — ลองรีเฟรชหรือติดต่อลูกค้า');
+        this.appointmentError.set('ยังโหลดรายละเอียดนัดหมายไม่พบ — ลองรีเฟรชหรือติดต่อลูกค้า');
       }
     } catch (e) {
       this.appointment.set(null);
@@ -583,7 +585,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.openAdvanceConfirm('Confirmed', {
       allowed: () => this.canConfirmAppointment(),
       busyLabel: 'กำลังยืนยัน…',
-      notice: 'ยืนยันนัดหมายแล้ว — กดเริ่มงานเมื่อถึงเวลานัด',
+      notice: 'ยืนยันนัดหมายแล้ว — กดเริ่มงานเมื่อถึงเวลานัดหมาย',
       errorFallback: 'ยืนยันนัดหมายไม่สำเร็จ',
     });
   }
@@ -612,7 +614,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       return `${GLOSSARY.confirmReceiveAppointment}?`;
     }
     if (status === 'InProgress') {
-      return 'เริ่มงานตามนัด?';
+      return 'เริ่มงานตามนัดหมาย?';
     }
     if (status === 'Completed') {
       return 'ยืนยันว่างานเสร็จแล้ว?';

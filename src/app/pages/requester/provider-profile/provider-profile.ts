@@ -5,6 +5,7 @@ import { MapView } from '../../../demo/map-view';
 import { PageShell } from '../../../demo/page-shell';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { ProviderDetail, ProviderService, ReviewItem } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
 import { providerTypeLabel } from '../../../shared/status-labels';
@@ -34,6 +35,7 @@ export class ProviderProfilePage implements OnInit {
   private readonly router = inject(Router);
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
+  private readonly cache = inject(MarketplaceCacheService);
 
   constructor() {
     afterNextRender(() => {
@@ -55,14 +57,18 @@ export class ProviderProfilePage implements OnInit {
     this.provider.set(detail);
     this.reviews.set(reviewList);
     this.syncSelectedService(detail);
+    this.loading.set(false);
+    void this.syncOwnShop(detail.id);
+    queueMicrotask(() => this.scrollToFocusedService());
+  }
+
+  private async syncOwnShop(providerId: string): Promise<void> {
     try {
-      const mine = await firstValueFrom(this.api.getMyProvider());
-      this.isOwnShop.set(mine.id === detail.id);
+      const mine = await firstValueFrom(this.cache.getMyProvider());
+      this.isOwnShop.set(mine.id === providerId);
     } catch {
       this.isOwnShop.set(false);
     }
-    this.loading.set(false);
-    queueMicrotask(() => this.scrollToFocusedService());
   }
 
   protected activeServices(): ProviderService[] {

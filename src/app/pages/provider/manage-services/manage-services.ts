@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { ProviderDetail } from '../../../core/models';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { ErrorState } from '../../../shared/ui/error-state';
@@ -34,6 +35,7 @@ export class ManageServicesPage implements OnInit {
 
   constructor(
     private readonly api: LocalGoApiService,
+    private readonly cache: MarketplaceCacheService,
     private readonly toast: ToastService,
   ) {}
 
@@ -45,7 +47,7 @@ export class ManageServicesPage implements OnInit {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const mine = await firstValueFrom(this.api.getMyProvider());
+      const mine = await firstValueFrom(this.cache.getMyProvider());
       this.provider.set(mine);
     } catch (e) {
       if (e instanceof HttpErrorResponse && e.status === 404) {

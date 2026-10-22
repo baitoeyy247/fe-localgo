@@ -38,7 +38,7 @@
     }
 
     <p class="muted" style="margin: 0; font-size: 13px">
-      <b>ซ่อมข้อมูลทดสอบ</b> — แก้รีวิว/งานค้างโดยไม่ลบบัญชี · <b>รีเซ็ตข้อมูลทดสอบ</b> — ล้างงาน/นัด/รีวิว คง 10 บัญชีทดสอบ
+      <b>ซ่อมข้อมูลทดสอบ</b> — แก้รีวิว/งานค้างโดยไม่ลบบัญชี · <b>รีเซ็ตข้อมูลทดสอบ</b> — ล้างงาน/นัดหมาย/รีวิว คง 10 บัญชีทดสอบ
     </p>
     <div class="sec-title admin-users-head__title">ผู้ใช้ ({{ usersTotal() }})</div>
     <div class="admin-tool-row">
@@ -217,7 +217,7 @@
           }
         </article>
       } @empty {
-        <p class="muted">ไม่มีนัด</p>
+        <p class="muted">ไม่มีนัดหมาย</p>
       }
     </div>
     <div class="admin-table-wrap admin-wide admin-appointments-table">
@@ -225,7 +225,7 @@
         <thead>
           <tr>
             <th>สถานะ</th>
-            <th>เวลานัด</th>
+            <th>เวลานัดหมาย</th>
             <th>สถานที่</th>
             <th>หมายเหตุลูกค้า</th>
             <th>เหตุผลที่ปฏิเสธ</th>
@@ -249,7 +249,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="5" class="muted">ไม่มีนัด</td>
+              <td colspan="5" class="muted">ไม่มีนัดหมาย</td>
             </tr>
           }
         </tbody>
