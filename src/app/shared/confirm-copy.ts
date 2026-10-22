@@ -37,8 +37,27 @@ export function formatDatetimeConfirmLine(
   return `${label}: ${prevFmt} → ${curFmt}`;
 }
 
+/** Create flows omit "— →" when there is no prior value (L-11). */
+export function formatConfirmFieldLine(
+  label: string,
+  previous: string | null | undefined,
+  current: string | null | undefined,
+): string {
+  const prev = previous?.trim() || '';
+  const cur = current?.trim() || '';
+  if (!prev || prev === '—') {
+    return `${label}: ${cur || '—'}`;
+  }
+  return `${label}: ${prev} → ${cur || '—'}`;
+}
+
 export function formatBidPriceConfirmLine(previous: string, current: string): string {
-  return `ราคา: ${previous.trim() || '—'} → ${current.trim()} บาท`;
+  const prev = previous.trim();
+  const cur = current.trim();
+  if (!prev || prev === '—') {
+    return `ราคา: ${cur} บาท`;
+  }
+  return `ราคา: ${prev} → ${cur} บาท`;
 }
 
 export function formatBidDescriptionConfirmLine(previous: string, current: string): string | null {

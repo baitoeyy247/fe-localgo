@@ -1,7 +1,5 @@
 <app-page-shell title="ข้อเสนอที่ได้รับ" backLink="/requester">
-  @if (!loading() || request()) {
-    <app-requester-flow-bar active="bids" />
-  }
+  <app-requester-flow-bar active="bids" />
 
   @if (justPosted() && !loading()) {
     <div class="banner ok" role="status">

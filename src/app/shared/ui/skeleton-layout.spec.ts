@@ -40,6 +40,8 @@ function injectSkeletonLayoutStyles(): void {
       const childIndex =
         index +
         1 +
+        (spec.flowChrome ? 1 : 0) +
+        (spec.requestSummaryChrome ? 1 : 0) +
         (spec.sectionChrome ? 1 : 0) +
         (spec.headerChrome ? 1 : 0) +
         (spec.filterChrome ? 1 : 0);
@@ -47,6 +49,37 @@ function injectSkeletonLayoutStyles(): void {
         `.skeleton-stack--${spec.stackModifier} .skeleton-card:nth-child(${childIndex}) { min-height: ${heightPx}px; }`,
       );
     });
+    return rules;
+  }).join('\n');
+
+  const chromeRules = PRESET_KEYS.flatMap((key) => {
+    const spec = SKELETON_PAGE_PRESETS[key];
+    const rules: string[] = [];
+    if (spec.flowChrome && spec.flowChromeHeightPx) {
+      rules.push(
+        `.skeleton-stack--${spec.stackModifier} .skeleton-flow-chrome { min-height: ${spec.flowChromeHeightPx}px; box-sizing: border-box; flex-shrink: 0; }`,
+      );
+    }
+    if (spec.requestSummaryChrome && spec.requestSummaryHeightPx) {
+      rules.push(
+        `.skeleton-stack--${spec.stackModifier} .skeleton-request-summary { min-height: ${spec.requestSummaryHeightPx}px; box-sizing: border-box; flex-shrink: 0; }`,
+      );
+    }
+    if (spec.filterChrome && spec.filterChromeHeightPx) {
+      rules.push(
+        `.skeleton-stack--${spec.stackModifier} .skeleton-filter-chrome { min-height: ${spec.filterChromeHeightPx}px; box-sizing: border-box; flex-shrink: 0; }`,
+      );
+    }
+    if (spec.sectionChrome && spec.sectionChromeHeightPx) {
+      rules.push(
+        `.skeleton-stack--${spec.stackModifier} .skeleton-section-chrome { min-height: ${spec.sectionChromeHeightPx}px; height: ${spec.sectionChromeHeightPx}px; box-sizing: border-box; flex-shrink: 0; }`,
+      );
+    }
+    if (spec.headerChrome && spec.headerChromeHeightPx) {
+      rules.push(
+        `.skeleton-stack--${spec.stackModifier} .skeleton-header-chrome { min-height: ${spec.headerChromeHeightPx}px; height: ${spec.headerChromeHeightPx}px; box-sizing: border-box; flex-shrink: 0; }`,
+      );
+    }
     return rules;
   }).join('\n');
 
@@ -58,10 +91,7 @@ function injectSkeletonLayoutStyles(): void {
       position: relative;
     }
     .skeleton-stack--detail .skeleton-card { min-height: 180px; }
-    .skeleton-header-chrome { min-height: 61px; height: 61px; box-sizing: border-box; flex-shrink: 0; }
-    .skeleton-stack--bids .skeleton-header-chrome { min-height: 61px; height: 61px; }
-    .skeleton-section-chrome { min-height: 44px; height: 44px; box-sizing: border-box; flex-shrink: 0; }
-    .skeleton-filter-chrome { min-height: 206px; box-sizing: border-box; flex-shrink: 0; }
+    ${chromeRules}
     ${cardRules}
   `;
 
@@ -115,12 +145,7 @@ describe('SkeletonCard page presets (CLS proxy)', () => {
   it.each(PRESET_KEYS)('preset %s first block offset within tolerance', (preset) => {
     const spec = SKELETON_PAGE_PRESETS[preset];
     const documentedOffset = skeletonFirstCardOffsetPx(preset);
-    expect(documentedOffset).toBe(
-      spec.stackOffsetPx +
-        (spec.sectionChrome ? spec.sectionChromeHeightPx : 0) +
-        (spec.headerChrome ? spec.headerChromeHeightPx : 0) +
-        (spec.filterChrome ? spec.filterChromeHeightPx : 0),
-    );
+    expect(documentedOffset).toBe(skeletonFirstCardOffsetPx(preset));
 
     const fixture = TestBed.createComponent(SkeletonPresetHost);
     fixture.componentInstance.preset = preset;
@@ -130,18 +155,22 @@ describe('SkeletonCard page presets (CLS proxy)', () => {
     const stack = root.querySelector('.skeleton-stack') as HTMLElement;
     const block = firstSkeletonBlock(root, preset);
 
-    const chromeSelector = spec.filterChrome
-      ? '.skeleton-filter-chrome'
-      : spec.headerChrome
-        ? '.skeleton-header-chrome'
-        : spec.sectionChrome
-          ? '.skeleton-section-chrome'
-          : null;
+    const chromeSelectors = [
+      spec.flowChrome ? '.skeleton-flow-chrome' : null,
+      spec.requestSummaryChrome ? '.skeleton-request-summary' : null,
+      spec.sectionChrome ? '.skeleton-section-chrome' : null,
+      spec.headerChrome ? '.skeleton-header-chrome' : null,
+      spec.filterChrome ? '.skeleton-filter-chrome' : null,
+    ].filter(Boolean) as string[];
 
-    if (chromeSelector) {
-      const chrome = stack.querySelector(chromeSelector) as HTMLElement;
-      expect(chrome).toBeTruthy();
-      const gapAfterChrome = block.offsetTop - chrome.offsetTop - chrome.offsetHeight;
+    const lastChrome =
+      chromeSelectors.length > 0
+        ? (stack.querySelector(chromeSelectors[chromeSelectors.length - 1]) as HTMLElement)
+        : null;
+
+    if (lastChrome) {
+      expect(lastChrome).toBeTruthy();
+      const gapAfterChrome = block.offsetTop - lastChrome.offsetTop - lastChrome.offsetHeight;
       expect(Math.abs(gapAfterChrome - SKELETON_STACK_GAP_PX)).toBeLessThanOrEqual(
         SKELETON_STACK_GAP_PX,
       );

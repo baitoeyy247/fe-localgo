@@ -10,8 +10,8 @@ export async function canAccessServiceRequest(
   requestId: string,
 ): Promise<boolean> {
   try {
-    await firstValueFrom(api.getRequest(requestId));
-    return true;
+    const mine = await firstValueFrom(api.listMyRequests());
+    return mine.some((r) => r.id === requestId);
   } catch {
     return false;
   }

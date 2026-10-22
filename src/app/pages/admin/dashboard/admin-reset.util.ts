@@ -18,3 +18,19 @@ export function optimisticAdminDashboardAfterReset(
 }
 
 export const ADMIN_RESET_TOAST = 'รีเซ็ตข้อมูลทดสอบแล้ว';
+
+export function normalizeResetDashboard(raw: unknown): AdminDashboard | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const d = raw as Record<string, unknown>;
+  const num = (key: string, alt: string) => Number(d[key] ?? d[alt] ?? 0);
+  return {
+    users: num('users', 'Users'),
+    providers: num('providers', 'Providers'),
+    publishedRequests: num('publishedRequests', 'PublishedRequests'),
+    completedRequests: num('completedRequests', 'CompletedRequests'),
+    expiredRequests: num('expiredRequests', 'ExpiredRequests'),
+    pendingNotifications: num('pendingNotifications', 'PendingNotifications'),
+  };
+}

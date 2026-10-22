@@ -1,11 +1,6 @@
 import { NgClass } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
-import {
-  SKELETON_PAGE_PRESETS,
-  SKELETON_STACK_GAP_PX,
-  skeletonFirstCardOffsetPx,
-  type SkeletonPagePreset,
-} from './skeleton-layout.constants';
+import { SKELETON_PAGE_PRESETS, type SkeletonPagePreset } from './skeleton-layout.constants';
 
 @Component({
   selector: 'app-skeleton-card',
@@ -20,10 +15,20 @@ import {
         <button type="button" class="btn btn-primary" (click)="retry.emit()">ลองใหม่</button>
       </div>
     } @else {
-      @if (slow()) {
-        <p class="muted" style="text-align: center" role="status">กำลังเชื่อมต่อเซิร์ฟเวอร์…</p>
-      }
-      <div class="skeleton-stack" [ngClass]="stackClasses()" [style]="stackStyle()">
+      <div class="skeleton-stack" [ngClass]="stackClasses()">
+        @if (showFlowChrome()) {
+          <div class="skeleton-flow-chrome" aria-hidden="true">
+            @for (i of flowSteps(); track i) {
+              <div class="skel skeleton-flow-chrome__step"></div>
+            }
+          </div>
+        }
+        @if (showRequestSummaryChrome()) {
+          <div class="skeleton-request-summary" aria-hidden="true">
+            <div class="skel skeleton-request-summary__title"></div>
+            <div class="skel skeleton-request-summary__line"></div>
+          </div>
+        }
         @if (showSectionChrome()) {
           <div class="skeleton-section-chrome" aria-hidden="true">
             <div class="skel skeleton-section-chrome__title"></div>
@@ -40,9 +45,10 @@ import {
           <div
             class="skeleton-filter-chrome"
             [class.skeleton-filter-chrome--chips]="filterChromeMode() === 'chips'"
+            [class.skeleton-filter-chrome--provider-inbox]="filterChromeMode() === 'inbox'"
             aria-hidden="true"
           >
-            @if (filterChromeMode() !== 'chips') {
+            @if (filterChromeMode() === 'inbox') {
               <div class="skel skeleton-filter-chrome__banner"></div>
               <p class="skel skeleton-filter-chrome__hint"></p>
             }
@@ -51,7 +57,7 @@ import {
                 <div class="skel skeleton-filter-chrome__chip"></div>
               }
             </div>
-            @if (filterChromeMode() !== 'chips') {
+            @if (filterChromeMode() === 'inbox') {
               <div class="skel skeleton-filter-chrome__sec-title"></div>
             }
           </div>
@@ -69,6 +75,7 @@ import {
             <div
               class="card skeleton-card"
               [class.skeleton-card--map]="mapCardIndex() === i"
+              [style.min-height.px]="cardHeightPx(i)"
               aria-hidden="true"
             >
               <div class="skel" [style.height.px]="effectiveVariant() === 'detail' ? 24 : 20" style="width: 60%"></div>
@@ -88,15 +95,11 @@ import {
   `,
 })
 export class SkeletonCard {
-  /** Show the "connecting to server" hint (set after ~3s of loading). */
   readonly slow = input(false);
-  /** After ~10s — show retry instead of skeleton. */
   readonly timedOut = input(false);
-  /** Page-specific layout (overrides count / variant / topOffset when set). */
   readonly preset = input<SkeletonPagePreset | undefined>(undefined);
   readonly count = input(2);
   readonly variant = input<'list' | 'detail' | 'form'>('list');
-  /** Nudge skeleton down to align with real content below flow bars / banners. */
   readonly topOffset = input(false);
   readonly retry = output<void>();
 
@@ -108,6 +111,16 @@ export class SkeletonCard {
   protected readonly effectiveVariant = computed(() => {
     const p = this.preset();
     return p ? SKELETON_PAGE_PRESETS[p].variant : this.variant();
+  });
+
+  protected readonly showFlowChrome = computed(() => {
+    const p = this.preset();
+    return p ? SKELETON_PAGE_PRESETS[p].flowChrome : false;
+  });
+
+  protected readonly showRequestSummaryChrome = computed(() => {
+    const p = this.preset();
+    return p ? SKELETON_PAGE_PRESETS[p].requestSummaryChrome : false;
   });
 
   protected readonly showHeaderChrome = computed(() => {
@@ -143,11 +156,7 @@ export class SkeletonCard {
       'skeleton-stack--form': variant === 'form',
     };
     if (p) {
-      const spec = SKELETON_PAGE_PRESETS[p];
-      classes[`skeleton-stack--${spec.stackModifier}`] = true;
-      if (spec.padToContentFirstCard) {
-        classes['skeleton-stack--pad-content-first-card'] = true;
-      }
+      classes[`skeleton-stack--${SKELETON_PAGE_PRESETS[p].stackModifier}`] = true;
     } else if (this.topOffset()) {
       classes['skeleton-stack--top-offset'] = true;
     }
@@ -166,18 +175,23 @@ export class SkeletonCard {
     return [0, 1, 2, 3];
   }
 
-  protected stackStyle(): Record<string, string> | null {
+  protected flowSteps(): number[] {
+    return [0, 1, 2, 3];
+  }
+
+  protected cardHeightPx(index: number): number | null {
     const p = this.preset();
     if (!p) {
       return null;
     }
     const spec = SKELETON_PAGE_PRESETS[p];
-    if (!spec.padToContentFirstCard) {
-      return null;
+    const heights = spec.cardHeightsPx;
+    if (heights?.[index] != null) {
+      return heights[index];
     }
-    const chromeAboveCard = skeletonFirstCardOffsetPx(p as SkeletonPagePreset);
-    const gapBeforeCard = chromeAboveCard > 0 ? SKELETON_STACK_GAP_PX : 0;
-    const pad = Math.max(0, spec.contentFirstCardTopPx - chromeAboveCard - gapBeforeCard);
-    return { '--sk-content-first-card-top': `${pad}px` };
+    if (index === 0) {
+      return spec.firstCardHeightPx;
+    }
+    return null;
   }
 }

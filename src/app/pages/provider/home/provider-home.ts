@@ -5,13 +5,14 @@ import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
-import { ProviderDetail } from '../../../core/models';
+import { ProviderDetail, ServiceRequestSummary } from '../../../core/models';
 import { AuthService } from '../../../core/auth.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { SlowLoadHint } from '../../../shared/load-state';
 import { ErrorState } from '../../../shared/ui/error-state';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { formatVerifiedRatingLine } from '../../../shared/format-verified-rating';
+import { GLOSSARY } from '../../../shared/glossary';
 
 @Component({
   selector: 'app-provider-home-page',
@@ -19,6 +20,7 @@ import { formatVerifiedRatingLine } from '../../../shared/format-verified-rating
   templateUrl: './provider-home.html',
 })
 export class ProviderHomePage implements OnInit, OnDestroy {
+  protected readonly GLOSSARY = GLOSSARY;
   protected readonly provider = signal<ProviderDetail | null>(null);
   protected readonly hasProfile = signal(false);
   protected readonly loading = signal(true);
@@ -46,17 +48,15 @@ export class ProviderHomePage implements OnInit, OnDestroy {
     this.error.set(null);
     this.hint.begin();
     try {
-      const mine = await firstValueFrom(this.api.getMyProvider());
+      const [mine, matching] = await Promise.all([
+        firstValueFrom(this.api.getMyProvider()),
+        firstValueFrom(this.api.listMatchingRequests()).catch(() => [] as ServiceRequestSummary[]),
+      ]);
       this.provider.set(mine);
       this.hasProfile.set(true);
-      try {
-        const matching = await firstValueFrom(this.api.listMatchingRequests());
-        this.pendingConfirmCount.set(
-          matching.filter((r) => r.needsAppointmentConfirm).length,
-        );
-      } catch {
-        this.pendingConfirmCount.set(0);
-      }
+      this.pendingConfirmCount.set(
+        matching.filter((r) => r.needsAppointmentConfirm).length,
+      );
     } catch (e) {
       if (e instanceof HttpErrorResponse && e.status === 404) {
         this.hasProfile.set(false);

@@ -17,7 +17,7 @@
         <span class="badge b-green">พร้อมรับงาน</span>
       </div>
       <p class="muted" style="margin: 6px 0 0">
-        {{ provider()!.services.length }} บริการ · {{ provider()!.branches.length }} จุด ·
+        {{ provider()!.services.length }} บริการ · {{ provider()!.branches.length }} {{ GLOSSARY.serviceBranch }} ·
         @if (provider()!.verifiedReviewCount > 0) {
           <span class="stars">{{ formatVerifiedRatingLine(provider()!.averageVerifiedRating, provider()!.verifiedReviewCount) }}</span>
         } @else {
@@ -29,7 +29,7 @@
     @if (pendingConfirmCount() > 0) {
       <a class="banner warn" routerLink="/provider/requests" style="text-decoration: none">
         <span
-          ><b>มีงานรอยืนยันนัด {{ pendingConfirmCount() }} รายการ</b><br />แตะเพื่อไปยืนยันนัดหมายกับผู้ประกาศ</span
+          ><b>มีงาน{{ GLOSSARY.pendingAppointmentConfirmChip }} {{ pendingConfirmCount() }} รายการ</b><br />แตะเพื่อ{{ GLOSSARY.confirmReceiveAppointment }}กับผู้ประกาศ</span
         >
       </a>
     }

@@ -158,17 +158,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       this.toast.show(navState.notice.trim());
       this.notice.set(null);
     }
-    const id = this.route.snapshot.paramMap.get('id');
-    const cached = id ? this.flowCache.peekRequest(id) : null;
     if (navState?.requestDetail?.id) {
-      this.request.set(navState.requestDetail);
-      this.loading.set(false);
-      void this.load({ background: true });
-      return;
-    }
-    if (cached) {
-      this.request.set(cached);
-      this.loading.set(false);
       void this.load({ background: true });
       return;
     }
@@ -195,7 +185,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.categoryBlocked.set(null);
     this.hint.begin();
     try {
-      const [detail, myProvider, apptFromApi] = await Promise.all([
+      const [detail, myProvider, apptFromApi, bidAccessResult] = await Promise.all([
         firstValueFrom(this.api.getRequest(id)),
         firstValueFrom(
           this.cache
@@ -205,9 +195,13 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
         firstValueFrom(
           this.api.getAppointment(id).pipe(catchError(() => of(null as AppointmentDetail | null))),
         ),
+        firstValueFrom(
+          this.api.getBidFormAccess(id).pipe(
+            catchError(() => of({ allowed: true as const, reason: null, reasonCode: null })),
+          ),
+        ),
       ]);
-      this.request.set(detail);
-      this.flowCache.putRequest(detail);
+      let blocked: string | null = null;
       const hasMyBidHistory =
         !!myProvider && !!detail.bids?.some((b) => b.providerId === myProvider.id);
       const needsBidAccess =
@@ -215,24 +209,17 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
         detail.source !== 'DirectBooking' &&
         !hasMyBidHistory &&
         detail.selectedProviderId !== myProvider?.id;
-      if (needsBidAccess) {
-        try {
-          const bidAccess = await firstValueFrom(this.api.getBidFormAccess(id));
-          if (!bidAccess.allowed) {
-            const msg = bidAccess.reason?.trim() || 'งานนี้ไม่ตรงกับบริการของคุณ';
-            this.categoryBlocked.set(
-              bidAccess.reasonCode === 'CATEGORY_MISMATCH' || msg.includes('ไม่ตรง')
-                ? 'งานนี้ไม่ตรงกับบริการของคุณ'
-                : msg,
-            );
-          }
-        } catch (e) {
-          if (isNotFoundError(e)) {
-            this.categoryBlocked.set('งานนี้ไม่ตรงกับบริการของคุณ');
-          }
-        }
+      if (needsBidAccess && bidAccessResult && !bidAccessResult.allowed) {
+        const msg = bidAccessResult.reason?.trim() || 'งานนี้ไม่ตรงกับบริการของคุณ';
+        blocked =
+          bidAccessResult.reasonCode === 'CATEGORY_MISMATCH' || msg.includes('ไม่ตรง')
+            ? 'งานนี้ไม่ตรงกับบริการของคุณ'
+            : msg;
       }
       this.myProvider.set(myProvider);
+      this.categoryBlocked.set(blocked);
+      this.request.set(detail);
+      this.flowCache.putRequest(detail);
       let appt = detail.appointment ?? apptFromApi;
       if (!appt && (detail.appointmentStatus || this.needsAppointmentFetch(detail, myProvider))) {
         appt = apptFromApi;

@@ -1,4 +1,4 @@
-/** QA28 M-1 — skeleton layout targets (CLS proxy @ 375×800, API delay ~2.5s). Sync with styles.scss skeleton-stack--*. */
+/** QA30 M-1 — skeleton layout targets (CLS @ 375×800 & 320×800, API delay ~2.5s). */
 
 export const SKELETON_STACK_GAP_PX = 12;
 export const SKELETON_FORM_FIELD_HEIGHT_PX = 52;
@@ -20,24 +20,20 @@ export type SkeletonPresetLayout = {
   count: number;
   variant: 'list' | 'detail' | 'form';
   stackModifier: string;
-  /** min-height of the first `.skeleton-card` (or first form block) in the stack (px). */
   firstCardHeightPx: number;
-  /** Optional per-card min-heights (index 0 = first card). */
   cardHeightsPx?: number[];
-  /** padding-top on `.skeleton-stack` (px) — below in-page chrome (flow bar / banners). */
   stackOffsetPx: number;
-  /** Measured offset from `.page-content` top to first skeleton card top (px). */
+  /** Target offset from `.page-content` top to first skeleton card / form field (px). */
   contentFirstCardTopPx: number;
-  /** Optional summary / job header block above list cards. */
+  flowChrome: boolean;
+  flowChromeHeightPx: number;
+  requestSummaryChrome: boolean;
+  requestSummaryHeightPx: number;
   headerChrome: boolean;
   headerChromeHeightPx: number;
-  /** Filter tabs / chips block (provider inbox). */
   filterChrome: boolean;
   filterChromeMode?: 'inbox' | 'chips';
   filterChromeHeightPx: number;
-  /** When true, `.skeleton-stack` uses padding-top = contentFirstCardTopPx (in-page chrome hidden while loading). */
-  padToContentFirstCard: boolean;
-  /** Section title row above cards (coverage list header). */
   sectionChrome: boolean;
   sectionChromeHeightPx: number;
 };
@@ -50,44 +46,54 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     firstCardHeightPx: 120,
     stackOffsetPx: 0,
     contentFirstCardTopPx: 0,
+    flowChrome: false,
+    flowChromeHeightPx: 0,
+    requestSummaryChrome: false,
+    requestSummaryHeightPx: 0,
     headerChrome: false,
     headerChromeHeightPx: 0,
     filterChrome: false,
     filterChromeHeightPx: 0,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
-    padToContentFirstCard: false,
   },
   bids: {
-    count: 3,
+    count: 2,
     variant: 'list',
     stackModifier: 'bids',
     firstCardHeightPx: 82,
-    cardHeightsPx: [82, 178, 147],
+    cardHeightsPx: [82, 178],
     stackOffsetPx: 0,
     contentFirstCardTopPx: 190,
+    flowChrome: false,
+    flowChromeHeightPx: 0,
+    requestSummaryChrome: true,
+    requestSummaryHeightPx: 82,
     headerChrome: false,
     headerChromeHeightPx: 0,
     filterChrome: false,
     filterChromeHeightPx: 0,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
-    padToContentFirstCard: true,
   },
   'provider-requests': {
-    count: 3,
+    count: 2,
     variant: 'list',
     stackModifier: 'provider-requests',
-    firstCardHeightPx: 169,
+    firstCardHeightPx: 166,
     stackOffsetPx: 0,
-    contentFirstCardTopPx: 278,
+    contentFirstCardTopPx: 189,
+    flowChrome: false,
+    flowChromeHeightPx: 0,
+    requestSummaryChrome: false,
+    requestSummaryHeightPx: 0,
     headerChrome: false,
     headerChromeHeightPx: 0,
-    filterChrome: false,
-    filterChromeHeightPx: 0,
+    filterChrome: true,
+    filterChromeMode: 'inbox',
+    filterChromeHeightPx: 117,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
-    padToContentFirstCard: true,
   },
   'provider-my-bids': {
     count: 2,
@@ -96,30 +102,36 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     firstCardHeightPx: 194,
     stackOffsetPx: 0,
     contentFirstCardTopPx: 130,
+    flowChrome: false,
+    flowChromeHeightPx: 0,
+    requestSummaryChrome: false,
+    requestSummaryHeightPx: 0,
     headerChrome: false,
     headerChromeHeightPx: 0,
     filterChrome: true,
     filterChromeMode: 'chips',
-    filterChromeHeightPx: 44,
+    filterChromeHeightPx: 62,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
-    padToContentFirstCard: true,
   },
   'appointment-detail': {
     count: 2,
     variant: 'detail',
     stackModifier: 'appointment-detail',
-    firstCardHeightPx: 72,
-    cardHeightsPx: [72, 125],
+    firstCardHeightPx: 76,
+    cardHeightsPx: [76, 125],
     stackOffsetPx: 0,
     contentFirstCardTopPx: 72,
+    flowChrome: false,
+    flowChromeHeightPx: 0,
+    requestSummaryChrome: false,
+    requestSummaryHeightPx: 0,
     headerChrome: false,
     headerChromeHeightPx: 0,
     filterChrome: false,
     filterChromeHeightPx: 0,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
-    padToContentFirstCard: true,
   },
   'request-detail': {
     count: 2,
@@ -128,29 +140,35 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     firstCardHeightPx: 88,
     stackOffsetPx: 0,
     contentFirstCardTopPx: 88,
+    flowChrome: false,
+    flowChromeHeightPx: 0,
+    requestSummaryChrome: false,
+    requestSummaryHeightPx: 0,
     headerChrome: false,
     headerChromeHeightPx: 0,
     filterChrome: false,
     filterChromeHeightPx: 0,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
-    padToContentFirstCard: false,
   },
   'provider-request-detail': {
-    count: 3,
+    count: 2,
     variant: 'detail',
     stackModifier: 'provider-request-detail',
-    firstCardHeightPx: 110,
-    cardHeightsPx: [110, 224, 185],
+    firstCardHeightPx: 84,
+    cardHeightsPx: [84, 224],
     stackOffsetPx: 0,
     contentFirstCardTopPx: 72,
+    flowChrome: false,
+    flowChromeHeightPx: 0,
+    requestSummaryChrome: false,
+    requestSummaryHeightPx: 0,
     headerChrome: false,
     headerChromeHeightPx: 0,
     filterChrome: false,
     filterChromeHeightPx: 0,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
-    padToContentFirstCard: true,
   },
   coverage: {
     count: 1,
@@ -159,13 +177,16 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     firstCardHeightPx: 320,
     stackOffsetPx: 0,
     contentFirstCardTopPx: 233,
+    flowChrome: false,
+    flowChromeHeightPx: 0,
+    requestSummaryChrome: false,
+    requestSummaryHeightPx: 0,
     headerChrome: false,
     headerChromeHeightPx: 0,
     filterChrome: false,
     filterChromeHeightPx: 0,
     sectionChrome: true,
-    sectionChromeHeightPx: 32,
-    padToContentFirstCard: true,
+    sectionChromeHeightPx: 44,
   },
   'post-form': {
     count: 1,
@@ -173,21 +194,29 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     stackModifier: 'post-form',
     firstCardHeightPx: SKELETON_FORM_FIELD_HEIGHT_PX,
     stackOffsetPx: 0,
-    contentFirstCardTopPx: 731,
+    contentFirstCardTopPx: 72,
+    flowChrome: false,
+    flowChromeHeightPx: 0,
+    requestSummaryChrome: false,
+    requestSummaryHeightPx: 0,
     headerChrome: false,
     headerChromeHeightPx: 0,
     filterChrome: false,
     filterChromeHeightPx: 0,
     sectionChrome: false,
     sectionChromeHeightPx: 0,
-    padToContentFirstCard: true,
   },
 };
 
-/** Documented offset from stack top to first list/detail card top (px), excluding flex gap after chrome blocks. */
 export function skeletonFirstCardOffsetPx(preset: SkeletonPagePreset): number {
   const spec = SKELETON_PAGE_PRESETS[preset];
   let offset = spec.stackOffsetPx;
+  if (spec.flowChrome) {
+    offset += spec.flowChromeHeightPx;
+  }
+  if (spec.requestSummaryChrome) {
+    offset += spec.requestSummaryHeightPx;
+  }
   if (spec.sectionChrome) {
     offset += spec.sectionChromeHeightPx;
   }
@@ -197,6 +226,15 @@ export function skeletonFirstCardOffsetPx(preset: SkeletonPagePreset): number {
   if (spec.filterChrome) {
     offset += spec.filterChromeHeightPx;
   }
+  const chromeBlocks =
+    (spec.flowChrome ? 1 : 0) +
+    (spec.requestSummaryChrome ? 1 : 0) +
+    (spec.sectionChrome ? 1 : 0) +
+    (spec.headerChrome ? 1 : 0) +
+    (spec.filterChrome ? 1 : 0);
+  if (chromeBlocks > 0) {
+    offset += chromeBlocks * SKELETON_STACK_GAP_PX;
+  }
   return offset;
 }
 
@@ -205,18 +243,17 @@ export type SkeletonE2ERouteCase = {
   path: string | ((ctx: { requestId?: string; appointmentId?: string; providerRequestId?: string }) => string);
   personaKey: string;
   preset: SkeletonPagePreset;
-  /** First real content block selector after load (defaults to first `.card` in content). */
   loadedSelector?: string;
   skeletonSelector?: string;
 };
 
-/** Seven QA28 M-1 routes measured against `.page-content`. */
 export const SKELETON_E2E_ROUTE_CASES: SkeletonE2ERouteCase[] = [
   {
     name: 'requester-bids',
     path: '/requester/bids',
     personaKey: 'req-01',
     preset: 'bids',
+    loadedSelector: '.page-content article.card, .page-content .card:not(.skeleton-card)',
   },
   {
     name: 'appointment-detail',
@@ -227,25 +264,25 @@ export const SKELETON_E2E_ROUTE_CASES: SkeletonE2ERouteCase[] = [
   {
     name: 'provider-requests',
     path: '/provider/requests',
-    personaKey: 'both-02',
+    personaKey: 'prov-01',
     preset: 'provider-requests',
   },
   {
     name: 'provider-my-bids',
     path: '/provider/my-bids',
-    personaKey: 'both-02',
+    personaKey: 'prov-01',
     preset: 'provider-my-bids',
   },
   {
     name: 'provider-request-detail',
     path: ({ providerRequestId }) => `/provider/requests/${providerRequestId ?? 'e2e-placeholder'}`,
-    personaKey: 'both-02',
+    personaKey: 'prov-01',
     preset: 'provider-request-detail',
   },
   {
     name: 'provider-coverage',
     path: '/provider/coverage',
-    personaKey: 'both-02',
+    personaKey: 'prov-01',
     preset: 'coverage',
   },
   {

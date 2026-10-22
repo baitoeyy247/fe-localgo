@@ -1,3 +1,5 @@
+import { GLOSSARY } from './glossary';
+
 const REQUEST_STATUS: Record<string, string> = {
   Draft: 'ฉบับร่าง',
   Open: 'เปิดรับข้อเสนอ',
@@ -144,7 +146,7 @@ export function providerBidRowStatus(item: {
   }
   if (item.status === 'Selected') {
     if (!item.appointmentStatus || item.appointmentStatus === 'Pending') {
-      return { key: 'confirm', label: 'รอยืนยันนัด', badgeClass: 'badge--orange' };
+      return { key: 'confirm', label: GLOSSARY.pendingAppointmentConfirmChip, badgeClass: 'badge--orange' };
     }
     return { key: 'selected', label: 'ถูกเลือก', badgeClass: 'badge--green' };
   }

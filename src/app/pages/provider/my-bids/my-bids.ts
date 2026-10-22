@@ -22,7 +22,7 @@ const FILTER_CHIPS: { key: ProviderBidFilterKey; label: string }[] = [
   { key: 'all', label: 'ทั้งหมด' },
   { key: 'waiting', label: 'รอผล' },
   { key: 'selected', label: 'ถูกเลือก' },
-  { key: 'confirm', label: 'รอยืนยันนัด' },
+  { key: 'confirm', label: GLOSSARY.pendingAppointmentConfirmChip },
   { key: 'inprogress', label: 'กำลังทำ' },
   { key: 'done', label: 'เสร็จ' },
   { key: 'withdrawn', label: 'ถอนแล้ว' },

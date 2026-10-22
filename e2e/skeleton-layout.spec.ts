@@ -88,7 +88,7 @@ async function discoverIds(page: Page): Promise<{ appointmentId?: string; provid
 
 const PERSONA_LABEL: Record<string, { name: string; role: 'Requester' | 'Provider' }> = {
   'req-01': { name: 'QA ผู้รับ 01', role: 'Requester' },
-  'both-02': { name: 'QA สองบทบาท 02', role: 'Provider' },
+  'prov-01': { name: 'QA ผู้ให้ 01', role: 'Provider' },
 };
 
 test.describe('QA28 M-1 skeleton layout shift', () => {
@@ -133,12 +133,16 @@ test.describe('QA28 M-1 skeleton layout shift', () => {
       expect(skeletonBox.top).toBeGreaterThanOrEqual(0);
       expect(loadedBox.top).toBeGreaterThanOrEqual(0);
 
-      expect(Math.abs(skeletonBox.top - loadedBox.top)).toBeLessThanOrEqual(
-        SKELETON_CLS_TOLERANCE_PX,
-      );
-      expect(Math.abs(skeletonBox.height - loadedBox.height)).toBeLessThanOrEqual(
-        SKELETON_CLS_TOLERANCE_PX + (preset.variant === 'form' ? 12 : 0),
-      );
+      const topDelta = Math.abs(skeletonBox.top - loadedBox.top);
+      const heightDelta = Math.abs(skeletonBox.height - loadedBox.height);
+      expect(
+        topDelta,
+        `${routeCase.name} top skeleton=${skeletonBox.top} loaded=${loadedBox.top} Δ=${topDelta}`,
+      ).toBeLessThanOrEqual(SKELETON_CLS_TOLERANCE_PX);
+      expect(
+        heightDelta,
+        `${routeCase.name} height skeleton=${skeletonBox.height} loaded=${loadedBox.height} Δ=${heightDelta}`,
+      ).toBeLessThanOrEqual(SKELETON_CLS_TOLERANCE_PX + (preset.variant === 'form' ? 12 : 0));
     });
   }
 });

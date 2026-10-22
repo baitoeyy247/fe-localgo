@@ -679,10 +679,17 @@ app-offline-bar {
   margin: 16px 0;
 }
 .budget-seg--tap {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   padding: 0;
   background: transparent;
   border-radius: 0;
+}
+@media (min-width: 480px) {
+  .budget-seg--tap {
+    flex-direction: row;
+  }
 }
 .budget-seg--tap .budget-seg__option {
   position: relative;
@@ -711,21 +718,24 @@ app-offline-bar {
 }
 .budget-seg--tap .budget-seg__option > span {
   margin: 0;
-  line-height: 1.4;
-  word-break: keep-all;
-  overflow-wrap: normal;
+  line-height: 1.25;
+  white-space: nowrap;
+  font-size: 14px;
 }
 .budget-seg--tap .budget-seg__option.is-active {
   border-color: var(--primary);
   box-shadow: 0 0 0 2px var(--primary);
   font-weight: 700;
 }
-@media (max-width: 399px) {
-  .budget-seg--tap {
-    flex-direction: column;
-  }
+.budget-seg--tap .budget-seg__option {
+  width: 100%;
+  min-height: 50px;
+}
+@media (min-width: 480px) {
   .budget-seg--tap .budget-seg__option {
-    width: 100%;
+    flex: 1;
+    width: auto;
+    min-height: 50px;
   }
 }
 
@@ -1404,12 +1414,46 @@ label.branch-check input[type='checkbox'],
   min-height: 147px;
 }
 
-.skeleton-stack--pad-content-first-card {
-  padding-top: var(--sk-content-first-card-top, 0);
+.skeleton-flow-chrome {
+  display: flex;
+  gap: 8px;
+  min-height: 56px;
+  align-items: center;
+  overflow: hidden;
+}
+.skeleton-flow-chrome__step {
+  height: 36px;
+  min-width: 64px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+.skeleton-request-summary {
+  box-sizing: border-box;
+  min-height: 82px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+}
+.skeleton-request-summary__title {
+  height: 18px;
+  width: 70%;
+}
+.skeleton-request-summary__line {
+  height: 14px;
+  width: 45%;
 }
 
 .skeleton-stack--provider-requests .skeleton-card:first-child {
-  min-height: 169px;
+  min-height: 166px;
+}
+
+.skeleton-filter-chrome--provider-inbox {
+  min-height: 117px;
 }
 
 .skeleton-stack--provider-my-bids .skeleton-card:first-child {
@@ -1420,8 +1464,8 @@ label.branch-check input[type='checkbox'],
   min-height: 194px;
 }
 
-.skeleton-stack--appointment-detail .skeleton-card {
-  min-height: 72px;
+.skeleton-stack--appointment-detail .skeleton-card:first-child {
+  min-height: 76px;
 }
 
 .skeleton-stack--appointment-detail .skeleton-card:nth-child(2) {
@@ -1433,7 +1477,7 @@ label.branch-check input[type='checkbox'],
 }
 
 .skeleton-stack--provider-request-detail .skeleton-card:first-child {
-  min-height: 110px;
+  min-height: 84px;
 }
 
 .skeleton-stack--provider-request-detail .skeleton-card:nth-child(2) {

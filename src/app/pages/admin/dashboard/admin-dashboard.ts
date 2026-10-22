@@ -35,6 +35,7 @@ import { suspendUserConfirmMessage, suspendUserAriaLabel } from '../../../shared
 import { GLOSSARY } from '../../../shared/glossary';
 import {
   ADMIN_RESET_TOAST,
+  normalizeResetDashboard,
   optimisticAdminDashboardAfterReset,
 } from './admin-reset.util';
 
@@ -261,11 +262,14 @@ export class AdminDashboardPage implements OnInit {
     try {
       const result = await firstValueFrom(this.api.resetTestData());
       const kept = (result as { keptUsers?: number }).keptUsers ?? 10;
+      const dashFromApi = normalizeResetDashboard((result as { dashboard?: unknown }).dashboard);
       const deletedReq = (result as { deletedRequests?: number }).deletedRequests ?? 0;
       const seeded = (result as { sampleReviewsSeeded?: number }).sampleReviewsSeeded ?? 0;
       this.marketplaceCache.invalidateAll();
       this.usersPage.set(1);
-      this.dashboard.set(optimisticAdminDashboardAfterReset(this.dashboard(), kept));
+      this.dashboard.set(
+        dashFromApi ?? optimisticAdminDashboardAfterReset(this.dashboard(), kept),
+      );
       this.requests.set([]);
       this.appointments.set([]);
       this.notifications.set([]);

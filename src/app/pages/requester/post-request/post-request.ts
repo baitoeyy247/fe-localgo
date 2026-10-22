@@ -23,7 +23,7 @@ import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
 import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
 import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 import { GLOSSARY } from '../../../shared/glossary';
-import { formatDatetimeConfirmLine } from '../../../shared/confirm-copy';
+import { formatConfirmFieldLine, formatDatetimeConfirmLine } from '../../../shared/confirm-copy';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { RequestFlowCacheService } from '../../../core/request-flow-cache.service';
 import { ServiceRequestDetail } from '../../../core/models';
@@ -212,8 +212,8 @@ export class PostRequestPage implements OnInit {
     const prev = this.baselineSummary;
     const cur = this.formSnapshot();
     const lines: string[] = [];
-    if (prev && prev.title !== cur.title) {
-      lines.push(`หัวข้อ: ${prev.title || '—'} → ${cur.title || '—'}`);
+    if (!prev || prev.title !== cur.title) {
+      lines.push(formatConfirmFieldLine('หัวข้อ', prev?.title, cur.title));
     }
     if (prev && prev.preferredAt !== cur.preferredAt) {
       lines.push(formatDatetimeConfirmLine('วันและเวลา', prev.preferredAt, cur.preferredAt));

@@ -40,7 +40,6 @@ export class MarketplaceCacheService {
 
   /** Warm home data after login / persona switch (role-aware — skip matching on requester-only). */
   preloadHome(activeRole?: string | null): void {
-    this.api.pingHealth().subscribe({ error: () => undefined });
     if (activeRole === 'Provider') {
       this.getMyProvider().subscribe({ error: () => undefined });
       this.refreshMatching().subscribe({ error: () => undefined });

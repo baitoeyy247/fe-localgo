@@ -21,7 +21,7 @@
     @if (pendingConfirmCount() > 0 && tab() === 'pending') {
       <div class="banner warn" role="status">
         <span
-          ><b>มีงานรอยืนยันนัดหมาย {{ pendingConfirmCount() }} รายการ</b><br />กด{{ GLOSSARY.confirmReceiveAppointment }}ในแท็บรอยืนยัน</span
+          ><b>มีงาน{{ GLOSSARY.pendingAppointmentConfirmChip }} {{ pendingConfirmCount() }} รายการ</b><br />กด{{ GLOSSARY.confirmReceiveAppointment }}ในแท็บ{{ GLOSSARY.pendingAppointmentConfirmChip }}</span
         >
       </div>
     }

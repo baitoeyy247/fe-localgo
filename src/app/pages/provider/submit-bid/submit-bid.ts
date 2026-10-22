@@ -243,8 +243,8 @@ export class SubmitBidPage implements OnInit, OnDestroy {
     const prev = this.baselineSummary;
     const cur = this.formSnapshot();
     const lines: string[] = [];
-    if (prev && prev.priceText !== cur.priceText) {
-      lines.push(formatBidPriceConfirmLine(prev.priceText, cur.priceText));
+    if (!prev || prev.priceText !== cur.priceText) {
+      lines.push(formatBidPriceConfirmLine(prev?.priceText ?? '', cur.priceText));
     }
     if (prev) {
       const descLine = formatBidDescriptionConfirmLine(prev.description, cur.description);

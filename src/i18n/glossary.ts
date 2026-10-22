@@ -24,6 +24,7 @@ export const GLOSSARY = {
   cancelAppointmentSheetTitle: 'ยกเลิกนัดหมาย?',
   withdrawDialogCancel: 'ยกเลิก',
   appointment: 'นัดหมาย',
+  pendingAppointmentConfirmChip: 'รอยืนยันนัดหมาย',
   confirmAppointment: 'ยืนยันนัดหมาย',
   /** ผู้ให้บริการรับนัดที่ลูกค้าส่งมา */
   confirmReceiveAppointment: 'ยืนยันนัดหมาย',
