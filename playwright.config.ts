@@ -1,4 +1,4 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
 
 const baseURL =
   process.env.E2E_BASE_URL ??
@@ -17,16 +17,9 @@ export default defineConfig({
   },
   projects: [
     {
-      name: 'mobile-375',
+      name: 'sit-skeleton',
       use: {
-        ...devices['Pixel 5'],
         viewport: { width: 375, height: 800 },
-      },
-    },
-    {
-      name: 'mobile-320',
-      use: {
-        viewport: { width: 320, height: 800 },
       },
     },
   ],

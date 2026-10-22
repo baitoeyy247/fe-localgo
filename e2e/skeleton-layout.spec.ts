@@ -149,15 +149,18 @@ test.describe('QA31 M-1 skeleton layout shift', () => {
           await Promise.all([waitSkeleton, page.goto(path, { waitUntil: 'domcontentloaded' })]);
         }
 
-        await expect(loaded).toBeVisible({ timeout: 60_000 });
-
         const preset = SKELETON_PAGE_PRESETS[routeCase.preset];
         const skeletonBox = await contentBox(page, skelSel, 0);
+        let skeletonBox2: Box | null = null;
+        if (routeCase.assertSecondCard) {
+          skeletonBox2 = await contentBox(page, skelSel, 1);
+        }
+
+        await expect(loaded).toBeVisible({ timeout: 60_000 });
         const loadedBox = await contentBox(page, loadedSelector, 0);
         assertBoxDelta(routeCase.name, skeletonBox, loadedBox, preset.variant === 'form' ? 12 : 0);
 
-        if (routeCase.assertSecondCard) {
-          const skeletonBox2 = await contentBox(page, skelSel, 1);
+        if (routeCase.assertSecondCard && skeletonBox2) {
           const loadedBox2 = await contentBox(page, loadedSelector, 1);
           assertBoxDelta(`${routeCase.name} card2`, skeletonBox2, loadedBox2);
         }
