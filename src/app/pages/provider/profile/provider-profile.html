@@ -2,8 +2,7 @@
   <app-provider-setup-bar active="profile" />
 
   @if (loading()) {
-    <app-skeleton-card [count]="3" />
-    <p class="muted" style="text-align: center">กำลังโหลดข้อมูล…</p>
+    <app-skeleton-card variant="form" [count]="1" [topOffset]="true" />
   } @else {
     <label class="field" [class.field--error]="!!fieldErrors()['providerType']">
       <span>ประเภทผู้ให้บริการ <span class="req">*</span></span>
@@ -52,10 +51,21 @@
     @if (error()) {
       <p class="error-text">{{ error() }}</p>
     }
-    <button class="btn btn-primary btn-block" type="button" [class.is-busy]="saving()" [disabled]="saving()" (click)="saveAndContinue()">
+    <button class="btn btn-primary btn-block" type="button" [class.is-busy]="saving()" [disabled]="saving() || !hasChanges()" (click)="askSave()">
       {{ saving() ? 'กำลังบันทึก…' : 'บันทึกและตั้งพื้นที่' }}
     </button>
   }
+
+  <app-confirm-save-dialog
+    [saveOpen]="saveConfirmOpen()"
+    [saveMessage]="saveConfirmMessage()"
+    [saveBusy]="saving()"
+    [discardOpen]="discardConfirmOpen()"
+    (saveConfirm)="confirmSaveDialog()"
+    (saveCancel)="cancelSaveDialog()"
+    (discardConfirm)="cancelDiscardDialog()"
+    (discardCancel)="cancelDiscardDialog()"
+  />
 
   <app-provider-bottom-nav />
 </app-page-shell>

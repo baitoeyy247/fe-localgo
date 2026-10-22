@@ -34,8 +34,8 @@
       <p>เริ่มจากประกาศงานใหม่ แล้วกลับมาดูข้อเสนอที่ได้รับ</p>
       <a class="btn btn-primary" routerLink="/requester/post">ประกาศงาน</a>
     </div>
-  } @else if (loading()) {
-    <app-skeleton-card [slow]="hint.slow()" [count]="2" />
+  } @else if (loading() && !request()) {
+    <app-skeleton-card [slow]="hint.slow()" variant="list" [count]="2" [topOffset]="true" />
   } @else if (bids().length === 0) {
     <div class="state">
       <div class="em">⏳</div>

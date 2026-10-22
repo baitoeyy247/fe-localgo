@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { OPEN_BUDGET_LABEL } from '../budget.constants';
 
-/** L5 — document expected minimum input font size (enforced in global styles). */
+/** L5 — price input policy (mirrored in styles.scss .input-price). */
+export const PRICE_INPUT_MIN_FONT_PX = 16;
+export const PRICE_INPUT_MIN_HEIGHT_PX = 52;
+
 describe('input font policy', () => {
   it('open budget label matches BE canonical text', () => {
     expect(OPEN_BUDGET_LABEL).toBe('เปิดรับข้อเสนอ');
   });
 
-  it('minimum font size constant is at least 16px', () => {
-    const MIN_INPUT_FONT_PX = 16;
-    expect(MIN_INPUT_FONT_PX).toBeGreaterThanOrEqual(16);
+  it('documents minimum price input typography for L5', () => {
+    expect(PRICE_INPUT_MIN_FONT_PX).toBeGreaterThanOrEqual(16);
+    expect(PRICE_INPUT_MIN_HEIGHT_PX).toBeGreaterThanOrEqual(52);
   });
 });

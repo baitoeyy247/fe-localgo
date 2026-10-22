@@ -14,16 +14,31 @@ import { Component, input, output } from '@angular/core';
       @if (slow()) {
         <p class="muted" style="text-align: center" role="status">กำลังเชื่อมต่อเซิร์ฟเวอร์…</p>
       }
-      <div class="skeleton-stack" [class.skeleton-stack--detail]="variant() === 'detail'">
-        @for (i of items(); track i) {
-          <div class="card skeleton-card" aria-hidden="true">
-            <div class="skel" [style.height.px]="variant() === 'detail' ? 24 : 20" style="width: 60%"></div>
-            <div class="skel" style="height: 14px; margin-top: 12px"></div>
-            <div class="skel" style="height: 14px; width: 80%; margin-top: 8px"></div>
-            @if (variant() === 'detail') {
-              <div class="skel" style="height: 120px; width: 100%; margin-top: 12px; border-radius: 12px"></div>
-            }
-          </div>
+      <div
+        class="skeleton-stack"
+        [class.skeleton-stack--detail]="variant() === 'detail'"
+        [class.skeleton-stack--form]="variant() === 'form'"
+        [class.skeleton-stack--top-offset]="topOffset()"
+      >
+        @if (variant() === 'form') {
+          @for (i of formFields(); track i) {
+            <div class="skeleton-form-field" aria-hidden="true">
+              <div class="skel skeleton-form-field__label"></div>
+              <div class="skel skeleton-form-field__input"></div>
+            </div>
+          }
+          <div class="skel skeleton-form-field__button" aria-hidden="true"></div>
+        } @else {
+          @for (i of items(); track i) {
+            <div class="card skeleton-card" aria-hidden="true">
+              <div class="skel" [style.height.px]="variant() === 'detail' ? 24 : 20" style="width: 60%"></div>
+              <div class="skel" style="height: 14px; margin-top: 12px"></div>
+              <div class="skel" style="height: 14px; width: 80%; margin-top: 8px"></div>
+              @if (variant() === 'detail') {
+                <div class="skel" style="height: 120px; width: 100%; margin-top: 12px; border-radius: 12px"></div>
+              }
+            </div>
+          }
         }
       </div>
     }
@@ -35,10 +50,16 @@ export class SkeletonCard {
   /** After ~10s — show retry instead of skeleton. */
   readonly timedOut = input(false);
   readonly count = input(2);
-  readonly variant = input<'list' | 'detail'>('list');
+  readonly variant = input<'list' | 'detail' | 'form'>('list');
+  /** Nudge skeleton down to align with real content below flow bars / banners. */
+  readonly topOffset = input(false);
   readonly retry = output<void>();
 
   protected items(): number[] {
     return Array.from({ length: this.count() }, (_, i) => i);
+  }
+
+  protected formFields(): number[] {
+    return [0, 1, 2, 3, 4];
   }
 }

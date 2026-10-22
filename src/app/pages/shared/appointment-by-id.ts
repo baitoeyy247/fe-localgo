@@ -46,7 +46,7 @@ export class AppointmentByIdPage implements OnInit {
 
   protected providerProfileLink(): string | null {
     const id = this.appointment()?.providerId;
-    return id ? `/requester/providers/${id}` : null;
+    return id ? `/requester/provider/${id}` : null;
   }
 
   protected backLink(): string {

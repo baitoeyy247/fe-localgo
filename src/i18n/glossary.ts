@@ -1,0 +1,46 @@
+/** Canonical UI copy — FE + mirror keys on BE GlossaryMessages (N-7). */
+export const GLOSSARY = {
+  dialogConfirm: 'ยืนยัน',
+  dialogCancel: 'ยกเลิก',
+  withdrawDialogCancel: 'ยกเลิก',
+  appointment: 'นัดหมาย',
+  confirmAppointment: 'ยืนยันนัดหมาย',
+  confirmReceiveAppointment: 'ยืนยันรับนัดหมาย',
+  saveAppointment: 'บันทึกนัดหมาย',
+  appointmentSaved: 'บันทึกนัดหมายแล้ว',
+  cancelAppointment: 'ยกเลิกนัดหมาย',
+  rescheduleAppointment: 'เลื่อนนัดหมาย',
+  rejectAppointment: 'ปฏิเสธนัด',
+  bookService: 'นัดหมายบริการ',
+  confirmBooking: 'ยืนยันนัดหมาย',
+  clearBidSelection: 'ยกเลิกการเลือกข้อเสนอ',
+  selectBidAndAppointment: 'เลือกข้อเสนอและนัดหมาย',
+  submitBid: 'เสนอราคา',
+  submitBidAgain: 'เสนอราคาใหม่',
+  bidSubmitted: 'ส่งข้อเสนอแล้ว',
+  withdrawBid: 'ถอนข้อเสนอ',
+  bidWithdrawn: 'ถอนข้อเสนอแล้ว',
+  reviewAction: 'ให้คะแนนและรีวิว',
+  reviewPageTitle: 'ให้คะแนนและรีวิว',
+  submitReview: 'ส่งรีวิว',
+  backHome: 'กลับหน้าหลัก',
+  backToJobs: 'กลับไปรายการงาน',
+  backToMyBids: 'ข้อเสนอของฉัน',
+  savingAppointment: 'กำลังบันทึก…',
+  startJob: 'เริ่มงาน',
+  completeJob: 'งานเสร็จสิ้น',
+  providerLabel: 'ผู้ให้บริการ',
+  budgetLabel: 'งบประมาณ',
+  jobStatusLabel: 'สถานะงาน',
+  /** จุด/พื้นที่ให้บริการ (หน้า coverage / service) */
+  serviceBranch: 'จุดให้บริการ',
+  coverageAreaTitle: 'พื้นที่ให้บริการ',
+  /** ตัวเลือกงบเมื่อประกาศงาน (ไม่ใช่สถานะงาน) */
+  budgetOpenChoice: 'ให้ผู้ให้บริการเสนอราคา',
+  budgetFixedChoice: 'ระบุงบประมาณ',
+  /** สถานะงานบนตลาด */
+  jobStatusOpenOffers: 'เปิดรับข้อเสนอ',
+  bidPriceLabel: 'ข้อเสนอ',
+} as const;
+
+export type GlossaryKey = keyof typeof GLOSSARY;

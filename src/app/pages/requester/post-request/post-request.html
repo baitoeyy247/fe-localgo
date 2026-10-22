@@ -12,9 +12,13 @@
     </div>
   }
 
+  @if (loading()) {
+    <app-skeleton-card variant="form" [count]="1" [topOffset]="true" />
+  } @else {
+  <div class="post-request-form">
   <label class="field" [class.field--error]="!!fieldErrors()['title']">
     <span>หมวดหมู่ <span class="req">*</span></span>
-    <select class="input" aria-label="หมวดหมู่" (change)="selectCategory($any($event.target).value)">
+    <select class="input" aria-label="หมวดหมู่" [value]="selectedCategoryId()" (change)="selectCategory($any($event.target).value)">
       @for (cat of categories(); track cat.id) {
         <option [value]="cat.id" [selected]="selectedCategoryId() === cat.id">{{ cat.name }}</option>
       }
@@ -48,7 +52,7 @@
     label="วันที่และเวลาที่ต้องการ *"
     [value]="preferredAt()"
     [requireFuture]="true"
-    (valueChange)="preferredAt.set($event); clearFieldError('preferredAt')"
+    (valueChange)="onPreferredAtChange($event)"
   />
   @if (fieldErrors()['preferredAt']; as msg) {
     <p class="error-text">{{ msg }}</p>
@@ -79,7 +83,7 @@
           [checked]="budgetMode() === 'open'"
           (change)="setBudgetMode('open')"
         />
-        <span>เปิดรับข้อเสนอ</span>
+        <span>{{ GLOSSARY.budgetOpenChoice }}</span>
       </label>
       <label class="budget-seg__option" [class.is-active]="budgetMode() === 'fixed'">
         <input
@@ -89,7 +93,7 @@
           [checked]="budgetMode() === 'fixed'"
           (change)="setBudgetMode('fixed')"
         />
-        <span>ระบุจำนวน</span>
+        <span>{{ GLOSSARY.budgetFixedChoice }}</span>
       </label>
     </div>
     @if (budgetMode() === 'fixed') {
@@ -97,7 +101,8 @@
         <span>จำนวนเงิน</span>
         <div class="input-with-unit">
           <input
-            class="input"
+            class="input-price"
+            type="text"
             [class.err]="!!fieldErrors()['budget']"
             aria-label="งบประมาณ"
             inputmode="numeric"
@@ -127,9 +132,22 @@
   @if (error() && !fieldErrors()['title'] && !fieldErrors()['budget'] && !fieldErrors()['preferredAt']) {
     <p class="error-text">{{ error() }}</p>
   }
-  <button class="btn btn-primary btn-block" type="button" [disabled]="posting()" (click)="publish()">
+  <button class="btn btn-primary btn-block" type="button" [class.is-busy]="posting()" [disabled]="posting() || !hasChanges()" (click)="askSave()">
     {{ posting() ? 'กำลังประกาศ…' : 'ประกาศงาน' }}
   </button>
+  </div>
+  }
+
+  <app-confirm-save-dialog
+    [saveOpen]="saveConfirmOpen()"
+    [saveMessage]="saveConfirmMessage()"
+    [saveBusy]="posting()"
+    [discardOpen]="discardConfirmOpen()"
+    (saveConfirm)="confirmSaveDialog()"
+    (saveCancel)="cancelSaveDialog()"
+    (discardConfirm)="cancelDiscardDialog()"
+    (discardCancel)="cancelDiscardDialog()"
+  />
 
   <app-requester-bottom-nav />
 

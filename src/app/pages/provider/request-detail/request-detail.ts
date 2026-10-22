@@ -23,6 +23,7 @@ import { formatPrice } from '../../../shared/format-price';
 import { formatBudgetDisplay } from '../../../shared/format-budget';
 import { providerBidRowStatus } from '../../../shared/status-labels';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
+import { JOB_COMPLETED_REVIEW_NOTICE } from './request-detail.copy';
 import { AuthService } from '../../../core/auth.service';
 import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { ToastService } from '../../../core/toast.service';
@@ -568,7 +569,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.openAdvanceConfirm('Completed', {
       allowed: () => this.canCompleteJob(),
       busyLabel: 'กำลังปิดงาน…',
-      notice: 'ปิดงานแล้ว — ลูกค้าสามารถให้คะแนนและรีวิวได้',
+      notice: JOB_COMPLETED_REVIEW_NOTICE,
       errorFallback: 'ปิดงานไม่สำเร็จ',
     });
   }
@@ -678,7 +679,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
           /* local patch already applied */
         }
       }
-      this.notice.set(null);
+      this.notice.set(options.notice ?? null);
     } catch (e) {
       this.appointment.set(appt);
       this.error.set(apiErrorMessage(e, options.errorFallback));

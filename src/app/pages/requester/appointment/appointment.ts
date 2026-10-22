@@ -32,6 +32,9 @@ import { ThaiDatetimeField } from '../../../shared/ui/thai-datetime-field';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { formatPrice } from '../../../shared/format-price';
 import { GLOSSARY } from '../../../shared/glossary';
+import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
+import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
+import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 
 @Component({
   selector: 'app-appointment-page',
@@ -45,6 +48,7 @@ import { GLOSSARY } from '../../../shared/glossary';
     ConfirmSheet,
     ThaiDatetimeField,
     RouterLink,
+    ConfirmSaveDialog,
   ],
   templateUrl: './appointment.html',
 })
@@ -71,6 +75,14 @@ export class AppointmentPage implements OnInit, OnDestroy {
   protected readonly confirmCancelOpen = signal(false);
   protected readonly confirmClearOpen = signal(false);
   protected readonly hint = new SlowLoadHint();
+  protected readonly rescheduleMode = signal(false);
+  protected readonly saveConfirmOpen = signal(false);
+  protected readonly saveConfirmMessage = signal('');
+  protected readonly discardConfirmOpen = signal(false);
+
+  private readonly dirty = inject(DirtyFormGuardState);
+  private readonly formGuard = new UseDirtyGuard(this.dirty);
+  private baselineSummary: ReturnType<typeof this.formSnapshot> | null = null;
 
   protected statusLabel(status: string): string {
     return displayRequestStatusLabel(status, this.appointment()?.status);
@@ -142,10 +154,97 @@ export class AppointmentPage implements OnInit, OnDestroy {
       this.addressText.set(label);
     }
     this.pickerOpen.set(false);
+    this.touchForm();
+  }
+
+  private formSnapshot(): {
+    scheduledAt: string;
+    addressText: string;
+    note: string;
+    lat: number | null;
+    lng: number | null;
+  } {
+    return {
+      scheduledAt: this.scheduledAt().trim(),
+      addressText: this.addressText().trim(),
+      note: this.note().trim(),
+      lat: this.mapLat(),
+      lng: this.mapLng(),
+    };
+  }
+
+  private captureBaseline(): void {
+    const state = this.formSnapshot();
+    this.formGuard.captureBaseline(state);
+    this.baselineSummary = { ...state };
+  }
+
+  protected touchForm(): void {
+    this.formGuard.syncDirty(this.formSnapshot());
+  }
+
+  protected hasChanges(): boolean {
+    return this.formGuard.hasChanges(this.formSnapshot());
+  }
+
+  protected canRescheduleExisting(): boolean {
+    const appt = this.appointment();
+    return !!appt && (appt.status === 'Pending' || appt.status === 'Confirmed');
+  }
+
+  protected askSave(): void {
+    if (!this.hasChanges()) {
+      return;
+    }
+    const prev = this.baselineSummary;
+    const cur = this.formSnapshot();
+    const lines: string[] = [];
+    if (prev && prev.scheduledAt !== cur.scheduledAt) {
+      lines.push('วันและเวลา: มีการเปลี่ยนแปลง');
+    }
+    if (prev && prev.addressText !== cur.addressText) {
+      lines.push(`สถานที่: ${prev.addressText || '—'} → ${cur.addressText || '—'}`);
+    }
+    if (prev && prev.note !== cur.note) {
+      lines.push('หมายเหตุ: มีการแก้ไข');
+    }
+    this.saveConfirmMessage.set(this.formGuard.buildSaveMessage(lines));
+    this.saveConfirmOpen.set(true);
+  }
+
+  protected confirmSaveDialog(): void {
+    this.saveConfirmOpen.set(false);
+    void this.confirm();
+  }
+
+  protected cancelSaveDialog(): void {
+    this.saveConfirmOpen.set(false);
+  }
+
+  protected cancelDiscardDialog(): void {
+    this.discardConfirmOpen.set(false);
+  }
+
+  protected onScheduledAtChange(value: string): void {
+    this.scheduledAt.set(value);
+    this.touchForm();
+  }
+
+  protected updateAddressText(value: string): void {
+    this.addressText.set(value);
+    this.touchForm();
+  }
+
+  protected updateNote(value: string): void {
+    this.note.set(value);
+    this.touchForm();
   }
 
   protected async confirm(): Promise<void> {
-    if (this.saving() || this.hasActiveAppointment() || this.isReadOnly()) {
+    if (this.saving() || this.isReadOnly()) {
+      return;
+    }
+    if (this.hasActiveAppointment() && !this.rescheduleMode()) {
       return;
     }
     const dt = this.datetimeField();
@@ -207,7 +306,13 @@ export class AppointmentPage implements OnInit, OnDestroy {
         }),
       );
       this.cache.invalidateAll();
-      this.toast.show(GLOSSARY.appointmentSaved);
+      this.formGuard.markSaved(this.formSnapshot());
+      const whenLabel = created.scheduledAt
+        ? formatScheduledAt(created.scheduledAt)
+        : this.scheduledAt().trim()
+          ? formatScheduledAt(new Date(this.scheduledAt()).toISOString())
+          : GLOSSARY.appointment;
+      this.toast.show(`บันทึกนัดหมาย ${whenLabel} แล้ว`);
       await this.router.navigate(['/requester/appointments', created.id]);
     } catch (e) {
       this.success.set(null);
@@ -330,7 +435,13 @@ export class AppointmentPage implements OnInit, OnDestroy {
   }
 
   protected canEditAppointmentForm(): boolean {
-    if (this.hasActiveAppointment() || this.isReadOnly() || this.isTerminal()) {
+    if (this.isReadOnly() || this.isTerminal()) {
+      return false;
+    }
+    if (this.rescheduleMode() && this.canRescheduleExisting()) {
+      return true;
+    }
+    if (this.hasActiveAppointment()) {
       return false;
     }
     if (this.needsBidSelection && !this.hasSelectedProvider()) {
@@ -571,6 +682,9 @@ export class AppointmentPage implements OnInit, OnDestroy {
         this.scheduledAt.set('');
         this.applyRequestLocation(detail);
       }
+      const rescheduleQuery = this.route.snapshot.queryParamMap.get('reschedule') === '1';
+      this.rescheduleMode.set(rescheduleQuery && this.canRescheduleExisting());
+      this.captureBaseline();
     } catch (e) {
       this.loadError.set(apiErrorMessage(e, 'โหลดข้อมูลนัดหมายไม่สำเร็จ'));
     } finally {

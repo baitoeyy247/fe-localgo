@@ -1,6 +1,6 @@
 <app-page-shell title="เสนอราคา" [backLink]="backLink()">
-  @if (loading()) {
-    <app-skeleton-card [slow]="hint.slow()" [count]="1" />
+  @if (loading() && !request()) {
+    <app-skeleton-card [slow]="hint.slow()" variant="form" [count]="1" [topOffset]="true" />
   } @else if (loadError()) {
     <app-error-state [message]="loadError()!" (retry)="ngOnInit()" />
   } @else if (categoryBlocked()) {
@@ -30,10 +30,12 @@
       <span>ราคาเสนอ <span class="req">*</span></span>
       <div class="input-with-unit">
         <input
+          class="input-price"
+          type="text"
           placeholder="120"
           inputmode="numeric"
           [value]="priceText()"
-          (input)="priceText.set($any($event.target).value)"
+          (input)="updatePrice($any($event.target).value)"
         />
         <span class="input-with-unit__suffix">บาท</span>
       </div>
@@ -58,7 +60,7 @@
       }
     </label>
 
-    <button class="btn btn-primary btn-block" type="button" [disabled]="submitting() || !priceText().trim()" (click)="submit()">
+    <button class="btn btn-primary btn-block" type="button" [class.is-busy]="submitting()" [disabled]="submitting() || !priceText().trim() || !hasChanges()" (click)="askSave()">
       {{
         submitting()
           ? existingBidId()
@@ -69,6 +71,11 @@
             : 'ส่งข้อเสนอราคา'
       }}
     </button>
+    @if (existingBidId()) {
+      <button type="button" class="btn btn-danger-o btn-block" [disabled]="submitting() || withdrawing()" (click)="withdrawOpen.set(true)">
+        {{ GLOSSARY.withdrawBid }}
+      </button>
+    }
   } @else {
     @if (error()) {
       <p class="error-text">{{ error() }}</p>
@@ -80,4 +87,26 @@
       </div>
     }
   }
+
+  <app-confirm-save-dialog
+    [saveOpen]="saveConfirmOpen()"
+    [saveMessage]="saveConfirmMessage()"
+    [saveBusy]="submitting()"
+    [discardOpen]="discardConfirmOpen()"
+    (saveConfirm)="confirmSaveDialog()"
+    (saveCancel)="cancelSaveDialog()"
+    (discardConfirm)="cancelDiscardDialog()"
+    (discardCancel)="cancelDiscardDialog()"
+  />
+  <app-confirm-sheet
+    [open]="withdrawOpen()"
+    title="ถอนข้อเสนอราคา?"
+    message="ลูกค้าจะไม่เห็นข้อเสนอนี้อีก คุณสามารถส่งข้อเสนอใหม่ได้หากงานยังเปิดรับ"
+    confirmLabel="ถอนข้อเสนอ"
+    [danger]="true"
+    [busy]="withdrawing()"
+    [cancelLabel]="GLOSSARY.withdrawDialogCancel"
+    (confirm)="withdrawBid()"
+    (cancel)="withdrawOpen.set(false)"
+  />
 </app-page-shell>

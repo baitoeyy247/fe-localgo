@@ -11,13 +11,18 @@ import { ToastService } from '../../../core/toast.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
+import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
+import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
+import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
+import { GLOSSARY } from '../../../shared/glossary';
 
 @Component({
   selector: 'app-review-page',
-  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, SkeletonCard, RouterLink],
+  imports: [PageShell, RequesterBottomNav, RequesterFlowBar, SkeletonCard, RouterLink, ConfirmSaveDialog],
   templateUrl: './review.html',
 })
 export class ReviewPage implements OnInit {
+  protected readonly GLOSSARY = GLOSSARY;
   protected readonly rating = signal(0);
   protected readonly comment = signal('');
   protected readonly providerName = signal('กำลังโหลดผู้ให้บริการ…');
@@ -28,6 +33,9 @@ export class ReviewPage implements OnInit {
   protected readonly statusHint = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly loading = signal(true);
+  protected readonly saveConfirmOpen = signal(false);
+  protected readonly saveConfirmMessage = signal('');
+  protected readonly discardConfirmOpen = signal(false);
 
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
@@ -35,6 +43,9 @@ export class ReviewPage implements OnInit {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly dirty = inject(DirtyFormGuardState);
+  private readonly formGuard = new UseDirtyGuard(this.dirty);
+  private baselineSummary: ReturnType<typeof this.formSnapshot> | null = null;
 
   async ngOnInit(): Promise<void> {
     this.loading.set(true);
@@ -66,7 +77,6 @@ export class ReviewPage implements OnInit {
         this.statusHint.set('รอให้งานเสร็จก่อนรีวิว');
       }
 
-      // Always resolve from the job — never session/cache provider id.
       const resolved =
         appointment?.providerId ??
         detail.selectedProviderId ??
@@ -90,7 +100,29 @@ export class ReviewPage implements OnInit {
       this.providerName.set('โหลดชื่อไม่สำเร็จ');
     } finally {
       this.loading.set(false);
+      this.captureBaseline();
     }
+  }
+
+  private formSnapshot(): { rating: number; comment: string } {
+    return {
+      rating: this.rating(),
+      comment: this.comment().trim(),
+    };
+  }
+
+  private captureBaseline(): void {
+    const state = this.formSnapshot();
+    this.formGuard.captureBaseline(state);
+    this.baselineSummary = { ...state };
+  }
+
+  protected touchForm(): void {
+    this.formGuard.syncDirty(this.formSnapshot());
+  }
+
+  protected hasChanges(): boolean {
+    return this.formGuard.hasChanges(this.formSnapshot());
   }
 
   protected flowUnlockedThrough(): RequesterFlowStep {
@@ -100,6 +132,42 @@ export class ReviewPage implements OnInit {
   protected setRating(value: number): void {
     this.rating.set(value);
     this.error.set(null);
+    this.touchForm();
+  }
+
+  protected updateComment(value: string): void {
+    this.comment.set(value);
+    this.touchForm();
+  }
+
+  protected askSave(): void {
+    if (!this.hasChanges()) {
+      return;
+    }
+    const prev = this.baselineSummary;
+    const cur = this.formSnapshot();
+    const lines: string[] = [];
+    if (prev && prev.rating !== cur.rating) {
+      lines.push(`คะแนน: ${prev.rating || '—'} → ${cur.rating} ดาว`);
+    }
+    if (prev && prev.comment !== cur.comment) {
+      lines.push('ความคิดเห็น: มีการแก้ไข');
+    }
+    this.saveConfirmMessage.set(this.formGuard.buildSaveMessage(lines));
+    this.saveConfirmOpen.set(true);
+  }
+
+  protected confirmSaveDialog(): void {
+    this.saveConfirmOpen.set(false);
+    void this.submit();
+  }
+
+  protected cancelSaveDialog(): void {
+    this.saveConfirmOpen.set(false);
+  }
+
+  protected cancelDiscardDialog(): void {
+    this.discardConfirmOpen.set(false);
   }
 
   protected async submit(): Promise<void> {
@@ -121,18 +189,21 @@ export class ReviewPage implements OnInit {
     }
     this.submitting.set(true);
     this.error.set(null);
+    const stars = this.rating();
+    const name = this.providerName();
     try {
       await firstValueFrom(
         this.api.createReview(providerId, {
           serviceRequestId: requestId,
           reviewType: 'Verified',
-          rating: this.rating(),
+          rating: stars,
           comment: this.comment().trim() || undefined,
         }),
       );
       this.cache.invalidateAll();
+      this.formGuard.markSaved(this.formSnapshot());
       this.session.clearRequesterFlow();
-      this.toast.show('ส่งรีวิวแล้ว');
+      this.toast.show(`ส่งรีวิว ${stars} ดาวให้ ${name} แล้ว`);
       await this.router.navigateByUrl('/requester');
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'ส่งรีวิวไม่สำเร็จ'));

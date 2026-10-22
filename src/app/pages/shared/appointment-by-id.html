@@ -58,7 +58,7 @@
           <a
             class="btn btn-primary btn-block"
             [routerLink]="['/requester/appointment']"
-            [queryParams]="{ requestId: a.serviceRequestId }"
+            [queryParams]="{ requestId: a.serviceRequestId, reschedule: '1' }"
             >{{ GLOSSARY.rescheduleAppointment }}</a
           >
         }

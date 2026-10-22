@@ -1,5 +1,5 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { CanDeactivateFn, Router } from '@angular/router';
+import { CanDeactivateFn } from '@angular/router';
 
 /** Tracks unsaved form edits and prompts before navigation. */
 @Injectable({ providedIn: 'root' })

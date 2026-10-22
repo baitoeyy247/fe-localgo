@@ -2,7 +2,7 @@
   <app-provider-setup-bar active="service" />
 
   @if (loading()) {
-    <p class="muted" style="text-align: center">กำลังโหลด…</p>
+    <app-skeleton-card variant="form" [count]="1" [topOffset]="true" />
   } @else if (!provider()) {
     <div class="state">
       <div class="em">👤</div>
@@ -12,7 +12,7 @@
   } @else {
     <label class="field">
       <span>หมวดหมู่ <span class="req">*</span></span>
-      <select class="input" aria-label="หมวดหมู่" (change)="selectCategory($any($event.target).value)">
+      <select class="input" aria-label="หมวดหมู่" [value]="selectedCategoryId()" (change)="selectCategory($any($event.target).value)">
         @for (cat of categories(); track cat.id) {
           <option [value]="cat.id" [selected]="selectedCategoryId() === cat.id">{{ cat.name }}</option>
         }
@@ -29,7 +29,13 @@
     <label class="field">
       <span>ราคาเริ่มต้น</span>
       <div class="input-with-unit">
-        <input placeholder="40" inputmode="numeric" (input)="updateBasePrice($any($event.target).value)" />
+        <input
+          class="input-price"
+          type="text"
+          placeholder="40"
+          inputmode="numeric"
+          (input)="updateBasePrice($any($event.target).value)"
+        />
         <span class="input-with-unit__suffix">บาท</span>
       </div>
       <small class="muted">เช่น 40 บาท/กก. — พิมพ์ตัวเลขหรือช่วงราคา</small>
@@ -54,10 +60,21 @@
     @if (error()) {
       <p class="error-text">{{ error() }}</p>
     }
-    <button class="btn btn-primary btn-block" type="button" [disabled]="saving()" (click)="saveAndContinue()">
+    <button class="btn btn-primary btn-block" type="button" [class.is-busy]="saving()" [disabled]="saving() || !hasChanges()" (click)="askSave()">
       {{ saving() ? 'กำลังบันทึก…' : 'บันทึกและจัดการบริการ' }}
     </button>
   }
+
+  <app-confirm-save-dialog
+    [saveOpen]="saveConfirmOpen()"
+    [saveMessage]="saveConfirmMessage()"
+    [saveBusy]="saving()"
+    [discardOpen]="discardConfirmOpen()"
+    (saveConfirm)="confirmSaveDialog()"
+    (saveCancel)="cancelSaveDialog()"
+    (discardConfirm)="cancelDiscardDialog()"
+    (discardCancel)="cancelDiscardDialog()"
+  />
 
   <app-provider-bottom-nav />
 </app-page-shell>

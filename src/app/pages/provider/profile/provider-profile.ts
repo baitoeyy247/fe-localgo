@@ -12,14 +12,19 @@ import { apiErrorMessage } from '../../../core/api-error.util';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { ToastService } from '../../../core/toast.service';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
+import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
+import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
+import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 
 @Component({
   selector: 'app-provider-profile-setup-page',
-  imports: [PageShell, ProviderSetupBar, ProviderBottomNav, SkeletonCard],
+  imports: [PageShell, ProviderSetupBar, ProviderBottomNav, SkeletonCard, ConfirmSaveDialog],
   templateUrl: './provider-profile.html',
 })
 export class ProviderProfileSetupPage implements OnInit {
   private readonly toast = inject(ToastService);
+  private readonly dirty = inject(DirtyFormGuardState);
+  private readonly formGuard = new UseDirtyGuard(this.dirty);
   protected readonly loading = signal(true);
   protected readonly saving = signal(false);
   protected readonly provider = signal<ProviderDetail | null>(null);
@@ -31,6 +36,10 @@ export class ProviderProfileSetupPage implements OnInit {
   protected readonly typeOptions = PROVIDER_TYPE_OPTIONS;
   protected readonly error = signal<string | null>(null);
   protected readonly fieldErrors = signal<Record<string, string>>({});
+  protected readonly saveConfirmOpen = signal(false);
+  protected readonly saveConfirmMessage = signal('');
+  protected readonly discardConfirmOpen = signal(false);
+  private baselineSummary: ReturnType<typeof this.formSnapshot> | null = null;
   private readonly api = inject(LocalGoApiService);
   private readonly router = inject(Router);
 
@@ -49,27 +58,102 @@ export class ProviderProfileSetupPage implements OnInit {
       }
     } finally {
       this.loading.set(false);
+      this.captureBaseline();
     }
+  }
+
+  private formSnapshot(): {
+    providerType: string;
+    name: string;
+    description: string;
+    contactLineId: string;
+    contactPhone: string;
+  } {
+    return {
+      providerType: this.providerType(),
+      name: this.name().trim(),
+      description: this.description().trim(),
+      contactLineId: this.contactLineId().trim(),
+      contactPhone: this.contactPhone().trim(),
+    };
+  }
+
+  private captureBaseline(): void {
+    const state = this.formSnapshot();
+    this.formGuard.captureBaseline(state);
+    this.baselineSummary = { ...state };
+  }
+
+  protected touchForm(): void {
+    this.formGuard.syncDirty(this.formSnapshot());
+  }
+
+  protected hasChanges(): boolean {
+    return this.formGuard.hasChanges(this.formSnapshot());
   }
 
   protected selectProviderType(value: string): void {
     this.providerType.set(value);
+    this.touchForm();
   }
 
   protected updateName(value: string): void {
     this.name.set(value);
+    this.touchForm();
   }
 
   protected updateDescription(value: string): void {
     this.description.set(value);
+    this.touchForm();
   }
 
   protected updateContactLine(value: string): void {
     this.contactLineId.set(value);
+    this.touchForm();
   }
 
   protected updateContactPhone(value: string): void {
     this.contactPhone.set(value);
+    this.touchForm();
+  }
+
+  protected askSave(): void {
+    if (!this.hasChanges()) {
+      return;
+    }
+    const prev = this.baselineSummary;
+    const cur = this.formSnapshot();
+    const lines: string[] = [];
+    if (prev && prev.providerType !== cur.providerType) {
+      lines.push(`ประเภท: ${prev.providerType || '—'} → ${cur.providerType || '—'}`);
+    }
+    if (prev && prev.name !== cur.name) {
+      lines.push(`ชื่อ: ${prev.name || '—'} → ${cur.name || '—'}`);
+    }
+    if (prev && prev.description !== cur.description) {
+      lines.push('รายละเอียด: มีการแก้ไข');
+    }
+    if (prev && prev.contactLineId !== cur.contactLineId) {
+      lines.push(`LINE: ${prev.contactLineId || '—'} → ${cur.contactLineId || '—'}`);
+    }
+    if (prev && prev.contactPhone !== cur.contactPhone) {
+      lines.push(`เบอร์โทร: ${prev.contactPhone || '—'} → ${cur.contactPhone || '—'}`);
+    }
+    this.saveConfirmMessage.set(this.formGuard.buildSaveMessage(lines));
+    this.saveConfirmOpen.set(true);
+  }
+
+  protected confirmSaveDialog(): void {
+    this.saveConfirmOpen.set(false);
+    void this.saveAndContinue();
+  }
+
+  protected cancelSaveDialog(): void {
+    this.saveConfirmOpen.set(false);
+  }
+
+  protected cancelDiscardDialog(): void {
+    this.discardConfirmOpen.set(false);
   }
 
   protected async saveAndContinue(): Promise<void> {
@@ -90,12 +174,13 @@ export class ProviderProfileSetupPage implements OnInit {
       return;
     }
     this.saving.set(true);
+    const displayName = this.name().trim();
     try {
       const existing = this.provider();
       if (existing) {
         const updated = await firstValueFrom(
           this.api.updateProvider(existing.id, {
-            name: this.name().trim(),
+            name: displayName,
             description: this.description().trim() || undefined,
             contactLineId: this.contactLineId().trim() || undefined,
             contactPhone: this.contactPhone().trim() || undefined,
@@ -106,7 +191,7 @@ export class ProviderProfileSetupPage implements OnInit {
         const created = await firstValueFrom(
           this.api.createProvider({
             providerType: this.providerType(),
-            name: this.name().trim(),
+            name: displayName,
             description: this.description().trim() || undefined,
             contactLineId: this.contactLineId().trim() || undefined,
             contactPhone: this.contactPhone().trim() || undefined,
@@ -114,7 +199,9 @@ export class ProviderProfileSetupPage implements OnInit {
         );
         this.provider.set(created);
       }
-      this.toast.show('บันทึกและตั้งพื้นที่แล้ว');
+      this.formGuard.markSaved(this.formSnapshot());
+      this.captureBaseline();
+      this.toast.show(`บันทึกโปรไฟล์ '${displayName}' แล้ว · ไปตั้งพื้นที่ให้บริการ`);
       await this.router.navigateByUrl('/provider/coverage');
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'บันทึกโปรไฟล์ไม่สำเร็จ'));

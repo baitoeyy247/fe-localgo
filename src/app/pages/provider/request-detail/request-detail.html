@@ -1,6 +1,13 @@
 <app-page-shell title="รายละเอียดงาน" [backLink]="'/provider/requests'">
   @if (loading() || (!request() && !notFound() && !error())) {
-    <app-skeleton-card [slow]="hint.slow()" [timedOut]="hint.timedOut()" [count]="3" (retry)="load()" />
+    <app-skeleton-card
+      [slow]="hint.slow()"
+      [timedOut]="hint.timedOut()"
+      variant="detail"
+      [count]="2"
+      [topOffset]="true"
+      (retry)="load()"
+    />
   } @else if (notFound()) {
     <app-not-found-state
       title="ไม่พบงานนี้"

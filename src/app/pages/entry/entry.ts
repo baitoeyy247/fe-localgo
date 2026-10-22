@@ -9,6 +9,7 @@ import { TEST_PERSONAS, TestPersona } from '../../core/test-personas';
 import { apiErrorMessage } from '../../core/api-error.util';
 import { HttpErrorResponse } from '@angular/common/http';
 import { SlowLoadHint } from '../../shared/load-state';
+import { ENTRY_SESSION_TIMEOUT_MS } from './entry.constants';
 
 @Component({
   selector: 'app-entry-page',
@@ -191,7 +192,7 @@ export class EntryPage implements OnInit, OnDestroy {
   }
 
   /** Exported for tests — entry session bootstrap timeout. */
-  static readonly SESSION_TIMEOUT_MS = 12_000;
+  static readonly SESSION_TIMEOUT_MS = ENTRY_SESSION_TIMEOUT_MS;
 
   private async ensureSessionWithTimeout(): Promise<void> {
     try {

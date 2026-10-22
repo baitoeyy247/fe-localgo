@@ -2,6 +2,7 @@ import { Component, OnInit, signal } from '@angular/core';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 import { MapView } from '../../../demo/map-view';
 import { DirtyFormGuardState, summarizeChanges } from '../../../shared/forms/dirty-form.guard';
+import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 import { ToastService } from '../../../core/toast.service';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { RouterLink } from '@angular/router';
@@ -60,13 +61,16 @@ export class CoveragePage implements OnInit {
   protected readonly saveConfirmMessage = signal('');
   protected readonly discardConfirmOpen = signal(false);
   private formSnapshot = '';
+  private readonly formGuard: UseDirtyGuard;
 
   constructor(
     private readonly api: LocalGoApiService,
     private readonly userLocation: UserLocationService,
     private readonly dirty: DirtyFormGuardState,
     private readonly toastService: ToastService,
-  ) {}
+  ) {
+    this.formGuard = new UseDirtyGuard(this.dirty);
+  }
 
   async ngOnInit(): Promise<void> {
     await this.reload();
@@ -104,30 +108,33 @@ export class CoveragePage implements OnInit {
     this.pickerTitle.set(branch.name);
     this.error.set(null);
     this.formOpen.set(openForm);
-    this.captureFormSnapshot();
-    this.dirty.markDirty();
-    this.dirty.bindBeforeUnload();
+    this.captureFormBaseline();
   }
 
-  private captureFormSnapshot(): void {
-    this.formSnapshot = JSON.stringify({
-      name: this.editingName(),
+  private branchFormState(): {
+    name: string;
+    radius: number;
+    active: boolean;
+    lat: number;
+    lng: number;
+  } {
+    return {
+      name: this.editingName().trim(),
       radius: this.editingRadiusKm(),
       active: this.editingActive(),
       lat: this.editingLat(),
       lng: this.editingLng(),
-    });
+    };
+  }
+
+  private captureFormBaseline(): void {
+    const state = this.branchFormState();
+    this.formGuard.captureBaseline(state);
+    this.formSnapshot = JSON.stringify(state);
   }
 
   protected hasFormChanges(): boolean {
-    const current = JSON.stringify({
-      name: this.editingName(),
-      radius: this.editingRadiusKm(),
-      active: this.editingActive(),
-      lat: this.editingLat(),
-      lng: this.editingLng(),
-    });
-    return current !== this.formSnapshot;
+    return this.formGuard.hasChanges(this.branchFormState());
   }
 
   protected askSaveBranch(): void {
@@ -154,9 +161,8 @@ export class CoveragePage implements OnInit {
     this.saveConfirmOpen.set(true);
   }
 
-  protected markFormDirty(): void {
-    this.dirty.markDirty();
-    this.dirty.bindBeforeUnload();
+  protected touchForm(): void {
+    this.formGuard.syncDirty(this.branchFormState());
   }
 
   protected closeForm(): void {
@@ -187,8 +193,7 @@ export class CoveragePage implements OnInit {
     this.editingLng.set(area.lng);
     this.pickerTitle.set(area.title);
     this.error.set(null);
-    this.captureFormSnapshot();
-    this.markFormDirty();
+    this.captureFormBaseline();
   }
 
   protected canContinueToServices(): boolean {
@@ -221,8 +226,8 @@ export class CoveragePage implements OnInit {
         await firstValueFrom(this.api.addBranch(p.id, body));
         this.toastService.show(`เพิ่มจุด '${name}' แล้ว · รัศมี ${this.editingRadiusKm()} กม.`);
       }
-      this.dirty.markPristine();
-      this.dirty.unbindBeforeUnload();
+      this.formGuard.markSaved(this.branchFormState());
+      this.formSnapshot = JSON.stringify(this.branchFormState());
       await this.reload();
       const list = this.branches();
       const saved = branchId ? list.find((b) => b.id === branchId) : list[list.length - 1];
@@ -339,6 +344,7 @@ export class CoveragePage implements OnInit {
     this.editingName.set(value.title);
     this.pickerTitle.set(value.title);
     this.pickerOpen.set(false);
+    this.touchForm();
   }
 
   private showToast(text: string): void {

@@ -1,6 +1,9 @@
 import { Routes } from '@angular/router';
 import { adminGuard } from './core/admin.guard';
 import { authGuard } from './core/auth.guard';
+import { dirtyFormCanDeactivate } from './shared/forms/dirty-form.guard';
+
+const formGuard = { canDeactivate: [dirtyFormCanDeactivate] };
 
 export const routes: Routes = [
   {
@@ -48,6 +51,7 @@ export const routes: Routes = [
     path: 'requester/post',
     title: 'ประกาศงาน | LocalGo',
     canActivate: [authGuard],
+    ...formGuard,
     loadComponent: () =>
       import('./pages/requester/post-request/post-request').then((m) => m.PostRequestPage),
   },
@@ -76,6 +80,7 @@ export const routes: Routes = [
     path: 'requester/appointment',
     title: 'นัดหมาย | LocalGo',
     canActivate: [authGuard],
+    ...formGuard,
     loadComponent: () =>
       import('./pages/requester/appointment/appointment').then((m) => m.AppointmentPage),
   },
@@ -109,6 +114,7 @@ export const routes: Routes = [
     path: 'requester/review',
     title: 'รีวิวและให้คะแนน | LocalGo',
     canActivate: [authGuard],
+    ...formGuard,
     loadComponent: () => import('./pages/requester/review/review').then((m) => m.ReviewPage),
   },
   {
@@ -122,6 +128,7 @@ export const routes: Routes = [
     path: 'provider/profile',
     title: 'โปรไฟล์ผู้ให้บริการ | LocalGo',
     canActivate: [authGuard],
+    ...formGuard,
     loadComponent: () =>
       import('./pages/provider/profile/provider-profile').then((m) => m.ProviderProfileSetupPage),
   },
@@ -129,6 +136,7 @@ export const routes: Routes = [
     path: 'provider/service',
     title: 'เพิ่มบริการ | LocalGo',
     canActivate: [authGuard],
+    ...formGuard,
     loadComponent: () =>
       import('./pages/provider/add-service/add-service').then((m) => m.AddServicePage),
   },
@@ -136,6 +144,7 @@ export const routes: Routes = [
     path: 'provider/service/:serviceId/edit',
     title: 'แก้ไขบริการ | LocalGo',
     canActivate: [authGuard],
+    ...formGuard,
     loadComponent: () =>
       import('./pages/provider/edit-service/edit-service').then((m) => m.EditServicePage),
   },
@@ -143,6 +152,7 @@ export const routes: Routes = [
     path: 'provider/coverage',
     title: 'พื้นที่ให้บริการ | LocalGo',
     canActivate: [authGuard],
+    ...formGuard,
     loadComponent: () => import('./pages/provider/coverage/coverage').then((m) => m.CoveragePage),
   },
   {
@@ -181,6 +191,7 @@ export const routes: Routes = [
     path: 'provider/bid',
     title: 'ส่งข้อเสนอราคา | LocalGo',
     canActivate: [authGuard],
+    ...formGuard,
     loadComponent: () =>
       import('./pages/provider/submit-bid/submit-bid').then((m) => m.SubmitBidPage),
   },

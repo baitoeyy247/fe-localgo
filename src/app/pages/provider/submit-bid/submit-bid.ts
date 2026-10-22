@@ -14,15 +14,21 @@ import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { ToastService } from '../../../core/toast.service';
 import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { GLOSSARY } from '../../../shared/glossary';
+import { RequestFlowCacheService } from '../../../core/request-flow-cache.service';
+import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
+import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
+import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
+import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 
 export const BID_DESCRIPTION_MAX = 2000;
 
 @Component({
   selector: 'app-submit-bid-page',
-  imports: [PageShell, RouterLink, SkeletonCard, ErrorState],
+  imports: [PageShell, RouterLink, SkeletonCard, ErrorState, ConfirmSaveDialog, ConfirmSheet],
   templateUrl: './submit-bid.html',
 })
 export class SubmitBidPage implements OnInit, OnDestroy {
+  protected readonly GLOSSARY = GLOSSARY;
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly priceText = signal('');
   protected readonly description = signal('');
@@ -37,6 +43,11 @@ export class SubmitBidPage implements OnInit, OnDestroy {
   protected readonly truncated = signal(false);
   protected readonly maxLength = BID_DESCRIPTION_MAX;
   protected readonly hint = new SlowLoadHint();
+  protected readonly saveConfirmOpen = signal(false);
+  protected readonly saveConfirmMessage = signal('');
+  protected readonly discardConfirmOpen = signal(false);
+  protected readonly withdrawOpen = signal(false);
+  protected readonly withdrawing = signal(false);
 
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
@@ -44,6 +55,10 @@ export class SubmitBidPage implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly toast = inject(ToastService);
   private readonly cache = inject(MarketplaceCacheService);
+  private readonly flowCache = inject(RequestFlowCacheService);
+  private readonly dirty = inject(DirtyFormGuardState);
+  private readonly formGuard = new UseDirtyGuard(this.dirty);
+  private baselineSummary: ReturnType<typeof this.formSnapshot> | null = null;
 
   protected categoryBlockedTitle(): string {
     const code = this.blockReasonCode();
@@ -78,6 +93,7 @@ export class SubmitBidPage implements OnInit, OnDestroy {
       this.truncated.set(true);
     }
     this.description.set(value);
+    this.touchForm();
   }
 
   protected onDescriptionPaste(event: ClipboardEvent): void {
@@ -87,6 +103,32 @@ export class SubmitBidPage implements OnInit, OnDestroy {
     if (el.value.length - selected + pasted.length > BID_DESCRIPTION_MAX) {
       this.truncated.set(true);
     }
+  }
+
+  protected updatePrice(value: string): void {
+    this.priceText.set(value);
+    this.touchForm();
+  }
+
+  private formSnapshot(): { priceText: string; description: string } {
+    return {
+      priceText: this.priceText().trim(),
+      description: this.description().trim(),
+    };
+  }
+
+  private captureBaseline(): void {
+    const state = this.formSnapshot();
+    this.formGuard.captureBaseline(state);
+    this.baselineSummary = { ...state };
+  }
+
+  protected touchForm(): void {
+    this.formGuard.syncDirty(this.formSnapshot());
+  }
+
+  protected hasChanges(): boolean {
+    return this.formGuard.hasChanges(this.formSnapshot());
   }
 
   async ngOnInit(): Promise<void> {
@@ -100,7 +142,29 @@ export class SubmitBidPage implements OnInit, OnDestroy {
       this.error.set('เลือกงานจากรายการก่อน');
       return;
     }
-    this.loading.set(true);
+
+    const navState = (this.router.getCurrentNavigation()?.extras.state ?? history.state) as {
+      requestDetail?: ServiceRequestDetail;
+    };
+    const seed =
+      navState?.requestDetail?.id === requestId
+        ? navState.requestDetail
+        : this.flowCache.peekRequest(requestId);
+    if (seed) {
+      this.request.set(seed);
+      this.applyExistingBidFromDetail(seed);
+      this.loading.set(false);
+      void this.loadBidForm(requestId, { background: true });
+      return;
+    }
+
+    await this.loadBidForm(requestId);
+  }
+
+  private async loadBidForm(requestId: string, options?: { background?: boolean }): Promise<void> {
+    if (!options?.background) {
+      this.loading.set(true);
+    }
     this.loadError.set(null);
     this.hint.begin();
     try {
@@ -109,6 +173,7 @@ export class SubmitBidPage implements OnInit, OnDestroy {
         firstValueFrom(this.api.getMyProvider()),
         firstValueFrom(this.api.getBidFormAccess(requestId)),
       ]);
+      this.flowCache.putRequest(detail);
       if (!bidAccess.allowed) {
         const reason = bidAccess.reason?.trim();
         const cat = detail.categoryName?.trim() || 'อื่น';
@@ -118,31 +183,80 @@ export class SubmitBidPage implements OnInit, OnDestroy {
             : reason || 'ไม่สามารถเสนอราคางานนี้ได้ — กลับไปเลือกงานจากกล่องงานหรือตรวจสอบบริการของคุณ';
         this.blockReasonCode.set(bidAccess.reasonCode ?? null);
         this.categoryBlocked.set(blocked);
-        this.loading.set(false);
+        if (!options?.background) {
+          this.loading.set(false);
+        }
         this.hint.end();
         return;
       }
       this.providerId.set(myProvider.id);
       this.request.set(detail);
-      const existing = detail.bids?.find(
-        (bid) => bid.providerId === myProvider.id && bid.status === 'Submitted',
-      );
-      if (existing) {
-        this.existingBidId.set(existing.id);
-        this.priceText.set(existing.priceText);
-        this.description.set((existing.description ?? '').slice(0, BID_DESCRIPTION_MAX));
-      }
+      this.applyExistingBidFromDetail(detail, myProvider.id);
+      this.captureBaseline();
     } catch (e) {
-      const msg = apiErrorMessage(e, 'โหลดงานไม่สำเร็จ');
-      this.loadError.set(
-        msg === 'ไม่พบข้อมูล'
-          ? 'โหลดฟอร์มเสนอราคาไม่สำเร็จ — กลับไปเลือกงานจากรายการหรือลองใหม่'
-          : msg,
-      );
+      if (!options?.background || !this.request()) {
+        const msg = apiErrorMessage(e, 'โหลดงานไม่สำเร็จ');
+        this.loadError.set(
+          msg === 'ไม่พบข้อมูล'
+            ? 'โหลดฟอร์มเสนอราคาไม่สำเร็จ — กลับไปเลือกงานจากรายการหรือลองใหม่'
+            : msg,
+        );
+      }
     } finally {
       this.hint.end();
       this.loading.set(false);
     }
+  }
+
+  private applyExistingBidFromDetail(detail: ServiceRequestDetail, providerId?: string | null): void {
+    const pid = providerId ?? this.providerId();
+    if (!pid) {
+      return;
+    }
+    const existing = detail.bids?.find(
+      (bid) => bid.providerId === pid && bid.status === 'Submitted',
+    );
+    if (existing) {
+      this.existingBidId.set(existing.id);
+      this.priceText.set(existing.priceText);
+      this.description.set((existing.description ?? '').slice(0, BID_DESCRIPTION_MAX));
+    }
+  }
+
+  protected askSave(): void {
+    if (!this.priceText().trim()) {
+      this.error.set('กรุณาระบุราคาที่เสนอ');
+      scrollToFirstError();
+      return;
+    }
+    if (!this.hasChanges() && !this.existingBidId()) {
+      this.error.set('ไม่มีการเปลี่ยนแปลง');
+      return;
+    }
+    const prev = this.baselineSummary;
+    const cur = this.formSnapshot();
+    const lines: string[] = [];
+    if (prev && prev.priceText !== cur.priceText) {
+      lines.push(`ราคา: ${prev.priceText || '—'} → ${cur.priceText} บาท`);
+    }
+    if (prev && prev.description !== cur.description) {
+      lines.push('รายละเอียด: มีการแก้ไข');
+    }
+    this.saveConfirmMessage.set(this.formGuard.buildSaveMessage(lines));
+    this.saveConfirmOpen.set(true);
+  }
+
+  protected confirmSaveDialog(): void {
+    this.saveConfirmOpen.set(false);
+    void this.submit();
+  }
+
+  protected cancelSaveDialog(): void {
+    this.saveConfirmOpen.set(false);
+  }
+
+  protected cancelDiscardDialog(): void {
+    this.discardConfirmOpen.set(false);
   }
 
   protected async submit(): Promise<void> {
@@ -158,9 +272,10 @@ export class SubmitBidPage implements OnInit, OnDestroy {
     }
     this.submitting.set(true);
     this.error.set(null);
+    const price = this.priceText().trim();
     try {
       const payload = {
-        priceText: this.priceText().trim(),
+        priceText: price,
         description: this.description().trim() || undefined,
       };
       const bidId = this.existingBidId();
@@ -172,7 +287,8 @@ export class SubmitBidPage implements OnInit, OnDestroy {
       }
       this.cache.invalidateMatching();
       detail = await firstValueFrom(this.api.getRequest(requestId));
-      this.toast.show(GLOSSARY.bidSubmitted);
+      this.formGuard.markSaved(this.formSnapshot());
+      this.toast.show(`ส่งข้อเสนอ ${price} บาทแล้ว`);
       await this.router.navigate(['/provider/requests', requestId], {
         state: { notice: GLOSSARY.bidSubmitted, requestDetail: detail },
       });
@@ -188,6 +304,32 @@ export class SubmitBidPage implements OnInit, OnDestroy {
       }
     } finally {
       this.submitting.set(false);
+    }
+  }
+
+  protected async withdrawBid(): Promise<void> {
+    const bidId = this.existingBidId();
+    if (!bidId || this.withdrawing()) {
+      return;
+    }
+    this.withdrawing.set(true);
+    const requestId = this.session.providerRequestId;
+    try {
+      await firstValueFrom(this.api.withdrawBid(bidId));
+      this.withdrawOpen.set(false);
+      this.cache.invalidateMatching();
+      this.formGuard.markSaved(this.formSnapshot());
+      this.toast.show(GLOSSARY.bidWithdrawn);
+      if (requestId) {
+        await this.router.navigate(['/provider/requests', requestId]);
+      } else {
+        await this.router.navigateByUrl('/provider/requests');
+      }
+    } catch (e) {
+      this.error.set(apiErrorMessage(e, 'ถอนข้อเสนอไม่สำเร็จ'));
+      scrollToFirstError();
+    } finally {
+      this.withdrawing.set(false);
     }
   }
 
@@ -209,6 +351,7 @@ export class SubmitBidPage implements OnInit, OnDestroy {
       this.existingBidId.set(myBid.id);
       this.priceText.set(myBid.priceText);
       this.description.set(myBid.description ?? '');
+      this.captureBaseline();
       return true;
     } catch {
       return false;

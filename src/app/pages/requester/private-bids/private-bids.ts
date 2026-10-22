@@ -20,6 +20,7 @@ import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 import { formatPrice } from '../../../shared/format-price';
 import { shouldShowLineNotificationHint } from '../../../shared/line-notification-hint';
 import { GLOSSARY } from '../../../shared/glossary';
+import { RequestFlowCacheService } from '../../../core/request-flow-cache.service';
 
 @Component({
   selector: 'app-private-bids-page',
@@ -54,6 +55,7 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
   private readonly auth = inject(AuthService);
+  private readonly flowCache = inject(RequestFlowCacheService);
 
   protected showLineHint(): boolean {
     return shouldShowLineNotificationHint(this.auth);
@@ -83,6 +85,13 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
     });
     if (!requestId) {
       this.loading.set(false);
+      return;
+    }
+    const cached = this.flowCache.peekPrivateBids(requestId);
+    if (cached) {
+      this.applyLoadedState(cached.detail, cached.bids);
+      this.loading.set(false);
+      void this.load(requestId, { background: true });
       return;
     }
     await this.load(requestId);
@@ -218,8 +227,10 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
     return this.bids().find((b) => b.id === detail.selectedBidId) ?? null;
   }
 
-  private async load(requestId: string): Promise<void> {
-    this.loading.set(true);
+  private async load(requestId: string, options?: { background?: boolean }): Promise<void> {
+    if (!options?.background) {
+      this.loading.set(true);
+    }
     this.error.set(null);
     this.loadError.set(null);
     this.hint.begin();
@@ -228,22 +239,29 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
         firstValueFrom(this.api.getRequest(requestId)),
         firstValueFrom(this.api.listBids(requestId)),
       ]);
-      this.request.set(detail);
-      this.session.requesterRequestId = detail.id;
-      this.bids.set(bidList);
-      const selectedFromRequest = detail.selectedBidId
-        ? bidList.find((b) => b.id === detail.selectedBidId)
-        : undefined;
-      const pick = selectedFromRequest ?? bidList[0];
-      if (pick) {
-        this.selectedBidId.set(pick.id);
-        this.session.currentProviderId = pick.providerId;
-      }
+      this.applyLoadedState(detail, bidList);
+      this.flowCache.putPrivateBids(detail, bidList);
     } catch (e) {
-      this.loadError.set(apiErrorMessage(e, 'โหลดข้อเสนอไม่สำเร็จ'));
+      if (!options?.background || !this.request()) {
+        this.loadError.set(apiErrorMessage(e, 'โหลดข้อเสนอไม่สำเร็จ'));
+      }
     } finally {
       this.hint.end();
       this.loading.set(false);
+    }
+  }
+
+  private applyLoadedState(detail: ServiceRequestDetail, bidList: BidItem[]): void {
+    this.request.set(detail);
+    this.session.requesterRequestId = detail.id;
+    this.bids.set(bidList);
+    const selectedFromRequest = detail.selectedBidId
+      ? bidList.find((b) => b.id === detail.selectedBidId)
+      : undefined;
+    const pick = selectedFromRequest ?? bidList[0];
+    if (pick) {
+      this.selectedBidId.set(pick.id);
+      this.session.currentProviderId = pick.providerId;
     }
   }
 }

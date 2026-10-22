@@ -78,7 +78,7 @@
         label="วันและเวลา *"
         [value]="scheduledAt()"
         [requireFuture]="true"
-        (valueChange)="scheduledAt.set($event)"
+        (valueChange)="onScheduledAtChange($event)"
       />
       <label class="field">
         <span>สถานที่นัดหมาย <span class="req">*</span></span>
@@ -86,7 +86,7 @@
           class="input"
           placeholder="ที่อยู่นัดหมาย"
           [value]="addressText()"
-          (input)="addressText.set($any($event.target).value)"
+          (input)="updateAddressText($any($event.target).value)"
         />
         <button type="button" class="btn btn-secondary btn-sm" style="margin-top: 8px; width: fit-content" (click)="openPicker()">
           เปลี่ยนจุดบนแผนที่
@@ -97,7 +97,7 @@
       </label>
       <label class="field">
         <span>หมายเหตุ</span>
-        <textarea class="input" rows="3" [value]="note()" (input)="note.set($any($event.target).value)"></textarea>
+        <textarea class="input" rows="3" [value]="note()" (input)="updateNote($any($event.target).value)"></textarea>
       </label>
     }
 
@@ -137,10 +137,10 @@
         class="btn btn-primary btn-block"
         type="button"
         [class.is-busy]="saving()"
-        [disabled]="!canConfirm || saving()"
-        (click)="confirm()"
+        [disabled]="!canConfirm || saving() || !hasChanges()"
+        (click)="askSave()"
       >
-        {{ saving() ? GLOSSARY.savingAppointment : GLOSSARY.confirmAppointment }}
+        {{ saving() ? GLOSSARY.savingAppointment : rescheduleMode() ? GLOSSARY.saveAppointment : GLOSSARY.confirmAppointment }}
       </button>
     }
   } @else {
@@ -182,6 +182,17 @@
     [busy]="saving()"
     (confirm)="clearBidSelection()"
     (cancel)="confirmClearOpen.set(false)"
+  />
+
+  <app-confirm-save-dialog
+    [saveOpen]="saveConfirmOpen()"
+    [saveMessage]="saveConfirmMessage()"
+    [saveBusy]="saving()"
+    [discardOpen]="discardConfirmOpen()"
+    (saveConfirm)="confirmSaveDialog()"
+    (saveCancel)="cancelSaveDialog()"
+    (discardConfirm)="cancelDiscardDialog()"
+    (discardCancel)="cancelDiscardDialog()"
   />
 
   <app-requester-bottom-nav />

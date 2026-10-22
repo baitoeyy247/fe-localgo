@@ -1,7 +1,8 @@
 <app-page-shell [title]="pageTitle()" backLink="/requester/search" [hideNavPad]="!!provider()">
   @if (loading()) {
-    <app-skeleton-card [count]="2" />
+    <app-skeleton-card variant="detail" [count]="2" [topOffset]="true" />
   } @else if (provider(); as p) {
+    <div class="card-list-gap">
     @if (fromSearch() && primaryService(); as focused) {
       <div class="banner ok" role="status">
         <span
@@ -110,6 +111,7 @@
     @if (isOwnShop()) {
       <div class="banner warn" role="status">นี่คือร้านของคุณ — ไม่สามารถจองบริการตัวเองได้</div>
     }
+    </div>
     <div class="actionbar">
       <a class="btn btn-secondary" routerLink="/requester/post">ประกาศงาน</a>
       @if (p.contactUrl) {

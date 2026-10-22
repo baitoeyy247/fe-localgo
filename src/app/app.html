@@ -12,4 +12,14 @@
     </div>
   </main>
   <app-toast-host />
+  <app-confirm-sheet
+    [open]="dirty.discardPromptOpen()"
+    title="ละทิ้งการเปลี่ยนแปลง?"
+    message="ข้อมูลที่แก้ไขจะไม่ถูกบันทึก"
+    confirmLabel="ละทิ้ง"
+    cancelLabel="ยกเลิก"
+    [danger]="true"
+    (confirm)="dirty.resolveDiscard(true)"
+    (cancel)="dirty.resolveDiscard(false)"
+  />
 </div>

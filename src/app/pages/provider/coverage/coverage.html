@@ -79,7 +79,7 @@
         <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px">
           <label class="field">
             <span>ชื่อจุด <span class="req">*</span></span>
-            <input class="input" [value]="editingName()" (input)="editingName.set($any($event.target).value); markFormDirty()" />
+            <input class="input" [value]="editingName()" (input)="editingName.set($any($event.target).value); touchForm()" />
           </label>
           <label class="field">
             <span>รัศมี (กม.) — {{ editingRadiusKm() }}</span>
@@ -90,12 +90,12 @@
               max="15"
               step="1"
               [value]="editingRadiusKm()"
-              (input)="editingRadiusKm.set(+$any($event.target).value); markFormDirty()"
+              (input)="editingRadiusKm.set(+$any($event.target).value); touchForm()"
             />
           </label>
           <label class="row branch-check" style="justify-content: space-between">
             <span>เปิดใช้งานจุดนี้</span>
-            <input type="checkbox" [checked]="editingActive()" (change)="editingActive.set($any($event.target).checked); markFormDirty()" />
+            <input type="checkbox" [checked]="editingActive()" (change)="editingActive.set($any($event.target).checked); touchForm()" />
           </label>
           <p class="muted">{{ pickerTitle() }}</p>
           <button type="button" class="btn btn-secondary btn-sm" style="width: fit-content" (click)="openPicker()">เลือกบนแผนที่</button>

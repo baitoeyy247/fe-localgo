@@ -1,8 +1,8 @@
 <app-page-shell title="ให้คะแนนและรีวิว" backLink="/requester/appointment">
   <app-requester-flow-bar active="review" [unlockedThrough]="flowUnlockedThrough()" />
 
-  @if (loading()) {
-    <app-skeleton-card [count]="2" />
+  @if (loading() && !providerId()) {
+    <app-skeleton-card variant="form" [count]="1" [topOffset]="true" />
   } @else {
     <div class="card">
       <span class="badge" [class.b-green]="canSubmit()" [class.b-gray]="!canSubmit()">{{
@@ -38,7 +38,7 @@
           rows="3"
           placeholder="บอกประสบการณ์สั้น ๆ"
           [value]="comment()"
-          (input)="comment.set($any($event.target).value)"
+          (input)="updateComment($any($event.target).value)"
         ></textarea>
       </label>
 
@@ -52,14 +52,25 @@
         class="btn btn-primary btn-block"
         type="button"
         [class.is-busy]="submitting()"
-        [disabled]="submitting() || rating() < 1"
-        (click)="submit()"
+        [disabled]="submitting() || rating() < 1 || !hasChanges()"
+        (click)="askSave()"
       >
-        {{ submitting() ? 'กำลังส่ง…' : 'ส่งรีวิว' }}
+        {{ submitting() ? 'กำลังส่ง…' : GLOSSARY.submitReview }}
       </button>
     }
     <a class="btn btn-ghost btn-block" routerLink="/requester">กลับหน้าหลัก</a>
   }
+
+  <app-confirm-save-dialog
+    [saveOpen]="saveConfirmOpen()"
+    [saveMessage]="saveConfirmMessage()"
+    [saveBusy]="submitting()"
+    [discardOpen]="discardConfirmOpen()"
+    (saveConfirm)="confirmSaveDialog()"
+    (saveCancel)="cancelSaveDialog()"
+    (discardConfirm)="cancelDiscardDialog()"
+    (discardCancel)="cancelDiscardDialog()"
+  />
 
   <app-requester-bottom-nav />
 </app-page-shell>

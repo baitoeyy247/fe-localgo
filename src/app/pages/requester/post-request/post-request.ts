@@ -18,13 +18,30 @@ import { ThaiDatetimeField } from '../../../shared/ui/thai-datetime-field';
 import { AuthService } from '../../../core/auth.service';
 import { shouldShowLineNotificationHint } from '../../../shared/line-notification-hint';
 import { OPEN_BUDGET_LABEL } from '../../../shared/budget.constants';
+import { ToastService } from '../../../core/toast.service';
+import { ConfirmSaveDialog } from '../../../shared/forms/confirm-save-dialog';
+import { DirtyFormGuardState } from '../../../shared/forms/dirty-form.guard';
+import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
+import { GLOSSARY } from '../../../shared/glossary';
+import { SkeletonCard } from '../../../shared/ui/skeleton-card';
+import { RequestFlowCacheService } from '../../../core/request-flow-cache.service';
+import { ServiceRequestDetail } from '../../../core/models';
 
 @Component({
   selector: 'app-post-request-page',
-  imports: [PageShell, LocationPickerModal, RequesterBottomNav, RequesterFlowBar, ThaiDatetimeField],
+  imports: [
+    PageShell,
+    LocationPickerModal,
+    RequesterBottomNav,
+    RequesterFlowBar,
+    ThaiDatetimeField,
+    ConfirmSaveDialog,
+    SkeletonCard,
+  ],
   templateUrl: './post-request.html',
 })
 export class PostRequestPage implements OnInit {
+  protected readonly GLOSSARY = GLOSSARY;
   protected readonly pickerOpen = signal(false);
   protected readonly categories = signal<Category[]>([]);
   protected readonly selectedCategoryId = signal<string | null>(null);
@@ -36,6 +53,10 @@ export class PostRequestPage implements OnInit {
   protected readonly posting = signal(false);
   protected readonly fieldErrors = signal<Record<string, string>>({});
   protected readonly error = signal<string | null>(null);
+  protected readonly saveConfirmOpen = signal(false);
+  protected readonly saveConfirmMessage = signal('');
+  protected readonly discardConfirmOpen = signal(false);
+  protected readonly loading = signal(true);
   protected readonly requestLocation = signal({
     title: 'จุดรับงานปัจจุบัน',
     subtitle: 'พิกัดเริ่มต้นของประกาศนี้',
@@ -49,6 +70,11 @@ export class PostRequestPage implements OnInit {
   private readonly router = inject(Router);
   private readonly userLocation = inject(UserLocationService);
   private readonly auth = inject(AuthService);
+  private readonly toast = inject(ToastService);
+  private readonly dirty = inject(DirtyFormGuardState);
+  private readonly formGuard = new UseDirtyGuard(this.dirty);
+  private readonly flowCache = inject(RequestFlowCacheService);
+  private baselineSummary: ReturnType<typeof this.formSnapshot> | null = null;
 
   protected showLineHint(): boolean {
     return shouldShowLineNotificationHint(this.auth);
@@ -72,29 +98,77 @@ export class PostRequestPage implements OnInit {
     if (categories[0]) {
       this.selectedCategoryId.set(categories[0].id);
     }
+    this.captureBaseline();
+    this.loading.set(false);
+  }
+
+  private formSnapshot(): {
+    categoryId: string | null;
+    title: string;
+    description: string;
+    budgetMode: 'open' | 'fixed';
+    budgetAmount: string;
+    preferredAt: string;
+    location: { title: string; lat: number; lng: number; radiusKm: number };
+  } {
+    const loc = this.requestLocation();
+    return {
+      categoryId: this.selectedCategoryId(),
+      title: this.title().trim(),
+      description: this.description().trim(),
+      budgetMode: this.budgetMode(),
+      budgetAmount: this.budgetAmount().trim(),
+      preferredAt: this.preferredAt().trim(),
+      location: { title: loc.title, lat: loc.lat, lng: loc.lng, radiusKm: loc.radiusKm },
+    };
+  }
+
+  private captureBaseline(): void {
+    const state = this.formSnapshot();
+    this.formGuard.captureBaseline(state);
+    this.baselineSummary = JSON.parse(JSON.stringify(state)) as typeof state;
+  }
+
+  protected touchForm(): void {
+    this.formGuard.syncDirty(this.formSnapshot());
+  }
+
+  protected hasChanges(): boolean {
+    return this.formGuard.hasChanges(this.formSnapshot());
   }
 
   protected selectCategory(id: string): void {
     this.selectedCategoryId.set(id);
+    this.touchForm();
   }
 
   protected updateTitle(value: string): void {
     this.title.set(value);
     this.clearFieldError('title');
+    this.touchForm();
   }
 
   protected updateDescription(value: string): void {
     this.description.set(value);
+    this.touchForm();
   }
 
   protected setBudgetMode(mode: 'open' | 'fixed'): void {
     this.budgetMode.set(mode);
     this.clearFieldError('budget');
+    this.touchForm();
   }
 
   protected updateBudgetAmount(value: string): void {
     this.budgetAmount.set(value.replace(/[^\d]/gu, ''));
     this.clearFieldError('budget');
+    this.touchForm();
+  }
+
+  protected onPreferredAtChange(value: string): void {
+    this.preferredAt.set(value);
+    this.clearFieldError('preferredAt');
+    this.touchForm();
   }
 
   protected showCoords(): boolean {
@@ -121,6 +195,46 @@ export class PostRequestPage implements OnInit {
     this.requestLocation.set(loc);
     this.userLocation.remember(loc);
     this.pickerOpen.set(false);
+    this.touchForm();
+  }
+
+  protected askSave(): void {
+    if (!this.hasChanges()) {
+      return;
+    }
+    const prev = this.baselineSummary;
+    const cur = this.formSnapshot();
+    const lines: string[] = [];
+    if (prev && prev.title !== cur.title) {
+      lines.push(`หัวข้อ: ${prev.title || '—'} → ${cur.title || '—'}`);
+    }
+    if (prev && prev.preferredAt !== cur.preferredAt) {
+      lines.push('วันและเวลา: มีการเปลี่ยนแปลง');
+    }
+    if (prev && prev.budgetMode !== cur.budgetMode) {
+      lines.push('งบประมาณ: เปลี่ยนรูปแบบ');
+    }
+    if (prev && prev.budgetAmount !== cur.budgetAmount) {
+      lines.push(`จำนวนเงิน: ${prev.budgetAmount || '—'} → ${cur.budgetAmount || '—'}`);
+    }
+    if (prev && JSON.stringify(prev.location) !== JSON.stringify(cur.location)) {
+      lines.push(`ตำแหน่ง: ${prev.location.title} → ${cur.location.title}`);
+    }
+    this.saveConfirmMessage.set(this.formGuard.buildSaveMessage(lines));
+    this.saveConfirmOpen.set(true);
+  }
+
+  protected confirmSaveDialog(): void {
+    this.saveConfirmOpen.set(false);
+    void this.publish();
+  }
+
+  protected cancelSaveDialog(): void {
+    this.saveConfirmOpen.set(false);
+  }
+
+  protected cancelDiscardDialog(): void {
+    this.discardConfirmOpen.set(false);
   }
 
   protected async publish(): Promise<void> {
@@ -161,7 +275,10 @@ export class PostRequestPage implements OnInit {
           publish: true,
         }),
       );
+      this.formGuard.markSaved(this.formSnapshot());
       this.session.requesterRequestId = created.id;
+      this.flowCache.putPrivateBids(created as ServiceRequestDetail, []);
+      this.toast.show(`ประกาศงาน '${title}' แล้ว`);
       await this.router.navigate(['/requester/bids'], {
         queryParams: { posted: '1', requestId: created.id },
       });
