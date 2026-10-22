@@ -33,6 +33,7 @@ export type RequesterFlowStep = 'post' | 'bids' | 'appointment' | 'review';
           [attr.tabindex]="canOpen('bids') ? 0 : -1"
           (click)="onStepClick($event, 'bids')"
           routerLink="/requester/bids"
+          [queryParams]="stepQuery()"
         >
           <b>2</b>ข้อเสนอ
         </a>
@@ -45,6 +46,7 @@ export type RequesterFlowStep = 'post' | 'bids' | 'appointment' | 'review';
           [attr.tabindex]="canOpen('appointment') ? 0 : -1"
           (click)="onStepClick($event, 'appointment')"
           routerLink="/requester/appointment"
+          [queryParams]="stepQuery()"
         >
           <b>3</b>นัดหมาย
         </a>
@@ -57,6 +59,7 @@ export type RequesterFlowStep = 'post' | 'bids' | 'appointment' | 'review';
           [attr.tabindex]="canOpen('review') ? 0 : -1"
           (click)="onStepClick($event, 'review')"
           routerLink="/requester/review"
+          [queryParams]="stepQuery()"
         >
           <b>4</b>รีวิว
         </a>
@@ -67,6 +70,7 @@ export type RequesterFlowStep = 'post' | 'bids' | 'appointment' | 'review';
           [class.on]="active() === 'review'"
           [class.is-locked]="!canOpen('review')"
           routerLink="/requester/review"
+          [queryParams]="stepQuery()"
         >
           <b>2</b>รีวิว
         </a>
@@ -84,6 +88,13 @@ export class RequesterFlowBar {
   readonly active = input.required<RequesterFlowStep>();
   readonly unlockedThrough = input<RequesterFlowStep | null>(null);
   readonly mode = input<'standard' | 'direct'>('standard');
+  /** T4-26: keep the step links on the same request (e.g. open this request's appointment). */
+  readonly requestId = input<string | null | undefined>(null);
+
+  protected stepQuery(): Record<string, string> | null {
+    const id = this.requestId();
+    return id ? { requestId: id } : null;
+  }
 
   protected stepIndex(step: RequesterFlowStep): number {
     const order: RequesterFlowStep[] = ['post', 'bids', 'appointment', 'review'];

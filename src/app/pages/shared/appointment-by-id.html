@@ -1,11 +1,12 @@
 <app-page-shell [title]="title()" [backLink]="backLink()">
   @if (loading()) {
-    <div class="skeleton-stack skeleton-stack--appointment-detail" role="status" aria-live="polite">
-      <span class="sr-only">กำลังโหลด…</span>
+    <div class="skeleton-stack skeleton-stack--appointment-detail">
+      <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>
       <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
         <div class="row between" style="align-items: flex-start">
           <div>
-            <p style="margin: 0"><span class="ghost">ผู้ให้บริการ: ชื่อผู้ให้บริการตัวอย่าง</span></p>
+            <!-- R39 M-1: same inline structure as the loaded card (muted label + 44px name link) so it wraps identically -->
+            <p style="margin: 0"><span class="muted ghost ghost--inline">ผู้ให้บริการ: </span><span class="provider-name-link"><b class="ghost ghost--inline">ชื่อผู้ให้ 01</b></span></p>
           </div>
           <span class="badge ghost">ผู้ให้บริการยืนยันนัดหมายแล้ว</span>
         </div>

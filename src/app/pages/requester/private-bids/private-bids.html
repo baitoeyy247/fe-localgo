@@ -1,5 +1,5 @@
 <app-page-shell title="ข้อเสนอที่ได้รับ" backLink="/requester">
-  <app-requester-flow-bar active="bids" />
+  <app-requester-flow-bar active="bids" [unlockedThrough]="flowUnlockedThrough()" [requestId]="request()?.id" />
 
   @if (justPosted() && !loading()) {
     <div class="banner ok" role="status">
@@ -35,14 +35,14 @@
       <a class="btn btn-primary" routerLink="/requester/post">ประกาศงาน</a>
     </div>
   } @else if (loading() && !request()) {
-    <div class="skeleton-stack skeleton-stack--bids" role="status" aria-live="polite">
-      <span class="sr-only">กำลังโหลด…</span>
+    <div class="skeleton-stack skeleton-stack--bids">
+      <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>
       <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
         <div class="row between">
           <b class="ghost">ชื่องานบริการตัวอย่างระหว่างโหลดข้อมูลงาน</b>
           <span class="badge ghost">รอผู้ให้บริการยืนยันนัดหมาย</span>
         </div>
-        <p class="muted" style="margin: 4px 0 0; font-size: 13px"><span class="ghost">⏱ หมดอายุอัตโนมัติหากไม่มีความคืบหน้า</span></p>
+        <p class="muted" style="margin: 4px 0 0; font-size: 13px"><span class="ghost ghost--inline">⏱ หมดอายุอัตโนมัติหากไม่มีความคืบหน้า 14 วัน</span></p>
       </div>
       <div class="sec-title" aria-hidden="true"><span class="ghost">ข้อเสนอ 0 รายการ</span></div>
       <article class="card skeleton-card skeleton-card--ghost" aria-hidden="true">

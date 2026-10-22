@@ -9,17 +9,18 @@
     </div>
   }
   @if (loading()) {
-    <div class="skeleton-stack skeleton-stack--provider-my-bids" role="status" aria-live="polite">
-      <span class="sr-only">กำลังโหลด…</span>
+    <div class="skeleton-stack skeleton-stack--provider-my-bids">
+      <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>
       @for (i of [0, 1]; track i) {
         <article class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
           <div class="row between" style="align-items: flex-start">
             <span class="grow">
-              <b class="ghost">ชื่องานที่เสนอราคา</b><br />
-              <span class="muted ghost">{{ GLOSSARY.bidOfferedPriceLabel }} <span class="price" style="font-size: 16px">000 บาท</span></span><br />
-              <span class="muted ghost" style="font-size: 13px">ส่งเมื่อ 00 ต.ค. 00:00</span>
+              <!-- R39 M-1: inline ghost text + realistic lengths so it wraps like the real row at 320px -->
+              <b class="ghost ghost--inline">ชื่องานบริการที่เสนอราคาตัวอย่าง</b><br />
+              <span class="muted ghost ghost--inline">{{ GLOSSARY.bidOfferedPriceLabel }} <span class="price" style="font-size: 16px">1,000 บาท</span></span><br />
+              <span class="muted ghost ghost--inline" style="font-size: 13px">ส่งเมื่อ 00 ต.ค. 2569 00:00 · {{ GLOSSARY.appointment }} 00 ต.ค. 2569 00:00</span>
             </span>
-            <span class="badge ghost">สถานะ</span>
+            <span class="badge ghost">ยืนยันนัดแล้ว</span>
           </div>
           <span class="btn btn-secondary btn-sm btn-block ghost" style="margin-top: 12px">ดูรายละเอียด</span>
         </article>

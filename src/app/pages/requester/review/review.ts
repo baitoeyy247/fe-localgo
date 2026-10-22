@@ -231,6 +231,8 @@ export class ReviewPage implements OnInit {
         this.cache.invalidateMyRequests();
         this.formGuard.markSaved(this.formSnapshot());
         this.submitting.set(false);
+        // R39 A5-15: focus the read-only note instead of letting focus drop to <body>.
+        setTimeout(() => (document.getElementById('reviewed-note') as HTMLElement | null)?.focus(), 0);
         return;
       }
       // A5-14/R-4: say explicitly that the review was NOT sent.

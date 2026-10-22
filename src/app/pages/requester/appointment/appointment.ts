@@ -14,7 +14,7 @@ import { SessionStateService } from '../../../core/session-state.service';
 import { AuthService } from '../../../core/auth.service';
 import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { ToastService } from '../../../core/toast.service';
-import { apiErrorMessage } from '../../../core/api-error.util';
+import { apiErrorMessage, cancelAppointmentErrorMessage } from '../../../core/api-error.util';
 import {
   appointmentStatusLabel,
   displayRequestStatusLabel,
@@ -441,7 +441,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
       if (req) {
         this.request.set(req);
       }
-      this.cancelError.set(apiErrorMessage(e, 'ยกเลิกนัดหมายไม่สำเร็จ'));
+      this.cancelError.set(cancelAppointmentErrorMessage(e));
       scrollToFirstError();
     } finally {
       this.saving.set(false);

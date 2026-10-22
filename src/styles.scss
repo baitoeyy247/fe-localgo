@@ -1880,3 +1880,11 @@ span.ghost,
 b.ghost {
   display: inline-block;
 }
+
+/* R39 M-1: inline ghost text wraps line-by-line like real text (inline-block wraps as one box). */
+span.ghost.ghost--inline,
+b.ghost.ghost--inline {
+  display: inline;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}

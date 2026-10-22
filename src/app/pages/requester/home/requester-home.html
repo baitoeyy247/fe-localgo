@@ -11,8 +11,8 @@
   }
 
   @if (loading()) {
-    <div class="skeleton-stack skeleton-stack--requester-home" role="status" aria-live="polite">
-      <span class="sr-only">กำลังโหลด…</span>
+    <div class="skeleton-stack skeleton-stack--requester-home">
+      <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>
       @for (i of [0, 1]; track i) {
         <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
           <div class="row between">

@@ -61,7 +61,9 @@
     (valueChange)="onPreferredAtChange($event)"
   />
   @if (fieldErrors()['preferredAt']; as msg) {
-    <p class="error-text">{{ msg }}</p>
+    @if (!dtField()?.isShowingError()) {
+      <p class="error-text">{{ msg }}</p>
+    }
   }
 
   <div class="card row">

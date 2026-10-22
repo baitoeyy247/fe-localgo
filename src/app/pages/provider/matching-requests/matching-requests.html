@@ -8,25 +8,34 @@
     @if (hint.timedOut()) {
       <app-skeleton-card [timedOut]="true" (retry)="reload()" />
     } @else {
-      <!-- R38 M-1: same chrome as the loaded page (hint + chip bar + section heading) before the cards. -->
-      <p class="muted chips__hint" style="margin: 0" aria-hidden="true">เลื่อนดูแท็บทั้งหมด</p>
-      <div class="chips chips--scroll" aria-hidden="true">
-        @for (t of tabs; track t.key) {
-          <span class="chip" [class.on]="tab() === t.key">{{ t.label }} (0)</span>
-        }
-      </div>
-      <div class="sec-title" aria-hidden="true">{{ currentTabLabel() }}</div>
-      <div class="skeleton-stack skeleton-stack--provider-requests" role="status" aria-live="polite">
-        <span class="sr-only">กำลังโหลด…</span>
+      <!-- R39 M-1: chip bar/section heading only when the last load had them on top (no open jobs above);
+           otherwise mirror the "งานเปิดรับข้อเสนอ" heading. Unknown (first visit) → no chip bar. -->
+      @if (skeletonChipsFirst()) {
+        <p class="muted chips__hint" style="margin: 0" aria-hidden="true">เลื่อนดูแท็บทั้งหมด</p>
+        <div class="chips chips--scroll" aria-hidden="true">
+          @for (t of tabs; track t.key) {
+            <span class="chip" [class.on]="tab() === t.key">{{ t.label }} (0)</span>
+          }
+        </div>
+        <div class="sec-title" aria-hidden="true">{{ currentTabLabel() }}</div>
+      } @else {
+        <div class="sec-title" aria-hidden="true"><span class="ghost">งานเปิดรับข้อเสนอ (0)</span></div>
+      }
+      <div class="skeleton-stack skeleton-stack--provider-requests">
+        <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>
         @for (i of [0, 1]; track i) {
           <article class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
             <div class="row between" style="align-items: flex-start">
-              <b class="ghost">ชื่องานบริการตัวอย่างระหว่างโหลด</b>
+              <b class="ghost ghost--inline">ชื่องานบริการตัวอย่างระหว่างโหลด</b>
               <span class="badge ghost">รอคุณยืนยันนัดหมาย</span>
             </div>
             <p class="muted" style="margin: 4px 0 0"><span class="ghost">ทำความสะอาด · 0.0 กม.</span></p>
-            <p class="muted" style="margin: 4px 0 12px; font-size: 13px"><span class="ghost">โพสต์ 00 ต.ค. 2569 00:00</span></p>
-            <span class="btn btn-primary btn-sm btn-block ghost">ยืนยันนัดหมาย</span>
+            @if (skeletonChipsFirst()) {
+              <p class="muted" style="margin: 4px 0 12px; font-size: 13px"><span class="ghost">โพสต์ 00 ต.ค. 2569 00:00</span></p>
+              <span class="btn btn-primary btn-sm btn-block ghost">ยืนยันนัดหมาย</span>
+            } @else {
+              <span class="btn btn-primary btn-block ghost" style="margin-top: 8px">ส่งข้อเสนอราคา</span>
+            }
           </article>
         }
       </div>

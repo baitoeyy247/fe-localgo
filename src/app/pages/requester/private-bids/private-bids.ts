@@ -3,7 +3,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { RequesterBottomNav } from '../../../shared/requester-bottom-nav';
-import { RequesterFlowBar } from '../../../shared/requester-flow-bar';
+import { RequesterFlowBar, RequesterFlowStep } from '../../../shared/requester-flow-bar';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { BidItem, ServiceRequestDetail } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
@@ -224,6 +224,11 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
     }
   }
 
+  /** T4-26: unlock "นัดหมาย" once the request has an appointment (review once completed). */
+  protected flowUnlockedThrough(): RequesterFlowStep {
+    return requesterFlowUnlockedThrough(this.request());
+  }
+
   protected isExpired(): boolean {
     return this.request()?.status === 'Expired';
   }
@@ -287,4 +292,23 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
       this.session.currentProviderId = pick.providerId;
     }
   }
+}
+
+const ACTIVE_APPOINTMENT = ['Pending', 'Confirmed', 'InProgress', 'Completed'];
+
+/** T4-26: exported for unit tests. */
+export function requesterFlowUnlockedThrough(
+  detail: Pick<ServiceRequestDetail, 'status' | 'appointmentStatus' | 'appointment'> | null,
+): RequesterFlowStep {
+  if (!detail) {
+    return 'bids';
+  }
+  const apptStatus = detail.appointmentStatus ?? detail.appointment?.status ?? null;
+  if (detail.status === 'Completed' || apptStatus === 'Completed') {
+    return 'review';
+  }
+  if ((apptStatus && ACTIVE_APPOINTMENT.includes(apptStatus)) || detail.status === 'Scheduled' || detail.status === 'InProgress') {
+    return 'appointment';
+  }
+  return 'bids';
 }

@@ -75,6 +75,8 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   protected readonly error = signal<string | null>(null);
   protected readonly setupIssue = signal<SetupIssue | null>(null);
   protected readonly pendingConfirmCount = signal(0);
+  /** R39 M-1: skeleton layout follows the last loaded layout (chips on top only when there were no open jobs). */
+  protected readonly skeletonChipsFirst = signal(readSkeletonChipsFirst());
   protected readonly tab = signal<JobTab>('pending');
   protected readonly statusLabel = displayRequestStatusLabel;
   protected readonly statusBadgeClass = displayRequestStatusBadgeClass;
@@ -234,6 +236,9 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
         items.filter((r) => this.isMine(r) && this.isPendingConfirm(r)).length,
       );
       this.syncInitialTab();
+      const chipsFirst = this.openJobs().length === 0;
+      this.skeletonChipsFirst.set(chipsFirst);
+      writeSkeletonChipsFirst(chipsFirst);
 
       const missingBranches = mine.branches.filter((b) => b.isActive).length === 0;
       const missingServices = mine.services.filter((s) => s.isActive).length === 0;
@@ -385,5 +390,21 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
       return 'เสนอราคา';
     }
     return 'ดูรายละเอียด';
+  }
+}
+
+const SKELETON_LAYOUT_KEY = 'lg.provider.requests.chipsFirst';
+function readSkeletonChipsFirst(): boolean {
+  try {
+    return sessionStorage.getItem(SKELETON_LAYOUT_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function writeSkeletonChipsFirst(value: boolean): void {
+  try {
+    sessionStorage.setItem(SKELETON_LAYOUT_KEY, value ? '1' : '0');
+  } catch {
+    /* ignore */
   }
 }

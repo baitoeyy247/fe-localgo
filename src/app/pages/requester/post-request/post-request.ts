@@ -1,5 +1,5 @@
 import { PRICE_ERROR, priceError } from '../../../shared/field-limits';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -45,6 +45,8 @@ import { ServiceRequestDetail } from '../../../core/models';
   templateUrl: './post-request.html',
 })
 export class PostRequestPage implements OnInit {
+  /** L-16d: one date message only — the field's own (e.g. "วันที่ไม่ถูกต้อง"). */
+  protected readonly dtField = viewChild(ThaiDatetimeField);
   protected readonly GLOSSARY = GLOSSARY;
   protected readonly pickerOpen = signal(false);
   protected readonly categories = signal<Category[]>([]);
@@ -226,6 +228,7 @@ export class PostRequestPage implements OnInit {
     if (!this.hasChanges()) {
       return;
     }
+    this.dtField()?.markTouched();
     const preErrors = this.validateLocal();
     if (Object.keys(preErrors).length > 0) {
       this.fieldErrors.set(preErrors);

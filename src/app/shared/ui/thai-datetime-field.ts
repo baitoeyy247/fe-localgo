@@ -26,6 +26,7 @@ let nextThaiDatetimeFieldId = 0;
           [attr.aria-describedby]="showError() ? errorId + ' ' + hintId : hintId"
           [value]="dateText()"
           (input)="onDateInput($any($event.target).value)"
+          (blur)="markTouched()"
         />
         <input
           class="input form-field__input"
@@ -39,6 +40,7 @@ let nextThaiDatetimeFieldId = 0;
           [attr.aria-describedby]="showError() ? errorId + ' ' + hintId : hintId"
           [value]="timeText()"
           (input)="onTimeInput($any($event.target).value)"
+          (blur)="markTouched()"
         />
       </div>
       <!-- A5-12: error sits directly under the inputs (before the helper) and is announced. -->
@@ -69,11 +71,13 @@ export class ThaiDatetimeField {
   protected readonly hintId = `thai-dt-hint-${nextThaiDatetimeFieldId}`;
 
   private syncingFromParent = false;
+  /** L-16e: last value we emitted; the parent echoing it back must not wipe what the user is typing. */
+  private lastEmitted: string | null = null;
 
   constructor() {
     effect(() => {
       const external = this.value();
-      if (this.syncingFromParent) {
+      if (this.syncingFromParent || (this.lastEmitted !== null && external === this.lastEmitted)) {
         return;
       }
       if (!external) {
@@ -102,6 +106,11 @@ export class ThaiDatetimeField {
     const date = d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
     const time = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', hour12: false });
     return `เลือก: ${date} ${time} น.`;
+  }
+
+  /** L-16d: parent forms hide their own date message while the field shows one. */
+  public isShowingError(): boolean {
+    return this.showError();
   }
 
   protected showError(): boolean {
@@ -170,6 +179,7 @@ export class ThaiDatetimeField {
     this.touched.set(true);
     const iso = this.toIsoLocal();
     this.syncingFromParent = true;
+    this.lastEmitted = iso;
     this.valueChange.emit(iso);
     this.rawChange.emit(`${this.dateText().trim()} ${this.timeText().trim()}`.trim());
     this.syncingFromParent = false;

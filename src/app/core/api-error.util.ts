@@ -101,3 +101,19 @@ export function apiErrorMessage(err: unknown, fallback = 'เกิดข้อ�
   }
   return fallback;
 }
+
+/** R39 T4-28: the server's ProblemDetails text (detail/title/message), or null when absent. */
+export function apiErrorDetail(err: unknown): string | null {
+  if (err instanceof HttpErrorResponse) {
+    return messageFromBody(err.error as ProblemBody | null, err.status, '');
+  }
+  return null;
+}
+
+/** R39 T4-27: cancel-appointment failure; a 409 with no detail gets an appointment-specific reason. */
+export function cancelAppointmentErrorMessage(err: unknown): string {
+  if (err instanceof HttpErrorResponse && err.status === 409 && !apiErrorDetail(err)) {
+    return 'นัดหมายนี้ไม่อยู่ในสถานะที่ยกเลิกได้';
+  }
+  return apiErrorMessage(err, 'ยกเลิกนัดหมายไม่สำเร็จ');
+}

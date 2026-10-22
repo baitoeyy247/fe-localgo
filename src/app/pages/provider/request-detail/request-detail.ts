@@ -12,7 +12,8 @@ import {
   displayRequestStatusLabel,
   isTerminalAppointment,
 } from '../../../shared/status-labels';
-import { apiErrorMessage } from '../../../core/api-error.util';
+import { apiErrorDetail, apiErrorMessage } from '../../../core/api-error.util';
+import { ActionError } from '../../../shared/ui/action-error';
 import { formatScheduledAt } from '../../../shared/datetime.util';
 import { SlowLoadHint, isNotFoundError } from '../../../shared/load-state';
 import { ErrorState } from '../../../shared/ui/error-state';
@@ -45,6 +46,7 @@ import {
 @Component({
   selector: 'app-provider-request-detail-page',
   imports: [
+    ActionError,
     PageShell,
     ProviderBottomNav,
     ErrorState,
@@ -68,6 +70,8 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   protected readonly acting = signal(false);
   protected readonly actingLabel = signal('กำลังบันทึก…');
   protected readonly error = signal<string | null>(null);
+  /** R39 T4-28: set for action failures (rendered with app-action-error). */
+  protected readonly errorHeading = signal<string | null>(null);
   protected readonly notice = signal<string | null>(null);
   protected readonly notFound = signal(false);
   protected readonly withdrawOpen = signal(false);
@@ -183,6 +187,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       this.loading.set(true);
     }
     this.error.set(null);
+    this.errorHeading.set(null);
     this.notFound.set(false);
     this.categoryBlocked.set(null);
     this.hint.begin();
@@ -559,6 +564,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.acting.set(true);
     this.actingLabel.set(GLOSSARY.rejectingAppointment);
     this.error.set(null);
+    this.errorHeading.set(null);
     this.rejectOpen.set(false);
     const previousAppt = appt;
     const previousRequest = this.request();
@@ -698,6 +704,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.acting.set(true);
     this.actingLabel.set(options.busyLabel);
     this.error.set(null);
+    this.errorHeading.set(null);
     this.advanceConfirmOpen.set(false);
 
     const previousAppt = appt;
@@ -738,12 +745,14 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       this.notice.set(null);
       // TX-1: a server/transport failure (5xx/0, e.g. the new Thai 503) → "<action>ไม่สำเร็จ กรุณาลองใหม่".
       const httpStatus = (e as { status?: number } | null)?.status ?? -1;
+      // R39 T4-28/A5-15: heading = "<action>ไม่สำเร็จ" + ProblemDetails.detail, in a focused role=alert box.
+      const detail = apiErrorDetail(e);
       const msg =
         httpStatus === 0 || httpStatus >= 500
-          ? `${options.errorFallback} กรุณาลองใหม่`
+          ? `${detail ?? 'ระบบขัดข้องชั่วคราว'} กรุณาลองใหม่`
           : apiErrorMessage(e, options.errorFallback);
+      this.errorHeading.set(options.errorFallback);
       this.error.set(msg);
-      scrollToFirstError();
     } finally {
       this.acting.set(false);
     }

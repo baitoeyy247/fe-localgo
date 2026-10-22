@@ -4,7 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../demo/page-shell';
 import { LocalGoApiService } from '../../core/localgo-api.service';
 import { AppointmentDetail, ServiceRequestDetail } from '../../core/models';
-import { apiErrorMessage } from '../../core/api-error.util';
+import { apiErrorMessage, cancelAppointmentErrorMessage } from '../../core/api-error.util';
 import { appointmentStatusLabel } from '../../shared/status-labels';
 import { formatScheduledAt } from '../../shared/datetime.util';
 import { formatPrice } from '../../shared/format-price';
@@ -148,7 +148,7 @@ export class AppointmentByIdPage implements OnInit {
       this.appointment.set(updated);
       this.toast.show(cancelAppointmentToast(a.scheduledAt, this.title()));
     } catch (e) {
-      this.actionError.set(apiErrorMessage(e, 'ยกเลิกนัดหมายไม่สำเร็จ'));
+      this.actionError.set(cancelAppointmentErrorMessage(e));
     } finally {
       this.acting.set(false);
     }
