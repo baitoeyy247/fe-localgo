@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, firstValueFrom, of } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
 import { ProviderBottomNav } from '../../../shared/provider-bottom-nav';
@@ -20,6 +20,8 @@ import { NotFoundState } from '../../../shared/ui/not-found-state';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 import { formatPrice } from '../../../shared/format-price';
+import { formatBudgetDisplay } from '../../../shared/format-budget';
+import { providerBidRowStatus } from '../../../shared/status-labels';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { AuthService } from '../../../core/auth.service';
 import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
@@ -38,6 +40,7 @@ import { GLOSSARY } from '../../../shared/glossary';
     NotFoundState,
     SkeletonCard,
     ConfirmSheet,
+    RouterLink,
   ],
   templateUrl: './request-detail.html',
 })
@@ -56,6 +59,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   protected readonly notice = signal<string | null>(null);
   protected readonly notFound = signal(false);
   protected readonly withdrawOpen = signal(false);
+  protected readonly withdrawBusy = signal(false);
   protected readonly advanceConfirmOpen = signal(false);
   protected readonly rejectOpen = signal(false);
   protected readonly distanceMeters = signal<number | null>(null);
@@ -135,9 +139,17 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   private readonly toast = inject(ToastService);
 
   async ngOnInit(): Promise<void> {
-    const navState = this.router.getCurrentNavigation()?.extras.state as { notice?: string } | undefined;
+    const navState = (this.router.getCurrentNavigation()?.extras.state ?? history.state) as {
+      notice?: string;
+      requestDetail?: ServiceRequestDetail;
+    };
     if (typeof navState?.notice === 'string' && navState.notice.trim()) {
-      this.notice.set(navState.notice);
+      this.toast.show(navState.notice.trim());
+      this.notice.set(null);
+    }
+    if (navState?.requestDetail?.id) {
+      this.request.set(navState.requestDetail);
+      this.loading.set(false);
     }
     await this.load();
   }
@@ -266,22 +278,63 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
 
   protected async withdrawMyBid(): Promise<void> {
     const bid = this.myBid();
-    if (!bid || !this.canWithdrawBid() || this.acting()) {
+    if (!bid || !this.canWithdrawBid() || this.withdrawBusy()) {
       return;
     }
-    this.acting.set(true);
-    this.actingLabel.set('กำลังถอนข้อเสนอ…');
+    this.withdrawBusy.set(true);
     try {
       await firstValueFrom(this.api.withdrawBid(bid.id));
-      this.toast.show('ถอนข้อเสนอแล้ว');
+      this.withdrawOpen.set(false);
+      this.withdrawBusy.set(false);
+      this.cache.invalidateMatching();
+      this.toast.show(GLOSSARY.bidWithdrawn);
       await this.load();
     } catch (e) {
+      this.withdrawBusy.set(false);
       this.error.set(apiErrorMessage(e, 'ถอนข้อเสนอไม่สำเร็จ'));
       scrollToFirstError();
-    } finally {
-      this.withdrawOpen.set(false);
-      this.acting.set(false);
     }
+  }
+
+  protected formatBudget(budget?: string | null): string | null {
+    return formatBudgetDisplay(budget);
+  }
+
+  protected categoryBlockedBody(): string {
+    const cat = this.request()?.categoryName?.trim() || 'อื่น';
+    return `งานนี้อยู่ในหมวด ${cat} ซึ่งไม่ตรงกับบริการที่คุณเปิดไว้`;
+  }
+
+  protected primaryBidLabel(): string {
+    const bid = this.myBid();
+    if (bid?.status === 'Withdrawn') {
+      return GLOSSARY.submitBidAgain;
+    }
+    return GLOSSARY.submitBid;
+  }
+
+  protected myBidEngagementLabel(): string | null {
+    const bid = this.myBid();
+    const req = this.request();
+    if (!bid || !req) {
+      return null;
+    }
+    if (req.status === 'Completed' || this.appointment()?.status === 'Completed') {
+      return 'งานเสร็จสิ้น';
+    }
+    if (req.status === 'Open' || req.status === 'HasOffers') {
+      return bid.status === 'Withdrawn' ? 'ถอนข้อเสนอแล้ว' : bidStatusLabel(bid.status);
+    }
+    return providerBidRowStatus({
+      status: bid.status,
+      requestStatus: req.status,
+      appointmentStatus: this.effectiveAppointmentStatus(),
+    }).label;
+  }
+
+  protected showPostJobLinks(): boolean {
+    const req = this.request();
+    return !!req && (req.status === 'Completed' || this.isTerminal());
   }
 
   protected canWithdrawBid(): boolean {

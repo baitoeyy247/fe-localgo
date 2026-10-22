@@ -15,7 +15,7 @@
       <div class="state">
         <div class="em">🚫</div>
         <h3>งานนี้ไม่ตรงกับบริการของคุณ</h3>
-        <p class="muted">{{ categoryBlocked() }}</p>
+        <p class="muted">{{ categoryBlockedBody() }}</p>
         <button type="button" class="btn btn-primary" (click)="goBackToJobs()">กลับไปรายการงาน</button>
       </div>
     } @else {
@@ -47,9 +47,15 @@
           <dt>สถานที่</dt>
           <dd>{{ locationLine(r) }}</dd>
         </div>
+        @if (formatBudget(r.budgetText); as budget) {
+          <div>
+            <dt>{{ GLOSSARY.budgetLabel }}</dt>
+            <dd>{{ budget }}</dd>
+          </div>
+        }
         <div>
-          <dt>งบประมาณ</dt>
-          <dd>{{ formatPrice(r.budgetText) }}</dd>
+          <dt>{{ GLOSSARY.jobStatusLabel }}</dt>
+          <dd>{{ pageStatusLabel() }}</dd>
         </div>
         @if (distanceLine(); as dist) {
           <div>
@@ -64,8 +70,8 @@
     </div>
 
     @if (canOfferNewBid()) {
-      <button class="btn btn-primary btn-block" type="button" [class.is-busy]="acting()" [disabled]="acting()" (click)="submitBid()">
-        เสนอราคา
+      <button class="btn btn-primary btn-block" type="button" [disabled]="acting()" (click)="submitBid()">
+        {{ primaryBidLabel() }}
       </button>
     }
 
@@ -127,7 +133,9 @@
         } @else {
           <p class="muted">คุณถอนข้อเสนอไปแล้ว สามารถส่งข้อเสนอใหม่ได้หากงานยังเปิดรับ</p>
         }
-        <p class="muted" style="font-size: 13px">สถานะข้อเสนอ: {{ bidStatusLabel(bid.status) }}</p>
+        @if (myBidEngagementLabel(); as engagement) {
+          <p class="muted" style="font-size: 13px">สถานะ: {{ engagement }}</p>
+        }
         @if (canEditActiveBid()) {
           <button class="btn btn-secondary btn-block" type="button" style="margin-top: 8px" [disabled]="acting()" (click)="submitBid()">
             แก้ไขข้อเสนอ
@@ -138,10 +146,12 @@
             ถอนข้อเสนอ
           </button>
         }
-        @if (canResubmitBid() && !isTerminal()) {
-          <button class="btn btn-primary btn-block" type="button" style="margin-top: 8px" (click)="submitBid()">เสนอราคาใหม่</button>
-        }
       </article>
+    }
+
+    @if (showPostJobLinks()) {
+      <a class="btn btn-secondary btn-block" routerLink="/provider/requests">{{ GLOSSARY.backToJobs }}</a>
+      <a class="btn btn-ghost btn-block" routerLink="/provider/my-bids">{{ GLOSSARY.backToMyBids }}</a>
     }
     }
   }
@@ -175,9 +185,9 @@
     title="ถอนข้อเสนอราคา?"
     message="ลูกค้าจะไม่เห็นข้อเสนอนี้อีก คุณสามารถส่งข้อเสนอใหม่ได้หากงานยังเปิดรับ"
     confirmLabel="ถอนข้อเสนอ"
-    cancelLabel="ไม่ถอน"
     [danger]="true"
-    [busy]="acting()"
+    [busy]="withdrawBusy()"
+    [cancelLabel]="GLOSSARY.withdrawDialogCancel"
     (confirm)="withdrawMyBid()"
     (cancel)="withdrawOpen.set(false)"
   />

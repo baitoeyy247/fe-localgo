@@ -1263,3 +1263,23 @@ label.field input[type='checkbox'] {
   flex-shrink: 0;
   margin: 11px 0;
 }
+
+.input,
+.form-field__input,
+textarea.input,
+select.input,
+input.input,
+.search-box input {
+  font-size: 16px;
+}
+
+.pill-tabs button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px 14px;
+}
+
+.provider-home-hint {
+  line-height: 1.45;
+  word-break: break-word;
+}

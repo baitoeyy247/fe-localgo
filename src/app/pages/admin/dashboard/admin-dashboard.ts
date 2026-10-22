@@ -232,6 +232,8 @@ export class AdminDashboardPage implements OnInit {
       const deletedUsers = (result as { deletedAutomatedUsers?: number }).deletedAutomatedUsers ?? 0;
       this.usersPage.set(1);
       await this.refreshAfterMutation();
+      const dash = await firstValueFrom(this.api.getAdminDashboard());
+      this.dashboard.set({ ...dash });
       this.notice.set(
         `รีเซ็ตสำเร็จ — ลบงาน ${deletedReq} รายการ · คงบัญชีทดสอบ ${kept} บัญชี · สร้างรีวิวตัวอย่าง ${seeded} รายการ`,
       );
@@ -271,8 +273,8 @@ export class AdminDashboardPage implements OnInit {
   }
 
   protected adminRequestStatusLabel(r: ServiceRequestSummary): string {
-    const appt = this.appointments().find((a) => a.serviceRequestId === r.id);
-    return displayRequestStatusLabel(r.status, appt?.status ?? null);
+    const apptStatus = r.appointmentStatus ?? this.appointments().find((a) => a.serviceRequestId === r.id)?.status;
+    return displayRequestStatusLabel(r.status, apptStatus ?? null);
   }
 
   protected userLine(u: AdminUserRow): string {

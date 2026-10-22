@@ -33,6 +33,7 @@
     </div>
 
     @if (appointment(); as appt) {
+      <a class="btn btn-secondary btn-block" [routerLink]="['/requester/appointments', appt.id]">ดูรายละเอียดนัดหมาย</a>
       <div class="card">
         <p style="margin: 0 0 8px"><b>วันและเวลา:</b> {{ formatScheduledAt(appt.scheduledAt) }}</p>
         <p style="margin: 0 0 8px"><b>สถานที่:</b> {{ addressText() || 'ยังไม่ระบุสถานที่' }}</p>

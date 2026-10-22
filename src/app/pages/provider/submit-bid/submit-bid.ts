@@ -11,6 +11,9 @@ import { SlowLoadHint } from '../../../shared/load-state';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { ErrorState } from '../../../shared/ui/error-state';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
+import { ToastService } from '../../../core/toast.service';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
+import { GLOSSARY } from '../../../shared/glossary';
 
 export const BID_DESCRIPTION_MAX = 2000;
 
@@ -38,6 +41,8 @@ export class SubmitBidPage implements OnInit, OnDestroy {
   private readonly session = inject(SessionStateService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly toast = inject(ToastService);
+  private readonly cache = inject(MarketplaceCacheService);
 
   protected backLink(): string {
     const id = this.request()?.id;
@@ -90,9 +95,10 @@ export class SubmitBidPage implements OnInit, OnDestroy {
       ]);
       if (!bidAccess.allowed) {
         const reason = bidAccess.reason?.trim();
+        const cat = detail.categoryName?.trim() || 'อื่น';
         const blocked =
           bidAccess.reasonCode === 'CATEGORY_MISMATCH' || reason?.includes('ไม่ตรง')
-            ? 'งานนี้ไม่ตรงกับบริการของคุณ'
+            ? `งานนี้อยู่ในหมวด ${cat} ซึ่งไม่ตรงกับบริการที่คุณเปิดไว้`
             : reason || 'ไม่สามารถเสนอราคางานนี้ได้ — กลับไปเลือกงานจากกล่องงานหรือตรวจสอบบริการของคุณ';
         this.categoryBlocked.set(blocked);
         this.loading.set(false);
@@ -141,12 +147,18 @@ export class SubmitBidPage implements OnInit, OnDestroy {
         description: this.description().trim() || undefined,
       };
       const bidId = this.existingBidId();
+      let detail = this.request();
       if (bidId) {
         await firstValueFrom(this.api.updateBid(bidId, payload));
       } else {
         await firstValueFrom(this.api.submitBid(requestId, payload));
       }
-      await this.router.navigate(['/provider/requests', requestId]);
+      this.cache.invalidateMatching();
+      detail = await firstValueFrom(this.api.getRequest(requestId));
+      this.toast.show(GLOSSARY.bidSubmitted);
+      await this.router.navigate(['/provider/requests', requestId], {
+        state: { notice: GLOSSARY.bidSubmitted, requestDetail: detail },
+      });
     } catch (e) {
       const recovered = await this.recoverAfterSubmitError(requestId, providerId, e);
       if (recovered) {

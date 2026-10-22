@@ -206,10 +206,9 @@ export class AppointmentPage implements OnInit, OnDestroy {
           note: this.note().trim() || undefined,
         }),
       );
-      this.appointment.set(created);
       this.cache.invalidateAll();
-      this.toast.show('บันทึกนัดหมายแล้ว — รอผู้ให้บริการยืนยัน');
-      void this.loadRequestState(requestId);
+      this.toast.show(GLOSSARY.appointmentSaved);
+      await this.router.navigate(['/requester/appointments', created.id]);
     } catch (e) {
       this.success.set(null);
       this.error.set(apiErrorMessage(e, 'ยืนยันนัดหมายไม่สำเร็จ'));

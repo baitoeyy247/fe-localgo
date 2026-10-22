@@ -16,12 +16,10 @@
         <b>{{ r.title }}</b>
         <span class="badge" [ngClass]="statusClass()">{{ statusLabel() }}</span>
       </div>
-      <p class="muted" style="margin: 4px 0 0">
-        {{ r.categoryName ?? 'ทั่วไป' }}
-        @if (r.budgetText) {
-          · {{ r.budgetText }}
-        }
-      </p>
+      <p class="muted" style="margin: 4px 0 0">{{ r.categoryName ?? 'ทั่วไป' }}</p>
+      @if (budgetLine(); as budget) {
+        <p class="muted" style="margin: 4px 0 0">งบประมาณ: {{ budget }}</p>
+      }
     </div>
 
     @if (r.description) {

@@ -14,12 +14,14 @@
       <div class="row between" style="align-items: flex-start">
         <div>
           @if (providerName(); as name) {
-            <b style="font-size: 18px">ผู้ให้บริการ: {{ name }}</b>
-          } @else {
-            <b style="font-size: 18px">รายละเอียดนัดหมาย</b>
-          }
-          @if (request(); as r) {
-            <p class="muted" style="margin: 4px 0 0">{{ r.title }}</p>
+            <p style="margin: 0">
+              <span class="muted">{{ GLOSSARY.providerLabel }}:</span>
+              @if (providerProfileLink(); as link) {
+                <a [routerLink]="link"><b>{{ name }}</b></a>
+              } @else {
+                <b>{{ name }}</b>
+              }
+            </p>
           }
         </div>
         <span class="badge b-blue">{{ statusLabel(a.status) }}</span>

@@ -19,6 +19,7 @@ const NOTIFICATION_EVENT: Record<string, string> = {
   JobStarted: 'เริ่มงาน',
   JobCompleted: 'งานเสร็จ',
   ReviewReceived: 'ได้รับรีวิว',
+  AppointmentUpdated: 'อัปเดตนัดหมาย',
 };
 
 const NOTIFICATION_STATUS: Record<string, string> = {
@@ -45,18 +46,26 @@ export function adminAccountRoleLabel(user: {
   if (user.systemRole === 'Admin') {
     return 'ผู้ดูแลระบบ';
   }
-  if (user.activeRole === 'Provider' || user.hasProviderProfile) {
-    return 'ผู้ให้บริการ';
+  const hasProvider = !!user.hasProviderProfile || user.activeRole === 'Provider';
+  const hasRequester = user.activeRole === 'Requester' || user.activeRole == null;
+  if (hasProvider && hasRequester) {
+    return 'ผู้รับบริการและผู้ให้บริการ';
   }
-  if (user.activeRole === 'Requester') {
-    return 'ผู้รับบริการ';
+  if (hasProvider) {
+    return 'ผู้ให้บริการ';
   }
   return 'ผู้รับบริการ';
 }
 
 export function adminNotificationEventLabel(eventType: string): string {
   const key = eventType?.trim() ?? '';
-  return NOTIFICATION_EVENT[key] ?? (key ? key : 'แจ้งเตือน');
+  if (NOTIFICATION_EVENT[key]) {
+    return NOTIFICATION_EVENT[key];
+  }
+  if (/^[A-Z][a-zA-Z]+$/.test(key)) {
+    return 'แจ้งเตือนระบบ';
+  }
+  return key ? key : 'แจ้งเตือน';
 }
 
 export function adminNotificationStatusLabel(status: string): string {

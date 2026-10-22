@@ -18,6 +18,7 @@ import { ErrorState } from '../../../shared/ui/error-state';
 import { NotFoundState } from '../../../shared/ui/not-found-state';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
+import { formatBudgetDisplay } from '../../../shared/format-budget';
 
 @Component({
   selector: 'app-requester-request-detail-page',
@@ -57,6 +58,10 @@ export class RequesterRequestDetailPage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.hint.end();
+  }
+
+  protected budgetLine(): string | null {
+    return formatBudgetDisplay(this.request()?.budgetText);
   }
 
   protected statusLabel(): string {

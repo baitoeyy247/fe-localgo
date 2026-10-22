@@ -7,10 +7,15 @@
   } @else {
     <label class="field" [class.field--error]="!!fieldErrors()['providerType']">
       <span>ประเภทผู้ให้บริการ <span class="req">*</span></span>
-      <select class="input" aria-label="ประเภทผู้ให้บริการ" (change)="selectProviderType($any($event.target).value)">
-        <option value="" [selected]="!providerType()">-- เลือกประเภท --</option>
+      <select
+        class="input"
+        aria-label="ประเภทผู้ให้บริการ"
+        [value]="providerType()"
+        (change)="selectProviderType($any($event.target).value)"
+      >
+        <option value="">-- เลือกประเภท --</option>
         @for (opt of typeOptions; track opt.value) {
-          <option [value]="opt.value" [selected]="providerType() === opt.value">{{ opt.label }}</option>
+          <option [value]="opt.value">{{ opt.label }}</option>
         }
       </select>
       @if (fieldErrors()['providerType']; as msg) {

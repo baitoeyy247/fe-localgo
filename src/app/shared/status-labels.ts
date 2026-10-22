@@ -52,6 +52,9 @@ export function displayRequestStatusLabel(
   status: string,
   appointmentStatus?: string | null,
 ): string {
+  if (status === 'Completed' || status === 'InProgress') {
+    return requestStatusLabel(status);
+  }
   if (appointmentStatus === 'Rejected') {
     return 'ผู้ให้บริการปฏิเสธ';
   }

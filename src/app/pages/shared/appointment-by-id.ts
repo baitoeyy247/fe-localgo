@@ -41,7 +41,12 @@ export class AppointmentByIdPage implements OnInit {
   }
 
   protected title(): string {
-    return 'รายละเอียดนัดหมาย';
+    return this.request()?.title?.trim() || GLOSSARY.appointment;
+  }
+
+  protected providerProfileLink(): string | null {
+    const id = this.appointment()?.providerId;
+    return id ? `/requester/providers/${id}` : null;
   }
 
   protected backLink(): string {

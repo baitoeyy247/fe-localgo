@@ -15,6 +15,8 @@ import { UserLocationService } from '../../../core/user-location.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { ThaiDatetimeField } from '../../../shared/ui/thai-datetime-field';
+import { AuthService } from '../../../core/auth.service';
+import { shouldShowLineNotificationHint } from '../../../shared/line-notification-hint';
 
 @Component({
   selector: 'app-post-request-page',
@@ -45,6 +47,11 @@ export class PostRequestPage implements OnInit {
   private readonly session = inject(SessionStateService);
   private readonly router = inject(Router);
   private readonly userLocation = inject(UserLocationService);
+  private readonly auth = inject(AuthService);
+
+  protected showLineHint(): boolean {
+    return shouldShowLineNotificationHint(this.auth);
+  }
 
   async ngOnInit(): Promise<void> {
     const area = await this.userLocation.resolveSearchArea();

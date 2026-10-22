@@ -101,11 +101,12 @@ export class ThaiDatetimeField {
     if (!this.dateText().trim() || !this.timeText().trim()) {
       return 'กรุณาเลือกวันที่และเวลา';
     }
-    if (!this.toIsoLocal()) {
-      return 'รูปแบบวันที่หรือเวลาไม่ถูกต้อง';
-    }
-    if (this.requireFuture() && !this.isFuture()) {
+    const iso = this.toIsoLocal();
+    if (this.requireFuture() && iso && !this.isFuture()) {
       return 'กรุณาเลือกวันและเวลาในอนาคต';
+    }
+    if (!iso) {
+      return 'รูปแบบวันที่หรือเวลาไม่ถูกต้อง';
     }
     return 'วันและเวลาไม่ถูกต้อง';
   }

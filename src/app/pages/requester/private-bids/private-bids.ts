@@ -18,6 +18,7 @@ import { ErrorState } from '../../../shared/ui/error-state';
 import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 import { formatPrice } from '../../../shared/format-price';
+import { shouldShowLineNotificationHint } from '../../../shared/line-notification-hint';
 
 @Component({
   selector: 'app-private-bids-page',
@@ -51,6 +52,10 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
   private readonly api = inject(LocalGoApiService);
   private readonly session = inject(SessionStateService);
   private readonly auth = inject(AuthService);
+
+  protected showLineHint(): boolean {
+    return shouldShowLineNotificationHint(this.auth);
+  }
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
 
