@@ -20,6 +20,7 @@ jobs:
 
       - name: Generate environment.sit.ts
         env:
+          GITHUB_SHA: ${{ github.sha }}
           NG_APP_API_BASE_URL: ${{ secrets.SIT_API_BASE_URL }}
           NG_APP_LIFF_ID: ${{ secrets.SIT_LIFF_ID }}
           NG_APP_MAP_DEFAULT_LAT: ${{ secrets.SIT_MAP_DEFAULT_LAT }}

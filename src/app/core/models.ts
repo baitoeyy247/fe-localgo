@@ -190,6 +190,7 @@ export interface AdminUserRow {
   systemRole?: string;
   activeRole?: string | null;
   hasProviderProfile?: boolean;
+  canActAsRequester?: boolean;
   status?: string;
   isTestUser?: boolean;
 }

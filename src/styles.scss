@@ -1312,6 +1312,65 @@ label.branch-check input[type='checkbox'],
   width: 100%;
 }
 
+.skeleton-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3, 12px);
+}
+
+.skeleton-card {
+  min-height: 100px;
+}
+
+.skeleton-stack--detail .skeleton-card {
+  min-height: 180px;
+}
+
+.build-footer {
+  text-align: center;
+  font-size: 11px;
+  padding: 8px 16px 16px;
+  opacity: 0.65;
+}
+
+.coverage-card {
+  cursor: pointer;
+}
+
+.coverage-card:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.coverage-map-preview {
+  height: 160px;
+  border-radius: var(--r-md, 12px);
+  overflow: hidden;
+  margin-top: 12px;
+}
+
+.location-option,
+.radio-choice-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-height: 44px;
+  padding: 12px 16px;
+  margin: 0;
+}
+
+.card-list-gap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .card-list-gap {
+    gap: 20px;
+  }
+}
+
 .provider-home-link {
   display: inline-flex;
   align-items: center;

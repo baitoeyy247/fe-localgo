@@ -1,6 +1,7 @@
 import { Location } from '@angular/common';
 import { Component, inject, input } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-page-shell',
@@ -59,6 +60,9 @@ import { Router, RouterLink } from '@angular/router';
       <main class="content page-content">
         <ng-content />
       </main>
+      @if (showBuildInfo()) {
+        <footer class="build-footer muted" aria-label="เวอร์ชัน build">{{ buildLabel() }}</footer>
+      }
     </div>
   `,
 })
@@ -76,8 +80,14 @@ export class PageShell {
   readonly greenHeader = input(false);
   /** Skip bottom-nav padding (entry / sheets). */
   readonly hideNavPad = input(false);
+  readonly showBuildInfo = input(true);
 
   private readonly location = inject(Location);
+
+  protected buildLabel(): string {
+    const sha = (environment as { buildSha?: string }).buildSha ?? 'dev';
+    return `build ${sha.slice(0, 7)}`;
+  }
   private readonly router = inject(Router);
 
   protected goBack(): void {

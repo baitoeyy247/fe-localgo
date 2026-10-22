@@ -9,4 +9,5 @@ export const environment = {
   devLoginDisplayName: 'Demo Requester',
   allowDevLogin: true,
   privacyVersion: '1.0-mvp',
+  buildSha: 'dev',
 };

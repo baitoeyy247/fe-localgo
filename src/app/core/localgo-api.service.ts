@@ -253,6 +253,7 @@ export class LocalGoApiService {
     preferredStartAt?: string;
     preferredEndAt?: string;
     budgetText?: string;
+    budgetType?: 'open' | 'fixed';
     publish: boolean;
   }): Observable<CreatedResource> {
     return this.post<CreatedResource>('/service-requests', body);
@@ -382,8 +383,11 @@ export class LocalGoApiService {
 
   // --- Admin ---
 
-  getAdminDashboard(): Observable<AdminDashboard> {
-    return this.get<AdminDashboard>('/admin/dashboard');
+  getAdminDashboard(cacheBust = false): Observable<AdminDashboard> {
+    const params = cacheBust
+      ? new HttpParams().set('_', String(Date.now()))
+      : undefined;
+    return this.get<AdminDashboard>('/admin/dashboard', { params });
   }
 
   listAdminUsers(page = 1, pageSize = 20): Observable<{ items: AdminUserRow[]; total: number }> {

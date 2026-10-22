@@ -2,7 +2,7 @@
   <app-provider-setup-bar active="coverage" />
 
   @if (loading()) {
-    <p class="muted" style="text-align: center">กำลังโหลด…</p>
+    <app-skeleton-card [count]="2" />
   } @else if (!provider()) {
     <div class="state">
       <div class="em">👤</div>
@@ -18,65 +18,91 @@
     }
 
     <div class="sec-title">
-      จุดให้บริการ ({{ branches().length }})
+      พื้นที่ให้บริการ ({{ branches().length }})
       <button type="button" class="btn btn-primary btn-sm" (click)="startNewBranch()">เพิ่มจุดใหม่</button>
     </div>
 
-    @for (branch of branches(); track branch.id) {
-      <article class="card" [class.card--selected]="editingBranchId() === branch.id" [style.opacity]="branch.isActive ? '1' : '0.7'">
-        <div class="row between">
-          <b>{{ branch.name }}</b>
-          <span class="badge" [class.b-green]="branch.isActive" [class.b-gray]="!branch.isActive">{{
-            branch.isActive ? 'เปิด' : 'ปิด'
-          }}</span>
-        </div>
-        <p class="muted" style="margin: 4px 0 12px">รัศมี {{ branch.serviceRadiusMeters / 1000 }} กม.</p>
-        <div class="row">
-          <button type="button" class="btn btn-ghost btn-sm" (click)="editBranch(branch)">แก้ไข</button>
-          @if (branch.isActive) {
-            <button type="button" class="btn btn-danger-o btn-sm" (click)="askDeactivateBranch(branch)">ปิดจุด</button>
+    <div class="card-list-gap">
+      @for (branch of branches(); track branch.id) {
+        <article
+          class="card coverage-card"
+          [class.card--selected]="selectedBranchId() === branch.id"
+          role="button"
+          tabindex="0"
+          [attr.aria-selected]="selectedBranchId() === branch.id"
+          [style.opacity]="branch.isActive ? '1' : '0.7'"
+          (click)="selectBranch(branch)"
+          (keydown.enter)="selectBranch(branch)"
+          (keydown.space)="$event.preventDefault(); selectBranch(branch)"
+        >
+          <div class="row between">
+            <b>{{ branch.name }}</b>
+            <span class="badge" [class.b-green]="branch.isActive" [class.b-gray]="!branch.isActive">{{
+              branch.isActive ? 'เปิด' : 'ปิด'
+            }}</span>
+          </div>
+          @if (selectedBranchId() === branch.id) {
+            <p class="muted" style="margin: 8px 0 0">รัศมี {{ branch.serviceRadiusMeters / 1000 }} กม. · {{ branch.latitude.toFixed(5) }}, {{ branch.longitude.toFixed(5) }}</p>
+            <div class="coverage-map-preview">
+              <app-map-view
+                [lat]="branch.latitude"
+                [lng]="branch.longitude"
+                [radiusKm]="branch.serviceRadiusMeters / 1000"
+                [selectable]="false"
+                size="compact"
+              />
+            </div>
           } @else {
-            <button type="button" class="btn btn-secondary btn-sm" [disabled]="disabling()" (click)="activateBranch(branch)">
-              เปิดใช้งาน
-            </button>
+            <p class="muted" style="margin: 4px 0 0">รัศมี {{ branch.serviceRadiusMeters / 1000 }} กม.</p>
           }
-          <button type="button" class="btn btn-danger-o btn-sm" (click)="askDeleteBranch(branch)">ลบ</button>
-        </div>
-      </article>
-    } @empty {
-      <p class="muted">ยังไม่มีจุด — กดเพิ่มจุดใหม่</p>
-    }
+          <div class="row" style="margin-top: 12px" (click)="$event.stopPropagation()">
+            <button type="button" class="btn btn-ghost btn-sm" (click)="editBranch(branch)">แก้ไข</button>
+            @if (branch.isActive) {
+              <button type="button" class="btn btn-danger-o btn-sm" (click)="askDeactivateBranch(branch)">ปิดจุด</button>
+            } @else {
+              <button type="button" class="btn btn-secondary btn-sm" [disabled]="disabling()" (click)="activateBranch(branch)">
+                เปิดใช้งาน
+              </button>
+            }
+            <button type="button" class="btn btn-danger-o btn-sm" (click)="askDeleteBranch(branch)">ลบ</button>
+          </div>
+        </article>
+      } @empty {
+        <p class="muted">ยังไม่มีจุด — กดเพิ่มจุดใหม่</p>
+      }
+    </div>
 
     @if (formOpen()) {
       <div class="card">
         <b>{{ isEditingExisting() ? 'แก้ไขจุด: ' + editingName() : 'เพิ่มจุดใหม่' }}</b>
+        <p class="muted" style="margin: 4px 0 0">ค่าเริ่มต้น — แก้ไขได้ (ตำแหน่งจาก GPS หรือแผนที่)</p>
         <div style="margin-top: 12px; display: flex; flex-direction: column; gap: 12px">
           <label class="field">
             <span>ชื่อจุด <span class="req">*</span></span>
-            <input class="input" [value]="editingName()" (input)="editingName.set($any($event.target).value)" />
+            <input class="input" [value]="editingName()" (input)="editingName.set($any($event.target).value); markFormDirty()" />
           </label>
           <label class="field">
             <span>รัศมี (กม.) — {{ editingRadiusKm() }}</span>
             <input
-              class="input"
+              class="input map-radius-slider"
               type="range"
               min="1"
               max="15"
               step="1"
               [value]="editingRadiusKm()"
-              (input)="editingRadiusKm.set(+$any($event.target).value)"
+              (input)="editingRadiusKm.set(+$any($event.target).value); markFormDirty()"
             />
           </label>
-          <label class="row" style="justify-content: space-between">
+          <label class="row branch-check" style="justify-content: space-between">
             <span>เปิดใช้งานจุดนี้</span>
-            <input type="checkbox" [checked]="editingActive()" (change)="editingActive.set($any($event.target).checked)" />
+            <input type="checkbox" [checked]="editingActive()" (change)="editingActive.set($any($event.target).checked); markFormDirty()" />
           </label>
           <p class="muted">{{ pickerTitle() }}</p>
           <button type="button" class="btn btn-secondary btn-sm" style="width: fit-content" (click)="openPicker()">เลือกบนแผนที่</button>
-          <button type="button" class="btn btn-primary btn-block" [class.is-busy]="saving()" [disabled]="saving()" (click)="saveBranch()">
+          <button type="button" class="btn btn-primary btn-block" [class.is-busy]="saving()" [disabled]="saving() || !hasFormChanges()" (click)="askSaveBranch()">
             {{ saving() ? 'กำลังบันทึก…' : isEditingExisting() ? 'บันทึกการแก้ไข' : 'เพิ่มจุดนี้' }}
           </button>
-          <button type="button" class="btn btn-ghost btn-block" (click)="formOpen.set(false)">ปิดฟอร์ม</button>
+          <button type="button" class="btn btn-ghost btn-block" (click)="closeForm()">ปิดฟอร์ม</button>
         </div>
       </div>
     }
@@ -84,30 +110,50 @@
     @if (canContinueToServices()) {
       <a class="btn btn-secondary btn-block" routerLink="/provider/service">ต่อไป เพิ่มบริการ</a>
     } @else {
-      <p class="error-text">ต้องมีจุดให้บริการอย่างน้อย 1 จุดก่อนไปขั้นถัดไป</p>
+      <p class="error-text">ต้องมีพื้นที่ให้บริการอย่างน้อย 1 จุดก่อนไปขั้นถัดไป</p>
       <button type="button" class="btn btn-secondary btn-block" disabled>ต่อไป เพิ่มบริการ</button>
     }
   }
 
   <app-location-picker-modal
     [open]="pickerOpen()"
-    heading="เลือกจุดให้บริการ"
+    heading="เลือกพื้นที่ให้บริการ"
     [locationTitle]="pickerTitle()"
     [searchText]="editingName()"
     [radiusKm]="editingRadiusKm()"
-    [lat]="editingLat()"
-    [lng]="editingLng()"
+    [lat]="editingLat() || null"
+    [lng]="editingLng() || null"
     [radiusOptions]="[1, 3, 5, 8, 10, 15]"
     [savedLocationReady]="editingLat() !== 0 && editingLng() !== 0"
     (cancel)="closePicker()"
     (confirm)="applyLocation($event)"
   />
   <app-confirm-sheet
+    [open]="saveConfirmOpen()"
+    title="บันทึกการเปลี่ยนแปลง?"
+    [message]="saveConfirmMessage()"
+    confirmLabel="บันทึก"
+    cancelLabel="ยกเลิก"
+    [busy]="saving()"
+    (confirm)="saveConfirmOpen.set(false); saveBranch()"
+    (cancel)="saveConfirmOpen.set(false)"
+  />
+  <app-confirm-sheet
+    [open]="discardConfirmOpen()"
+    title="ละทิ้งการเปลี่ยนแปลง?"
+    message="ข้อมูลที่แก้ไขจะไม่ถูกบันทึก"
+    confirmLabel="ละทิ้ง"
+    cancelLabel="ยกเลิก"
+    [danger]="true"
+    (confirm)="confirmDiscardForm()"
+    (cancel)="discardConfirmOpen.set(false)"
+  />
+  <app-confirm-sheet
     [open]="!!disableTarget()"
     title="ปิดใช้งานจุดนี้?"
     [message]="disableTarget() ? 'ปิดจุด &quot;' + disableTarget()!.name + '&quot; ชั่วคราว — กดเปิดใช้งานบนการ์ดได้ทุกเมื่อ' : ''"
     confirmLabel="ปิดจุด"
-    cancelLabel="ไม่ปิด"
+    cancelLabel="ยกเลิก"
     [danger]="true"
     [busy]="disabling()"
     (confirm)="confirmDeactivateBranch()"
@@ -115,10 +161,10 @@
   />
   <app-confirm-sheet
     [open]="!!deleteTarget()"
-    title="ลบจุดให้บริการ?"
+    title="ลบพื้นที่ให้บริการ?"
     [message]="deleteTarget() ? 'ลบจุด &quot;' + deleteTarget()!.name + '&quot; ถาวร — กู้คืนไม่ได้' : ''"
     confirmLabel="ลบจุด"
-    cancelLabel="ไม่ลบ"
+    cancelLabel="ยกเลิก"
     [danger]="true"
     [busy]="deleting()"
     (confirm)="confirmDeleteBranch()"

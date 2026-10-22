@@ -17,6 +17,7 @@ import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { ThaiDatetimeField } from '../../../shared/ui/thai-datetime-field';
 import { AuthService } from '../../../core/auth.service';
 import { shouldShowLineNotificationHint } from '../../../shared/line-notification-hint';
+import { OPEN_BUDGET_LABEL } from '../../../shared/budget.constants';
 
 @Component({
   selector: 'app-post-request-page',
@@ -155,6 +156,7 @@ export class PostRequestPage implements OnInit {
           longitude: loc.lng,
           searchRadiusMeters: loc.radiusKm * 1000,
           preferredStartAt: new Date(preferredIso).toISOString(),
+          budgetType: this.budgetMode() === 'open' ? 'open' : 'fixed',
           budgetText: this.resolveBudgetText(),
           publish: true,
         }),
@@ -193,10 +195,10 @@ export class PostRequestPage implements OnInit {
     return errors;
   }
 
-  /** API contract: open → "เปิดรับราคา"; fixed → integer digits only. */
+  /** API contract: open → budgetType + canonical label; fixed → integer digits only. */
   private resolveBudgetText(): string {
     if (this.budgetMode() === 'open') {
-      return 'เปิดรับข้อเสนอ';
+      return OPEN_BUDGET_LABEL;
     }
     return this.budgetAmount().trim();
   }

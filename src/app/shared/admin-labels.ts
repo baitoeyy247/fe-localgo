@@ -42,12 +42,15 @@ export function adminAccountRoleLabel(user: {
   systemRole?: string;
   activeRole?: string | null;
   hasProviderProfile?: boolean;
+  canActAsRequester?: boolean;
 }): string {
   if (user.systemRole === 'Admin') {
     return 'ผู้ดูแลระบบ';
   }
   const hasProvider = !!user.hasProviderProfile || user.activeRole === 'Provider';
-  const hasRequester = user.activeRole === 'Requester' || user.activeRole == null;
+  const hasRequester =
+    user.canActAsRequester ??
+    (user.activeRole === 'Requester' || user.activeRole == null);
   if (hasProvider && hasRequester) {
     return 'ผู้รับบริการและผู้ให้บริการ';
   }

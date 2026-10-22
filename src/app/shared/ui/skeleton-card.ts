@@ -14,13 +14,18 @@ import { Component, input, output } from '@angular/core';
       @if (slow()) {
         <p class="muted" style="text-align: center" role="status">กำลังเชื่อมต่อเซิร์ฟเวอร์…</p>
       }
-      @for (i of items(); track i) {
-        <div class="card" aria-hidden="true">
-          <div class="skel" style="height: 20px; width: 60%"></div>
-          <div class="skel" style="height: 14px; margin-top: 12px"></div>
-          <div class="skel" style="height: 14px; width: 80%; margin-top: 8px"></div>
-        </div>
-      }
+      <div class="skeleton-stack" [class.skeleton-stack--detail]="variant() === 'detail'">
+        @for (i of items(); track i) {
+          <div class="card skeleton-card" aria-hidden="true">
+            <div class="skel" [style.height.px]="variant() === 'detail' ? 24 : 20" style="width: 60%"></div>
+            <div class="skel" style="height: 14px; margin-top: 12px"></div>
+            <div class="skel" style="height: 14px; width: 80%; margin-top: 8px"></div>
+            @if (variant() === 'detail') {
+              <div class="skel" style="height: 120px; width: 100%; margin-top: 12px; border-radius: 12px"></div>
+            }
+          </div>
+        }
+      </div>
     }
   `,
 })
@@ -30,6 +35,7 @@ export class SkeletonCard {
   /** After ~10s — show retry instead of skeleton. */
   readonly timedOut = input(false);
   readonly count = input(2);
+  readonly variant = input<'list' | 'detail'>('list');
   readonly retry = output<void>();
 
   protected items(): number[] {

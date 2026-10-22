@@ -150,6 +150,8 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     if (navState?.requestDetail?.id) {
       this.request.set(navState.requestDetail);
       this.loading.set(false);
+      void this.load({ background: true });
+      return;
     }
     await this.load();
   }
@@ -158,7 +160,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
     this.hint.end();
   }
 
-  protected async load(): Promise<void> {
+  protected async load(options?: { background?: boolean }): Promise<void> {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
       this.notFound.set(true);
@@ -166,7 +168,9 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       return;
     }
     this.session.providerRequestId = id;
-    this.loading.set(true);
+    if (!options?.background) {
+      this.loading.set(true);
+    }
     this.error.set(null);
     this.notFound.set(false);
     this.categoryBlocked.set(null);

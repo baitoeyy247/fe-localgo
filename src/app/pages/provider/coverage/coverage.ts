@@ -1,5 +1,9 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
+import { MapView } from '../../../demo/map-view';
+import { DirtyFormGuardState, summarizeChanges } from '../../../shared/forms/dirty-form.guard';
+import { ToastService } from '../../../core/toast.service';
+import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { RouterLink } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
@@ -24,6 +28,8 @@ import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
     ProviderSetupBar,
     ProviderBottomNav,
     ConfirmSheet,
+    MapView,
+    SkeletonCard,
   ],
   templateUrl: './coverage.html',
 })
@@ -48,11 +54,18 @@ export class CoveragePage implements OnInit {
   protected readonly editingRadiusKm = signal(5);
   protected readonly editingLat = signal(0);
   protected readonly editingLng = signal(0);
-  protected readonly pickerTitle = signal('จุดให้บริการ');
+  protected readonly pickerTitle = signal('พื้นที่ให้บริการ');
+  protected readonly selectedBranchId = signal<string | null>(null);
+  protected readonly saveConfirmOpen = signal(false);
+  protected readonly saveConfirmMessage = signal('');
+  protected readonly discardConfirmOpen = signal(false);
+  private formSnapshot = '';
 
   constructor(
     private readonly api: LocalGoApiService,
     private readonly userLocation: UserLocationService,
+    private readonly dirty: DirtyFormGuardState,
+    private readonly toastService: ToastService,
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -66,7 +79,18 @@ export class CoveragePage implements OnInit {
     return !!this.editingBranchId();
   }
 
+  protected selectBranch(branch: ProviderBranch): void {
+    this.selectedBranchId.set(branch.id);
+    this.formOpen.set(false);
+  }
+
+  protected selectedBranch(): ProviderBranch | null {
+    const id = this.selectedBranchId();
+    return id ? (this.branches().find((b) => b.id === id) ?? null) : null;
+  }
+
   protected editBranch(branch: ProviderBranch): void {
+    this.selectBranch(branch);
     this.loadBranchDraft(branch, true);
   }
 
@@ -80,6 +104,76 @@ export class CoveragePage implements OnInit {
     this.pickerTitle.set(branch.name);
     this.error.set(null);
     this.formOpen.set(openForm);
+    this.captureFormSnapshot();
+    this.dirty.markDirty();
+    this.dirty.bindBeforeUnload();
+  }
+
+  private captureFormSnapshot(): void {
+    this.formSnapshot = JSON.stringify({
+      name: this.editingName(),
+      radius: this.editingRadiusKm(),
+      active: this.editingActive(),
+      lat: this.editingLat(),
+      lng: this.editingLng(),
+    });
+  }
+
+  protected hasFormChanges(): boolean {
+    const current = JSON.stringify({
+      name: this.editingName(),
+      radius: this.editingRadiusKm(),
+      active: this.editingActive(),
+      lat: this.editingLat(),
+      lng: this.editingLng(),
+    });
+    return current !== this.formSnapshot;
+  }
+
+  protected askSaveBranch(): void {
+    if (!this.hasFormChanges()) {
+      this.error.set('ไม่มีการเปลี่ยนแปลง');
+      return;
+    }
+    const lines: string[] = [];
+    const prev = JSON.parse(this.formSnapshot || '{}') as {
+      name?: string;
+      radius?: number;
+      active?: boolean;
+    };
+    if (prev.name !== this.editingName().trim()) {
+      lines.push(`ชื่อ: ${prev.name ?? '—'} → ${this.editingName().trim()}`);
+    }
+    if (prev.radius !== this.editingRadiusKm()) {
+      lines.push(`รัศมี: ${prev.radius ?? '—'} → ${this.editingRadiusKm()} กม.`);
+    }
+    if (prev.active !== this.editingActive()) {
+      lines.push(`สถานะ: ${prev.active ? 'เปิด' : 'ปิด'} → ${this.editingActive() ? 'เปิด' : 'ปิด'}`);
+    }
+    this.saveConfirmMessage.set(summarizeChanges(lines));
+    this.saveConfirmOpen.set(true);
+  }
+
+  protected markFormDirty(): void {
+    this.dirty.markDirty();
+    this.dirty.bindBeforeUnload();
+  }
+
+  protected closeForm(): void {
+    if (this.hasFormChanges()) {
+      this.discardConfirmOpen.set(true);
+      return;
+    }
+    this.formOpen.set(false);
+    this.dirty.markPristine();
+    this.dirty.unbindBeforeUnload();
+  }
+
+  protected confirmDiscardForm(): void {
+    this.discardConfirmOpen.set(false);
+    this.formOpen.set(false);
+    this.dirty.markPristine();
+    this.dirty.unbindBeforeUnload();
   }
 
   protected async startNewBranch(): Promise<void> {
@@ -93,6 +187,8 @@ export class CoveragePage implements OnInit {
     this.editingLng.set(area.lng);
     this.pickerTitle.set(area.title);
     this.error.set(null);
+    this.captureFormSnapshot();
+    this.markFormDirty();
   }
 
   protected canContinueToServices(): boolean {
@@ -120,11 +216,13 @@ export class CoveragePage implements OnInit {
       const branchId = this.editingBranchId();
       if (branchId) {
         await firstValueFrom(this.api.updateBranch(p.id, branchId, body));
-        this.showToast('บันทึกแล้ว');
+        this.toastService.show(`บันทึกจุด '${name}' แล้ว · รัศมี ${this.editingRadiusKm()} กม.`);
       } else {
         await firstValueFrom(this.api.addBranch(p.id, body));
-        this.showToast('บันทึกแล้ว');
+        this.toastService.show(`เพิ่มจุด '${name}' แล้ว · รัศมี ${this.editingRadiusKm()} กม.`);
       }
+      this.dirty.markPristine();
+      this.dirty.unbindBeforeUnload();
       await this.reload();
       const list = this.branches();
       const saved = branchId ? list.find((b) => b.id === branchId) : list[list.length - 1];
@@ -258,8 +356,10 @@ export class CoveragePage implements OnInit {
       const mine = await firstValueFrom(this.api.getMyProvider());
       this.provider.set(mine);
       this.branches.set(mine.branches);
-      if (mine.branches[0] && !this.editingBranchId()) {
-        this.loadBranchDraft(mine.branches[0], false);
+      const keepId = this.selectedBranchId();
+      const selected = keepId ? mine.branches.find((b) => b.id === keepId) : mine.branches[0];
+      if (selected) {
+        this.selectedBranchId.set(selected.id);
       }
       if (mine.branches.length > 0) {
         this.formOpen.set(false);

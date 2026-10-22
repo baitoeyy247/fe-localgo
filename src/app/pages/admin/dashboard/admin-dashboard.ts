@@ -108,7 +108,7 @@ export class AdminDashboardPage implements OnInit {
 
   private async fetchAllAdminData(): Promise<void> {
     const [dashboard, usersPage, notifications, requests, appointments] = await Promise.all([
-      firstValueFrom(this.api.getAdminDashboard()),
+      firstValueFrom(this.api.getAdminDashboard(true)),
       firstValueFrom(this.api.listAdminUsers(this.usersPage(), this.pageSize)),
       firstValueFrom(this.api.listAdminNotifications()),
       firstValueFrom(this.api.listAdminServiceRequests(this.requestStatusFilter() || undefined)),
@@ -206,7 +206,14 @@ export class AdminDashboardPage implements OnInit {
       this.users.update((rows) =>
         rows.map((row) => (row.id === userId ? { ...row, status: target } : row)),
       );
-      this.notice.set(target === 'Suspended' ? 'ระงับผู้ใช้แล้ว' : 'เปิดใช้งานผู้ใช้แล้ว');
+      const label = u.displayName?.trim() || 'ผู้ใช้';
+      if (target === 'Suspended') {
+        this.toast.show(`ระงับบัญชี ${label} แล้ว`);
+        this.notice.set('ระงับผู้ใช้แล้ว');
+      } else {
+        this.toast.show(`เปิดใช้งานบัญชี ${label} แล้ว`);
+        this.notice.set('เปิดใช้งานผู้ใช้แล้ว');
+      }
       void this.refreshAfterMutation();
     } catch (e) {
       this.actionError.set(apiErrorMessage(e, 'อัปเดตสถานะผู้ใช้ไม่สำเร็จ'));
@@ -241,7 +248,7 @@ export class AdminDashboardPage implements OnInit {
       this.usersPage.set(1);
       this.dashboard.set(null);
       await this.refreshAfterMutation();
-      this.toast.show('รีเซ็ตข้อมูลแล้ว');
+      this.toast.show('รีเซ็ตข้อมูลทดสอบแล้ว');
       this.notice.set(
         `รีเซ็ตสำเร็จ — ลบงาน ${deletedReq} รายการ · คงบัญชีทดสอบ ${kept} บัญชี · สร้างรีวิวตัวอย่าง ${seeded} รายการ`,
       );
