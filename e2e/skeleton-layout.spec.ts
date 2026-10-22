@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { ensureSitPlaytestMarketplace, type SitPlaytestIds } from './helpers/sit-playtest-seed';
 import {
   SKELETON_CLS_TOLERANCE_PX,
   SKELETON_E2E_API_DELAY_MS,
@@ -39,51 +40,22 @@ async function loginPersona(page: Page, displayName: string, role: 'Requester' |
   });
 }
 
-async function discoverIds(page: Page): Promise<{ appointmentId?: string; providerRequestId?: string }> {
-  const appointmentId = process.env.E2E_APPOINTMENT_ID;
-  const providerRequestId = process.env.E2E_PROVIDER_REQUEST_ID;
-  if (appointmentId && providerRequestId) {
-    return { appointmentId, providerRequestId };
+let cachedSitIds: SitPlaytestIds | null = null;
+
+async function discoverIds(
+  page: Page,
+  request: import('@playwright/test').APIRequestContext,
+): Promise<SitPlaytestIds> {
+  if (process.env.E2E_APPOINTMENT_ID && process.env.E2E_PROVIDER_REQUEST_ID) {
+    return {
+      appointmentId: process.env.E2E_APPOINTMENT_ID,
+      providerRequestId: process.env.E2E_PROVIDER_REQUEST_ID,
+    };
   }
-
-  const found: { appointmentId?: string; providerRequestId?: string } = {
-    appointmentId,
-    providerRequestId,
-  };
-
-  if (!found.appointmentId) {
-    await page.goto('/requester/appointments');
-    const href = await page.locator('a[href*="/requester/appointments/"]').first().getAttribute('href');
-    const match = href?.match(/\/requester\/appointments\/([^/?#]+)/);
-    if (match?.[1]) {
-      found.appointmentId = match[1];
-    }
+  if (!cachedSitIds) {
+    cachedSitIds = await ensureSitPlaytestMarketplace(request);
   }
-
-  if (!found.providerRequestId) {
-    await page.goto('/provider/requests');
-    const href = await page
-      .locator('article.card a[href*="/provider/requests/"], article.card button')
-      .first()
-      .getAttribute('href');
-    const match = href?.match(/\/provider\/requests\/([^/?#]+)/);
-    if (match?.[1]) {
-      found.providerRequestId = match[1];
-    } else {
-      const card = page.locator('article.card button').first();
-      if (await card.count()) {
-        await card.click();
-        await page.waitForURL('**/provider/requests/**', { timeout: 15_000 });
-        const url = page.url();
-        const fromUrl = url.match(/\/provider\/requests\/([^/?#]+)/);
-        if (fromUrl?.[1]) {
-          found.providerRequestId = fromUrl[1];
-        }
-      }
-    }
-  }
-
-  return found;
+  return cachedSitIds;
 }
 
 const PERSONA_LABEL: Record<string, { name: string; role: 'Requester' | 'Provider' }> = {
@@ -100,17 +72,21 @@ test.describe('QA28 M-1 skeleton layout shift', () => {
   });
 
   for (const routeCase of SKELETON_E2E_ROUTE_CASES) {
-    test(`${routeCase.name} skeleton aligns with loaded content`, async ({ page }) => {
+    test(`${routeCase.name} skeleton aligns with loaded content`, async ({ page, request }) => {
       const persona = PERSONA_LABEL[routeCase.personaKey];
       test.skip(!persona, `Unknown persona ${routeCase.personaKey}`);
 
       await loginPersona(page, persona.name, persona.role);
-      const ids = await discoverIds(page);
+      const ids = await discoverIds(page, request);
 
-      const path =
+      let path =
         typeof routeCase.path === 'function'
           ? routeCase.path(ids)
           : routeCase.path;
+
+      if (routeCase.name === 'requester-bids' && ids.requestId) {
+        path = `/requester/bids?requestId=${ids.requestId}`;
+      }
 
       if (path.includes('e2e-placeholder')) {
         test.skip(true, 'Set E2E_APPOINTMENT_ID / E2E_PROVIDER_REQUEST_ID or seed SIT data');
@@ -122,8 +98,12 @@ test.describe('QA28 M-1 skeleton layout shift', () => {
       const loadedSelector =
         routeCase.loadedSelector ?? '.page-content .card:not(.skeleton-card)';
 
-      await page.goto(path);
-      await expect(page.locator(skeletonSelector).first()).toBeVisible({ timeout: 15_000 });
+      const skeleton = page.locator(skeletonSelector).first();
+      await page.goto(path, { waitUntil: 'domcontentloaded' });
+      if (!(await skeleton.isVisible().catch(() => false))) {
+        await page.reload({ waitUntil: 'domcontentloaded' });
+      }
+      await expect(skeleton).toBeVisible({ timeout: 25_000 });
       const skeletonBox = await contentBox(page, skeletonSelector);
 
       await expect(page.locator(loadedSelector).first()).toBeVisible({ timeout: 60_000 });

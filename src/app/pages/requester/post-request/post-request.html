@@ -1,19 +1,17 @@
 <app-page-shell title="ประกาศงาน" backLink="/requester">
   <app-requester-flow-bar active="post" />
 
-  @if (!loading()) {
-    <div class="banner info">
+  <div class="banner info">
+    <span
+      ><b>โพสต์แล้วรอรับราคา</b><br />กำหนด{{ GLOSSARY.jobLocationHint }}ให้ชัด แล้วเปิดรับข้อเสนอจากผู้ให้บริการรอบพื้นที่นั้น</span
+    >
+  </div>
+  @if (requestLocation().title === 'ยังไม่ได้เลือกตำแหน่ง') {
+    <div class="banner warn" role="status">
       <span
-        ><b>โพสต์แล้วรอรับราคา</b><br />กำหนด{{ GLOSSARY.jobLocationHint }}ให้ชัด แล้วเปิดรับข้อเสนอจากผู้ให้บริการรอบพื้นที่นั้น</span
+        ><b>ยังไม่มีตำแหน่งงาน</b><br />อนุญาต GPS หรือเลือกบนแผนที่ก่อนโพสต์ — ไม่ใช้กรุงเทพเป็นค่าเริ่มต้นโดยอัตโนมัติ</span
       >
     </div>
-    @if (requestLocation().title === 'ยังไม่ได้เลือกตำแหน่ง') {
-      <div class="banner warn" role="status">
-        <span
-          ><b>ยังไม่มีตำแหน่งงาน</b><br />อนุญาต GPS หรือเลือกบนแผนที่ก่อนโพสต์ — ไม่ใช้กรุงเทพเป็นค่าเริ่มต้นโดยอัตโนมัติ</span
-        >
-      </div>
-    }
   }
 
   @if (loading()) {
