@@ -92,7 +92,7 @@
     <article class="card">
       <span class="badge b-green">ข้อเสนอที่เลือก</span>
       <p style="margin: 8px 0 0"><b>{{ chosen.providerName }}</b> · {{ formatPrice(chosen.priceText) }}</p>
-      <a class="btn btn-primary btn-block" style="margin-top: 8px" routerLink="/requester/appointment">ดูนัดหมาย</a>
+      <a class="btn btn-primary btn-block" style="margin-top: 8px" routerLink="/requester/appointment" [queryParams]="request()?.id ? { requestId: request()?.id } : null">ดูนัดหมาย</a>
       @if (request()?.status === 'Completed') {
         <a class="btn btn-secondary btn-block" style="margin-top: 8px" routerLink="/requester/review">ให้คะแนนและรีวิว</a>
       }

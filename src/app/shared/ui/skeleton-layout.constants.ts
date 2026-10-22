@@ -38,6 +38,11 @@ export type SkeletonPresetLayout = {
   filterChromeHeightPx: number;
   sectionChrome: boolean;
   sectionChromeHeightPx: number;
+  /**
+   * R37 M-1: card height follows content (wrapping title + meta rows) instead of
+   * px targets measured at 320px, so the skeleton matches the real card at every width.
+   */
+  fluid?: boolean;
 };
 
 export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLayout> = {
@@ -60,6 +65,7 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     sectionChromeHeightPx: 0,
   },
   bids: {
+    fluid: true,
     count: 2,
     variant: 'list',
     stackModifier: 'bids',
@@ -120,6 +126,7 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     sectionChromeHeightPx: 0,
   },
   'appointment-detail': {
+    fluid: true,
     count: 2,
     variant: 'detail',
     stackModifier: 'appointment-detail',
@@ -157,6 +164,7 @@ export const SKELETON_PAGE_PRESETS: Record<SkeletonPagePreset, SkeletonPresetLay
     sectionChromeHeightPx: 0,
   },
   'provider-request-detail': {
+    fluid: true,
     count: 2,
     variant: 'detail',
     stackModifier: 'provider-request-detail',

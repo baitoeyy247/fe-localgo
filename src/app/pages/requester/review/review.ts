@@ -150,7 +150,7 @@ export class ReviewPage implements OnInit {
   }
 
   protected askSave(): void {
-    if (!this.hasChanges()) {
+    if (this.submitting() || !this.hasChanges()) {
       return;
     }
     const cur = this.formSnapshot();
@@ -159,6 +159,9 @@ export class ReviewPage implements OnInit {
   }
 
   protected confirmSaveDialog(): void {
+    if (this.submitting()) {
+      return;
+    }
     this.saveConfirmOpen.set(false);
     void this.submit();
   }
@@ -174,7 +177,11 @@ export class ReviewPage implements OnInit {
   protected async submit(): Promise<void> {
     const providerId = this.providerId();
     const requestId = this.requestId() ?? this.session.requesterRequestId;
-    if (!providerId || !requestId || this.submitting()) {
+    // R-2: a second tap while sending is a no-op (no navigate → no discard sheet, single POST).
+    if (this.submitting()) {
+      return;
+    }
+    if (!providerId || !requestId) {
       await this.router.navigateByUrl('/requester');
       return;
     }
@@ -190,7 +197,6 @@ export class ReviewPage implements OnInit {
     }
     const stars = this.rating();
     const name = this.providerName();
-    this.toast.show(`ส่งรีวิว ${stars} ดาวให้ ${name} แล้ว`);
     this.submitting.set(true);
     this.error.set(null);
     try {
@@ -202,6 +208,8 @@ export class ReviewPage implements OnInit {
           comment: this.comment().trim() || undefined,
         }),
       );
+      // R-1: success toast only after the server confirmed (2xx).
+      this.toast.show(`ส่งรีวิว ${stars} ดาวให้ ${name} แล้ว`);
       this.cache.invalidateAll();
       this.formGuard.markSaved(this.formSnapshot());
       this.session.clearRequesterFlow();

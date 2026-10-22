@@ -1,6 +1,8 @@
 import { Component, effect, input, output, signal } from '@angular/core';
 import { toDatetimeLocal } from '../datetime.util';
 
+let nextThaiDatetimeFieldId = 0;
+
 /**
  * Date/time inputs that do not depend on browser locale (DD/MM/YYYY + 24h HH:MM).
  */
@@ -20,6 +22,8 @@ import { toDatetimeLocal } from '../datetime.util';
           aria-label="วันที่ วว/ดด/ปปปป"
           placeholder="วว/ดด/ปปปป (พ.ศ.)"
           maxlength="10"
+          [attr.aria-invalid]="showError() ? 'true' : null"
+          [attr.aria-describedby]="showError() ? errorId + ' ' + hintId : hintId"
           [value]="dateText()"
           (input)="onDateInput($any($event.target).value)"
         />
@@ -31,17 +35,20 @@ import { toDatetimeLocal } from '../datetime.util';
           aria-label="เวลา 24 ชั่วโมง"
           placeholder="HH:MM"
           maxlength="5"
+          [attr.aria-invalid]="showError() ? 'true' : null"
+          [attr.aria-describedby]="showError() ? errorId + ' ' + hintId : hintId"
           [value]="timeText()"
           (input)="onTimeInput($any($event.target).value)"
         />
       </div>
-      @if (displaySummary(); as summary) {
-        <small class="form-field__hint muted">{{ summary }}</small>
-      } @else {
-        <small class="form-field__hint muted">วันที่ วว/ดด/ปปปป ใช้ปี พ.ศ. (เช่น 24/10/2569) หรือ ค.ศ. (2026) · เวลา 24 ชม.</small>
-      }
+      <!-- A5-12: error sits directly under the inputs (before the helper) and is announced. -->
       @if (showError()) {
-        <p class="error-text">{{ errorMessage() }}</p>
+        <p class="error-text" [id]="errorId" role="alert" style="margin: 4px 0 0">{{ errorMessage() }}</p>
+      }
+      @if (displaySummary(); as summary) {
+        <small class="form-field__hint muted" [id]="hintId">{{ summary }}</small>
+      } @else {
+        <small class="form-field__hint muted" [id]="hintId">วันที่ วว/ดด/ปปปป ใช้ปี พ.ศ. (เช่น 24/10/2569) หรือ ค.ศ. (2026) · เวลา 24 ชม.</small>
       }
     </div>
   `,
@@ -58,6 +65,8 @@ export class ThaiDatetimeField {
   protected readonly dateText = signal('');
   protected readonly timeText = signal('');
   protected readonly touched = signal(false);
+  protected readonly errorId = `thai-dt-error-${++nextThaiDatetimeFieldId}`;
+  protected readonly hintId = `thai-dt-hint-${nextThaiDatetimeFieldId}`;
 
   private syncingFromParent = false;
 
@@ -99,12 +108,19 @@ export class ThaiDatetimeField {
     return this.touched() && !this.isValid();
   }
 
+  /** L-16b: a complete DD/MM/YYYY that is not a real calendar date (31/02, 15/13, 29/02 non-leap). */
+  public hasInvalidDate(): boolean {
+    const text = this.dateText().trim();
+    return /^\d{1,2}\/\d{1,2}\/\d{4}$/u.test(text) && !this.parseDateParts(text);
+  }
+
   public errorMessage(): string {
+    // A5-12/L-16b: invalid date wins over "missing time" and "future" messages.
+    if (this.hasInvalidDate()) {
+      return 'วันที่ไม่ถูกต้อง';
+    }
     if (!this.dateText().trim() || !this.timeText().trim()) {
       return 'กรุณาเลือกวันที่และเวลา';
-    }
-    if (/^\d{1,2}\/\d{1,2}\/\d{4}$/u.test(this.dateText().trim()) && !this.parseDateParts(this.dateText())) {
-      return 'วันที่ไม่ถูกต้อง';
     }
     const iso = this.toIsoLocal();
     if (this.requireFuture()) {

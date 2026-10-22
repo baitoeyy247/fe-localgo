@@ -85,7 +85,16 @@ import { SKELETON_PAGE_PRESETS, type SkeletonPagePreset } from './skeleton-layou
               [style.min-height.px]="cardHeightPx(i)"
               aria-hidden="true"
             >
-              @if (effectiveVariant() === 'detail' && i === 0) {
+              @if (isFluid()) {
+                <!-- R37 M-1: mirror the real card — wrapping title (transparent text keeps the real line box) + meta rows. -->
+                <h3 class="skeleton-card__title-text" style="margin: 0; font-size: 16px; line-height: 1.4">
+                  <span class="skel" style="color: transparent; -webkit-box-decoration-break: clone; box-decoration-break: clone; border-radius: 6px">{{ i === 0 ? 'ชื่องานบริการตัวอย่างสำหรับโครงร่างระหว่างโหลดข้อมูล' : 'ข้อมูลผู้ให้บริการและรายละเอียดนัดหมายของงาน' }}</span>
+                </h3>
+                <div class="skel" style="height: 14px; width: 55%; margin-top: 8px"></div>
+                @if (i > 0 || effectiveVariant() !== 'detail') {
+                  <div class="skel" style="height: 14px; width: 80%; margin-top: 8px"></div>
+                }
+              } @else if (effectiveVariant() === 'detail' && i === 0) {
                 <div class="skel" style="height: 18px; width: 62%"></div>
                 <div class="skel" style="height: 14px; width: 42%; margin-top: 8px"></div>
               } @else {
@@ -93,7 +102,7 @@ import { SKELETON_PAGE_PRESETS, type SkeletonPagePreset } from './skeleton-layou
                 <div class="skel" style="height: 14px; margin-top: 12px"></div>
                 <div class="skel" style="height: 14px; width: 80%; margin-top: 8px"></div>
               }
-              @if (effectiveVariant() === 'detail' && i > 0) {
+              @if (effectiveVariant() === 'detail' && i > 0 && !isFluid()) {
                 <div class="skel skeleton-card__detail-block" style="height: 120px; width: 100%; margin-top: 12px; border-radius: 12px"></div>
               }
               @if (mapCardIndex() === i) {
@@ -196,12 +205,20 @@ export class SkeletonCard {
     return [0, 1, 2, 3];
   }
 
+  protected isFluid(): boolean {
+    const p = this.preset();
+    return !!p && !!SKELETON_PAGE_PRESETS[p].fluid;
+  }
+
   protected cardHeightPx(index: number): number | null {
     const p = this.preset();
     if (!p) {
       return null;
     }
     const spec = SKELETON_PAGE_PRESETS[p];
+    if (spec.fluid) {
+      return null;
+    }
     const heights = spec.cardHeightsPx;
     if (heights?.[index] != null) {
       return heights[index];

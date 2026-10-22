@@ -219,6 +219,16 @@ export class AppointmentPage implements OnInit, OnDestroy {
   }
 
   protected askSave(): void {
+    // L-16b: an invalid / incomplete date never opens the confirm sheet; only the field's own error shows.
+    const dtField = this.datetimeField();
+    if (dtField) {
+      dtField.markTouched();
+      if (!dtField.isValid()) {
+        this.error.set(null);
+        scrollToFirstError();
+        return;
+      }
+    }
     // F-N2: trim before validating — blank / whitespace-only address never opens the confirm sheet
     if (!this.addressText().trim()) {
       this.addressError.set('กรุณาระบุสถานที่');
@@ -272,6 +282,10 @@ export class AppointmentPage implements OnInit, OnDestroy {
 
   protected onScheduledAtChange(value: string): void {
     this.scheduledAt.set(value);
+    // L-16c: clear any stale date error once the field is valid again.
+    if (this.datetimeField()?.isValid()) {
+      this.error.set(null);
+    }
     this.touchForm();
   }
 
@@ -303,7 +317,8 @@ export class AppointmentPage implements OnInit, OnDestroy {
     const dt = this.datetimeField();
     dt?.markTouched();
     if (dt && !dt.isValid()) {
-      this.error.set('กรุณาเลือกวันและเวลาในอนาคต');
+      // L-16b: the field shows the precise reason (invalid date / missing / future); no duplicate page error.
+      this.error.set(null);
       scrollToFirstError();
       return;
     }

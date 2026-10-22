@@ -10,7 +10,7 @@ import { SessionStateService } from '../../../core/session-state.service';
 import { AuthService } from '../../../core/auth.service';
 import { apiErrorMessage } from '../../../core/api-error.util';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
-import { requestStatusLabel } from '../../../shared/status-labels';
+import { displayRequestStatusLabel } from '../../../shared/status-labels';
 import { resolveRequesterRequestId } from '../../../shared/requester-request-flow';
 import { redirectProviderFromRequesterRoute } from '../../../shared/requester-deep-link-guard';
 import { SlowLoadHint } from '../../../shared/load-state';
@@ -41,7 +41,11 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
   protected readonly loading = signal(true);
   protected readonly clearing = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly statusLabel = requestStatusLabel;
+  /** T4-23: header label follows the appointment status from the requester's point of view. */
+  protected statusLabel(status: string): string {
+    const r = this.request();
+    return displayRequestStatusLabel(status, r?.appointmentStatus ?? r?.appointment?.status ?? null, 'requester');
+  }
   protected readonly justPosted = signal(false);
   protected readonly loadError = signal<string | null>(null);
   protected readonly selecting = signal(false);
@@ -174,7 +178,8 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
     this.error.set(null);
     try {
       await firstValueFrom(this.api.selectBid(requestId, bidId));
-      await this.router.navigateByUrl('/requester/appointment');
+      // T4-4: open the appointment for this specific request, not whichever one is cached.
+      await this.router.navigate(['/requester/appointment'], { queryParams: { requestId } });
     } catch (e) {
       this.error.set(apiErrorMessage(e, 'เลือกข้อเสนอไม่สำเร็จ'));
       scrollToFirstError();

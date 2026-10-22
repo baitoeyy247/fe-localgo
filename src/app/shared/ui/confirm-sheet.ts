@@ -21,7 +21,7 @@ const FOCUSABLE =
       <div
         #sheet
         class="sheet"
-        role="dialog"
+        [attr.role]="danger() ? 'alertdialog' : 'dialog'"
         aria-modal="true"
         [attr.aria-label]="title()"
         tabindex="-1"
@@ -62,7 +62,13 @@ const FOCUSABLE =
           >
             {{ busy() ? busyLabel() : confirmLabel() }}
           </button>
-          <button type="button" class="btn btn-ghost btn-block" [disabled]="busy()" (click)="cancel.emit()">
+          <button
+            type="button"
+            class="btn btn-ghost btn-block"
+            data-confirm-safe
+            [disabled]="busy()"
+            (click)="cancel.emit()"
+          >
             {{ cancelLabel() }}
           </button>
         </div>
@@ -161,7 +167,9 @@ export class ConfirmSheet implements OnDestroy {
     const prev = document.activeElement;
     this.returnFocusTo = prev instanceof HTMLElement && prev !== document.body ? prev : null;
     this.inertBackground(sheet);
-    const target = this.focusables(sheet)[0] ?? sheet;
+    // A5-10: destructive sheets open on the safe (cancel) button (WAI-ARIA APG alertdialog).
+    const safe = this.danger() ? sheet.querySelector<HTMLElement>('[data-confirm-safe]:not([disabled])') : null;
+    const target = safe ?? this.focusables(sheet)[0] ?? sheet;
     target.focus();
   }
 
