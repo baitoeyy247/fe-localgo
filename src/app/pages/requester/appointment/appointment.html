@@ -5,7 +5,18 @@
     [mode]="isDirectBooking() ? 'direct' : 'standard'"
   />
 
-  @if (loading()) {
+  @if (activeList(); as list) {
+    <div class="sec-title">นัดหมายที่ยังดำเนินอยู่ ({{ list.length }})</div>
+    @for (item of list; track item.appt.id) {
+      <a class="card" style="display: block; color: inherit; text-decoration: none" [routerLink]="['/requester/appointments', item.appt.id]">
+        <div class="row between" style="align-items: flex-start">
+          <b>{{ item.title }}</b>
+          <span class="badge b-blue">{{ listStatusLabel(item.appt.status) }}</span>
+        </div>
+        <p class="muted" style="margin: 4px 0 0">{{ listWhen(item.appt.scheduledAt) }}@if (item.appt.providerName) { · {{ item.appt.providerName }} }</p>
+      </a>
+    }
+  } @else if (loading()) {
     <app-skeleton-card [slow]="hint.slow()" [timedOut]="hint.timedOut()" [count]="2" (retry)="retryLoad()" />
   } @else if (loadError()) {
     <app-error-state [message]="loadError()!" (retry)="retryLoad()" />
@@ -120,8 +131,11 @@
       </div>
     }
 
+    @if (cancelError()) {
+      <app-action-error heading="ยกเลิกนัดหมายไม่สำเร็จ" [message]="cancelError()" />
+    }
     @if (error()) {
-      <p class="error-text">{{ error() }}</p>
+      <p class="error-text" role="alert">{{ error() }}</p>
     }
 
     @if (showCancelAction()) {

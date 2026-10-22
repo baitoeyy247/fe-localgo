@@ -19,9 +19,10 @@ import { SlowLoadHint } from '../../../shared/load-state';
 import { ErrorState } from '../../../shared/ui/error-state';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 
+import { ActionError } from '../../../shared/ui/action-error';
 @Component({
   selector: 'app-requester-home-page',
-  imports: [PageShell, RouterLink, RequesterBottomNav, NgClass, ErrorState, ConfirmSheet],
+  imports: [ActionError, PageShell, RouterLink, RequesterBottomNav, NgClass, ErrorState, ConfirmSheet],
   templateUrl: './requester-home.html',
 })
 export class RequesterHomePage implements OnInit, OnDestroy {
@@ -103,9 +104,10 @@ export class RequesterHomePage implements OnInit, OnDestroy {
       ),
     );
     this.cancelTarget.set(null);
-    this.toast.show('ยกเลิกงานแล้ว');
     try {
       await firstValueFrom(this.api.cancelRequest(target.id));
+      // T4-25/A5-13: success toast (live region) only after the server confirmed.
+      this.toast.show('ยกเลิกงานแล้ว');
       this.cache.invalidateMyRequests();
       const items = await firstValueFrom(this.cache.listMyRequests(true));
       this.requests.set(items);
@@ -113,6 +115,8 @@ export class RequesterHomePage implements OnInit, OnDestroy {
       this.actionError.set(apiErrorMessage(e, 'ยกเลิกงานไม่สำเร็จ'));
       this.cache.invalidateMyRequests();
       await this.load(true);
+      // keep the cancel failure visible even if the silent reload had its own issue
+      this.error.set(null);
     } finally {
       this.busy.set(false);
     }

@@ -59,6 +59,8 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly flowCache = inject(RequestFlowCacheService);
   private readonly marketplaceCache = inject(MarketplaceCacheService);
+  /** R-3: hide the review CTA once reviewed. */
+  protected readonly hasReviewed = signal(false);
 
   protected showLineHint(): boolean {
     return shouldShowLineNotificationHint(this.auth);
@@ -270,6 +272,12 @@ export class PrivateBidsPage implements OnInit, OnDestroy {
     this.request.set(detail);
     this.session.requesterRequestId = detail.id;
     this.bids.set(bidList);
+    if (detail.status === 'Completed') {
+      this.marketplaceCache.listMyRequests().subscribe({
+        next: (mine) => this.hasReviewed.set(!!mine.find((x) => x.id === detail.id)?.hasReviewed),
+        error: () => this.hasReviewed.set(false),
+      });
+    }
     const selectedFromRequest = detail.selectedBidId
       ? bidList.find((b) => b.id === detail.selectedBidId)
       : undefined;

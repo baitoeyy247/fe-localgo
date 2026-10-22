@@ -19,9 +19,10 @@ import {
 } from '../../shared/confirm-copy';
 import { ToastService } from '../../core/toast.service';
 
+import { ActionError } from '../../shared/ui/action-error';
 @Component({
   selector: 'app-appointment-by-id-page',
-  imports: [PageShell, RouterLink, ErrorState, NotFoundState, ConfirmSheet],
+  imports: [ActionError, PageShell, RouterLink, ErrorState, NotFoundState, ConfirmSheet],
   templateUrl: './appointment-by-id.html',
 })
 export class AppointmentByIdPage implements OnInit {
@@ -34,6 +35,8 @@ export class AppointmentByIdPage implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly forbidden = signal(false);
   protected readonly cancelOpen = signal(false);
+  /** T4-25: cancel failure is an inline alert, never the page-load error state. */
+  protected readonly actionError = signal<string | null>(null);
   protected readonly formatScheduledAt = formatScheduledAt;
   protected readonly statusLabel = appointmentStatusLabel;
 
@@ -139,12 +142,13 @@ export class AppointmentByIdPage implements OnInit {
     }
     this.acting.set(true);
     this.cancelOpen.set(false);
+    this.actionError.set(null);
     try {
       const updated = await firstValueFrom(this.api.updateAppointmentStatus(a.id, 'Cancelled'));
       this.appointment.set(updated);
       this.toast.show(cancelAppointmentToast(a.scheduledAt, this.title()));
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'ยกเลิกนัดหมายไม่สำเร็จ'));
+      this.actionError.set(apiErrorMessage(e, 'ยกเลิกนัดหมายไม่สำเร็จ'));
     } finally {
       this.acting.set(false);
     }

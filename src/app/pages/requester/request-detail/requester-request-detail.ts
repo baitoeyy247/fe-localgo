@@ -21,9 +21,11 @@ import { SkeletonCard } from '../../../shared/ui/skeleton-card';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 import { formatBudgetDisplay } from '../../../shared/format-budget';
 
+import { ActionError } from '../../../shared/ui/action-error';
+import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 @Component({
   selector: 'app-requester-request-detail-page',
-  imports: [
+  imports: [ActionError, 
     PageShell,
     RouterLink,
     NgClass,
@@ -46,11 +48,14 @@ export class RequesterRequestDetailPage implements OnInit, OnDestroy {
   protected readonly cancelOpen = signal(false);
   private readonly toast = inject(ToastService);
   protected readonly busy = signal(false);
+  /** R-3: hide the review CTA once a review exists. */
+  protected readonly hasReviewed = signal(false);
   protected readonly hint = new SlowLoadHint();
   protected readonly bidStatusLabel = bidStatusLabel;
 
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(LocalGoApiService);
+  private readonly cache = inject(MarketplaceCacheService);
   private readonly session = inject(SessionStateService);
   private readonly router = inject(Router);
 
@@ -92,6 +97,14 @@ export class RequesterRequestDetailPage implements OnInit, OnDestroy {
       this.request.set(detail);
       this.session.currentRequestId = detail.id;
       this.bids.set(detail.bids ?? (await firstValueFrom(this.api.listBids(id))));
+      if (detail.status === 'Completed') {
+        try {
+          const mine = await firstValueFrom(this.cache.listMyRequests(true));
+          this.hasReviewed.set(!!mine.find((x) => x.id === id)?.hasReviewed);
+        } catch {
+          this.hasReviewed.set(false);
+        }
+      }
       try {
         this.appointment.set(await firstValueFrom(this.api.getAppointment(id)));
       } catch {
@@ -193,7 +206,6 @@ export class RequesterRequestDetailPage implements OnInit, OnDestroy {
       this.cancelOpen.set(false);
       const msg = apiErrorMessage(e, 'ยกเลิกงานไม่สำเร็จ');
       this.actionError.set(msg);
-      this.toast.show(msg);
     } finally {
       this.busy.set(false);
     }

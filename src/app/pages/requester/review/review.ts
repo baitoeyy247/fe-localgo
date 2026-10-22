@@ -37,6 +37,9 @@ export class ReviewPage implements OnInit {
   protected readonly loading = signal(true);
   /** A5-1: GET failure → error state with retry. */
   protected readonly loadError = signal<string | null>(null);
+  /** R-3: review already exists (from list hasReviewed or a 409 on POST) → read-only, no POST. */
+  protected readonly alreadyReviewed = signal(false);
+  protected readonly reviewedRating = signal<number | null>(null);
   protected readonly saveConfirmOpen = signal(false);
   protected readonly saveConfirmMessage = signal('');
   protected readonly discardConfirmOpen = signal(false);
@@ -75,12 +78,16 @@ export class ReviewPage implements OnInit {
     }
 
     try {
-      const [detail, appointment] = await Promise.all([
+      const [detail, appointment, mine] = await Promise.all([
         firstValueFrom(this.api.getRequest(requestId)),
         firstValueFrom(this.api.getAppointment(requestId)),
+        firstValueFrom(this.cache.listMyRequests(true)).catch(() => []),
       ]);
+      const summary = mine.find((r) => r.id === requestId);
+      this.alreadyReviewed.set(!!summary?.hasReviewed);
+      this.reviewedRating.set(summary?.myReviewRating ?? null);
 
-      const ready = detail.status === 'Completed';
+      const ready = detail.status === 'Completed' && !this.alreadyReviewed();
       this.canSubmit.set(ready);
       if (!ready) {
         this.statusHint.set('รอให้งานเสร็จก่อนรีวิว');
@@ -215,8 +222,22 @@ export class ReviewPage implements OnInit {
       this.session.clearRequesterFlow();
       await this.router.navigateByUrl('/requester');
     } catch (e) {
-      this.error.set(apiErrorMessage(e, 'ส่งรีวิวไม่สำเร็จ'));
-      scrollToFirstError();
+      const status = (e as { status?: number } | null)?.status ?? -1;
+      if (status === 409) {
+        // R-3: server says a review already exists → switch to read-only, not an error.
+        this.alreadyReviewed.set(true);
+        this.reviewedRating.set(stars);
+        this.canSubmit.set(false);
+        this.cache.invalidateMyRequests();
+        this.formGuard.markSaved(this.formSnapshot());
+        this.submitting.set(false);
+        return;
+      }
+      // A5-14/R-4: say explicitly that the review was NOT sent.
+      const detail = status === 0 || status >= 500 ? 'ระบบขัดข้องชั่วคราว กรุณาลองใหม่' : apiErrorMessage(e, 'กรุณาลองใหม่');
+      this.error.set(`ส่งรีวิวไม่สำเร็จ ${detail}`);
+      this.submitting.set(false);
+      setTimeout(() => (document.getElementById('review-error') as HTMLElement | null)?.focus(), 0);
     } finally {
       this.submitting.set(false);
     }

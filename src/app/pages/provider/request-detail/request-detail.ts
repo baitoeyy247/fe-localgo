@@ -736,9 +736,13 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
         this.request.set(previousRequest);
       }
       this.notice.set(null);
-      const msg = apiErrorMessage(e, options.errorFallback);
+      // TX-1: a server/transport failure (5xx/0, e.g. the new Thai 503) → "<action>ไม่สำเร็จ กรุณาลองใหม่".
+      const httpStatus = (e as { status?: number } | null)?.status ?? -1;
+      const msg =
+        httpStatus === 0 || httpStatus >= 500
+          ? `${options.errorFallback} กรุณาลองใหม่`
+          : apiErrorMessage(e, options.errorFallback);
       this.error.set(msg);
-      this.toast.show(msg);
       scrollToFirstError();
     } finally {
       this.acting.set(false);

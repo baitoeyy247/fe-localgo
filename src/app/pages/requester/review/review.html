@@ -7,12 +7,14 @@
     <app-error-state [message]="loadError()!" (retry)="retryLoad()" />
   } @else {
     <div class="card">
-      <span class="badge" [class.b-green]="canSubmit()" [class.b-gray]="!canSubmit()">{{
-        canSubmit() ? 'เสร็จสิ้น' : 'รอดำเนินงาน'
+      <span class="badge" [class.b-green]="canSubmit() || alreadyReviewed()" [class.b-gray]="!canSubmit() && !alreadyReviewed()">{{
+        alreadyReviewed() ? 'รีวิวแล้ว' : canSubmit() ? 'เสร็จสิ้น' : 'รอดำเนินงาน'
       }}</span>
       <h3 style="margin: 8px 0 4px">รีวิว {{ providerName() }}</h3>
       <p class="muted" style="margin: 0">รีวิวนี้เป็นรีวิวที่ยืนยันแล้วจากงานในระบบ</p>
-      @if (statusHint()) {
+      @if (alreadyReviewed()) {
+        <p style="margin: 8px 0 0" role="status"><b>คุณรีวิวงานนี้แล้ว</b>@if (reviewedRating()) { · ★{{ reviewedRating() }} }</p>
+      } @else if (statusHint()) {
         <p class="muted" style="margin: 8px 0 0">{{ statusHint() }}</p>
       }
     </div>
@@ -45,7 +47,7 @@
       </label>
 
       @if (error()) {
-        <p class="error-text">{{ error() }}</p>
+        <p class="error-text" id="review-error" role="alert" tabindex="-1">{{ error() }}</p>
       }
       @if (rating() < 1) {
         <p class="muted" style="margin: 0">เลือกดาวอย่างน้อย 1 ดาว</p>

@@ -7,8 +7,8 @@
         <span class="sr-only">กำลังโหลด…</span>
         <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
           <div class="row between" style="align-items: flex-start">
-            <b class="ghost">ชื่องานที่เปิดรับ</b>
-            <span class="badge ghost">สถานะ</span>
+            <b class="ghost">ชื่องานบริการตัวอย่างระหว่างโหลด</b>
+            <span class="badge ghost">รอคุณยืนยันนัดหมาย</span>
           </div>
           <p class="muted" style="margin: 4px 0 0"><span class="ghost">หมวดหมู่</span></p>
         </div>
@@ -40,7 +40,7 @@
       <div class="banner info">{{ notice() }}</div>
     }
     @if (error()) {
-      <p class="error-text">{{ error() }}</p>
+      <p class="error-text" role="alert">{{ error() }}</p>
     }
 
     <div class="card">

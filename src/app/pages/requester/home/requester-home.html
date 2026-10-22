@@ -7,7 +7,7 @@
   <div class="sec-title"><h3 style="margin: 0; font-size: 18px">งานของฉัน</h3></div>
 
   @if (actionError()) {
-    <p class="error-text">{{ actionError() }}</p>
+    <app-action-error heading="ยกเลิกงานไม่สำเร็จ" [message]="actionError()" />
   }
 
   @if (loading()) {

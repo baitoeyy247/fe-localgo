@@ -39,8 +39,8 @@
       <span class="sr-only">กำลังโหลด…</span>
       <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
         <div class="row between">
-          <b class="ghost">ชื่องานของฉัน</b>
-          <span class="badge ghost">เปิดรับข้อเสนอ</span>
+          <b class="ghost">ชื่องานบริการตัวอย่างระหว่างโหลดข้อมูลงาน</b>
+          <span class="badge ghost">รอผู้ให้บริการยืนยันนัดหมาย</span>
         </div>
         <p class="muted" style="margin: 4px 0 0; font-size: 13px"><span class="ghost">⏱ หมดอายุอัตโนมัติหากไม่มีความคืบหน้า</span></p>
       </div>
@@ -93,8 +93,8 @@
       <span class="badge b-green">ข้อเสนอที่เลือก</span>
       <p style="margin: 8px 0 0"><b>{{ chosen.providerName }}</b> · {{ formatPrice(chosen.priceText) }}</p>
       <a class="btn btn-primary btn-block" style="margin-top: 8px" routerLink="/requester/appointment" [queryParams]="request()?.id ? { requestId: request()?.id } : null">ดูนัดหมาย</a>
-      @if (request()?.status === 'Completed') {
-        <a class="btn btn-secondary btn-block" style="margin-top: 8px" routerLink="/requester/review">ให้คะแนนและรีวิว</a>
+      @if (request()?.status === 'Completed' && !hasReviewed()) {
+        <a class="btn btn-secondary btn-block" style="margin-top: 8px" routerLink="/requester/review" [queryParams]="{ requestId: request()?.id }">ให้คะแนนและรีวิว</a>
       }
     </article>
   }

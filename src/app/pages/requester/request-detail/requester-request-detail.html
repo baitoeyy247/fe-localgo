@@ -44,7 +44,7 @@
     }
 
     @if (actionError()) {
-      <p class="error-text">{{ actionError() }}</p>
+      <app-action-error heading="ยกเลิกงานไม่สำเร็จ" [message]="actionError()" />
     }
 
     @if (isRejected()) {
@@ -63,7 +63,7 @@
       @if (nextActionLabel(); as label) {
         <button class="btn btn-primary btn-block" type="button" (click)="goNext()">{{ label }}</button>
       }
-      @if (r.status === 'Completed') {
+      @if (r.status === 'Completed' && !hasReviewed()) {
         <a class="btn btn-primary btn-block" routerLink="/requester/review" [queryParams]="{ requestId: r.id }">ให้คะแนนและรีวิว</a>
       }
       @if (canCancel()) {

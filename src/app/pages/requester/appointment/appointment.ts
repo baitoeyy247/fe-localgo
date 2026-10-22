@@ -45,9 +45,10 @@ import { UseDirtyGuard } from '../../../shared/forms/use-dirty-guard';
 import { CharCounter } from '../../../shared/ui/char-counter';
 import { FIELD_LIMITS, priceError, PRICE_ERROR } from '../../../shared/field-limits';
 
+import { ActionError } from '../../../shared/ui/action-error';
 @Component({
   selector: 'app-appointment-page',
-  imports: [CharCounter, 
+  imports: [ActionError, CharCounter, 
     PageShell,
     RequesterBottomNav,
     RequesterFlowBar,
@@ -85,6 +86,12 @@ export class AppointmentPage implements OnInit, OnDestroy {
   protected readonly formatPrice = formatPrice;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
   protected readonly loadError = signal<string | null>(null);
+  /** T4-25: cancel failure → inline alert (heading + ProblemDetails.detail). */
+  protected readonly cancelError = signal<string | null>(null);
+  /** T4-4: no query → list of all active appointments (sorted by time). */
+  protected readonly activeList = signal<{ appt: AppointmentDetail; title: string }[] | null>(null);
+  protected readonly listStatusLabel = (s: string) => appointmentStatusLabel(s, 'requester');
+  protected readonly listWhen = (iso?: string | null) => formatScheduledAt(iso);
   protected readonly noWork = signal(false);
   protected readonly confirmCancelOpen = signal(false);
   protected readonly confirmClearOpen = signal(false);
@@ -127,6 +134,16 @@ export class AppointmentPage implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
+    const qp = this.route.snapshot.queryParamMap;
+    // T4-4: ?appointmentId=X opens exactly that appointment.
+    const queryAppointmentId = qp.get('appointmentId');
+    if (queryAppointmentId) {
+      await this.router.navigate(['/requester/appointments', queryAppointmentId], { replaceUrl: true });
+      return;
+    }
+    if (!qp.get('requestId') && qp.get('reschedule') !== '1' && (await this.loadActiveList())) {
+      return;
+    }
     const queryRequestId = this.route.snapshot.queryParamMap.get('requestId');
     if (queryRequestId) {
       const redirected = await redirectProviderFromRequesterRoute(
@@ -409,9 +426,11 @@ export class AppointmentPage implements OnInit, OnDestroy {
       this.request.set({ ...req, status: 'Cancelled' });
     }
     const title = req?.title?.trim() || 'งาน';
-    this.toast.show(cancelAppointmentToast(existing.scheduledAt, title));
+    this.cancelError.set(null);
     try {
       await firstValueFrom(this.api.updateAppointmentStatus(existing.id, 'Cancelled'));
+      // A5-13: success live region only after the server confirmed.
+      this.toast.show(cancelAppointmentToast(existing.scheduledAt, title));
       this.cache.invalidateAll();
       const requestId = this.request()?.id ?? this.session.requesterRequestId;
       if (requestId) {
@@ -422,10 +441,42 @@ export class AppointmentPage implements OnInit, OnDestroy {
       if (req) {
         this.request.set(req);
       }
-      this.error.set(apiErrorMessage(e, 'ยกเลิกนัดหมายไม่สำเร็จ'));
+      this.cancelError.set(apiErrorMessage(e, 'ยกเลิกนัดหมายไม่สำเร็จ'));
       scrollToFirstError();
     } finally {
       this.saving.set(false);
+    }
+  }
+
+  /** T4-4: returns true when the list view was shown. */
+  private async loadActiveList(): Promise<boolean> {
+    try {
+      const mine = await firstValueFrom(this.cache.listMyRequests(true));
+      const active = mine.filter((r) => ['Pending', 'Confirmed', 'InProgress'].includes(r.appointmentStatus ?? ''));
+      if (active.length === 0) {
+        return false;
+      }
+      const rows = await Promise.all(
+        active.map(async (r) => {
+          try {
+            const appt = await firstValueFrom(this.api.getAppointment(r.id));
+            return appt ? { appt, title: r.title } : null;
+          } catch {
+            return null;
+          }
+        }),
+      );
+      const list = rows
+        .filter((x): x is { appt: AppointmentDetail; title: string } => !!x)
+        .sort((a, b) => (a.appt.scheduledAt ?? '').localeCompare(b.appt.scheduledAt ?? ''));
+      if (list.length === 0) {
+        return false;
+      }
+      this.activeList.set(list);
+      this.loading.set(false);
+      return true;
+    } catch {
+      return false;
     }
   }
 
