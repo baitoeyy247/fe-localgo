@@ -1,3 +1,4 @@
+import { FitSourceDirective, FitTargetDirective } from '../../../shared/ui/skeleton-fit.directive';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -24,7 +25,7 @@ import { MarketplaceCacheService } from '../../../core/marketplace-cache.service
 
 @Component({
   selector: 'app-private-bids-page',
-  imports: [
+  imports: [FitSourceDirective, FitTargetDirective, 
     PageShell,
     RequesterBottomNav,
     RequesterFlowBar,

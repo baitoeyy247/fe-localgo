@@ -8,4 +8,5 @@ export const environment = {
   devLoginDisplayName: 'ทดสอบ ผู้รับ 01',
   allowDevLogin: true,
   privacyVersion: '1.0-mvp',
+  httpConsoleLog: true,
 };

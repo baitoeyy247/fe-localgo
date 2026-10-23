@@ -860,13 +860,14 @@ app-offline-bar {
     transform: rotate(360deg);
   }
 }
+/* R40 T4-26: unlocked steps are tappable everywhere; only .is-locked blocks pointer input. */
 .flow a.is-step {
-  pointer-events: none;
-  cursor: default;
-}
-.flow--direct a.is-step {
   pointer-events: auto;
   cursor: pointer;
+}
+.flow a.is-step.is-locked {
+  pointer-events: none;
+  cursor: default;
 }
 .chips__hint {
   flex: none;

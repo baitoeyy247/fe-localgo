@@ -24,7 +24,7 @@
       <div class="skeleton-stack skeleton-stack--provider-requests">
         <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>
         @for (i of [0, 1]; track i) {
-          <article class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+          <article class="card skeleton-card skeleton-card--ghost" aria-hidden="true" lgFitTarget>
             <div class="row between" style="align-items: flex-start">
               <b class="ghost ghost--inline">ชื่องานบริการตัวอย่างระหว่างโหลด</b>
               <span class="badge ghost">รอคุณยืนยันนัดหมาย</span>
@@ -54,7 +54,7 @@
     @if (openJobs().length > 0) {
       <div class="sec-title">งานเปิดรับข้อเสนอ ({{ openJobs().length }})</div>
       @for (request of openJobs(); track request.id) {
-        <article class="card">
+        <article class="card" [lgFitSource]="$first">
           <div class="row between" style="align-items: flex-start">
             <b>{{ request.title }}</b>
             <span class="badge" [ngClass]="chipClass(request)">{{ chipLabel(request) }}</span>
@@ -80,7 +80,7 @@
 
     <div class="sec-title">{{ currentTabLabel() }}</div>
     @for (request of filteredMyJobs(); track request.id) {
-      <article class="card">
+      <article class="card" [lgFitSource]="$first && openJobs().length === 0">
         <div class="row between" style="align-items: flex-start">
           <b>{{ request.title }}</b>
           <span class="badge" [ngClass]="chipClass(request)">{{ chipLabel(request) }}</span>

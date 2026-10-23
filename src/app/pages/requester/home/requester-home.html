@@ -14,7 +14,7 @@
     <div class="skeleton-stack skeleton-stack--requester-home">
       <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>
       @for (i of [0, 1]; track i) {
-        <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+        <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true" lgFitTarget>
           <div class="row between">
             <b class="ghost">ชื่องานของฉัน</b>
             <span class="badge ghost">สถานะ</span>
@@ -31,7 +31,7 @@
     <app-error-state [message]="error()!" (retry)="load()" />
   } @else {
     @for (request of requests(); track request.id) {
-      <div class="card">
+      <div class="card" [lgFitSource]="$first">
         <div class="row between">
           <b>{{ request.title }}</b>
           @if (isReviewed(request)) {

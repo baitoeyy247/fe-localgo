@@ -1,3 +1,4 @@
+import { FitSourceDirective, FitTargetDirective } from '../../../shared/ui/skeleton-fit.directive';
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { NgClass } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
@@ -29,7 +30,7 @@ const FILTER_CHIPS: { key: ProviderBidFilterKey; label: string }[] = [
 
 @Component({
   selector: 'app-provider-my-bids-page',
-  imports: [
+  imports: [FitSourceDirective, FitTargetDirective, 
     PageShell,
     RouterLink,
     ProviderBottomNav,

@@ -5,7 +5,7 @@
     } @else {
       <div class="skeleton-stack skeleton-stack--provider-request-detail">
         <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>
-        <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+        <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true" lgFitTarget>
           <div class="row between" style="align-items: flex-start">
             <b class="ghost">ชื่องานบริการตัวอย่างระหว่างโหลด</b>
             <span class="badge ghost">รอคุณยืนยันนัดหมาย</span>
@@ -45,7 +45,7 @@
       <p class="error-text" role="alert">{{ error() }}</p>
     }
 
-    <div class="card">
+    <div class="card" lgFitSource>
       <div class="row between" style="align-items: flex-start">
         <b>{{ r.title }}</b>
         <span class="badge b-blue">{{ pageStatusLabel() }}</span>

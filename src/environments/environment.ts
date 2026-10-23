@@ -10,4 +10,5 @@ export const environment = {
   allowDevLogin: true,
   privacyVersion: '1.0-mvp',
   buildSha: 'dev',
+  httpConsoleLog: false,
 };

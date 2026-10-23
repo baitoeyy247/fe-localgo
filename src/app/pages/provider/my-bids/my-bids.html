@@ -12,7 +12,7 @@
     <div class="skeleton-stack skeleton-stack--provider-my-bids">
       <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>
       @for (i of [0, 1]; track i) {
-        <article class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+        <article class="card skeleton-card skeleton-card--ghost" aria-hidden="true" lgFitTarget>
           <div class="row between" style="align-items: flex-start">
             <span class="grow">
               <!-- R39 M-1: inline ghost text + realistic lengths so it wraps like the real row at 320px -->
@@ -45,7 +45,7 @@
     }
 
     @for (item of filtered(); track item.id) {
-      <article class="card">
+      <article class="card" [lgFitSource]="$first">
         <button type="button" class="row between" style="width: 100%; background: none; border: 0; padding: 0; font: inherit; text-align: left; cursor: pointer; align-items: flex-start" (click)="openItem(item)">
           <span class="grow">
             <b>{{ item.requestTitle }}</b><br />

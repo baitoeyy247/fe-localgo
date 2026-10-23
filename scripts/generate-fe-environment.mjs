@@ -43,6 +43,7 @@ export const environment = {
   allowDevLogin: ${allowDevLogin},
   privacyVersion: '1.0-mvp',
   buildSha: '${buildSha}',
+  httpConsoleLog: true,
 };
 `;
 

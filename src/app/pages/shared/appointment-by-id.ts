@@ -1,3 +1,4 @@
+import { FitSourceDirective, FitTargetDirective } from '../../shared/ui/skeleton-fit.directive';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -22,7 +23,7 @@ import { ToastService } from '../../core/toast.service';
 import { ActionError } from '../../shared/ui/action-error';
 @Component({
   selector: 'app-appointment-by-id-page',
-  imports: [ActionError, PageShell, RouterLink, ErrorState, NotFoundState, ConfirmSheet],
+  imports: [FitSourceDirective, FitTargetDirective, ActionError, PageShell, RouterLink, ErrorState, NotFoundState, ConfirmSheet],
   templateUrl: './appointment-by-id.html',
 })
 export class AppointmentByIdPage implements OnInit {

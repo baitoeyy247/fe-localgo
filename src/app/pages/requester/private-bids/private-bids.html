@@ -14,7 +14,7 @@
   }
 
   @if (request(); as r) {
-    <div class="card">
+    <div class="card" lgFitSource>
       <div class="row between">
         <b>{{ r.title }}</b>
         <span class="badge" [class.b-yellow]="isExpired()" [class.b-blue]="!isExpired()">{{ statusLabel(r.status) }}</span>
@@ -37,7 +37,7 @@
   } @else if (loading() && !request()) {
     <div class="skeleton-stack skeleton-stack--bids">
       <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>
-      <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+      <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true" lgFitTarget>
         <div class="row between">
           <b class="ghost">ชื่องานบริการตัวอย่างระหว่างโหลดข้อมูลงาน</b>
           <span class="badge ghost">รอผู้ให้บริการยืนยันนัดหมาย</span>

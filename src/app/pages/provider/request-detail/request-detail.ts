@@ -1,3 +1,4 @@
+import { FitSourceDirective, FitTargetDirective } from '../../../shared/ui/skeleton-fit.directive';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, firstValueFrom, of } from 'rxjs';
@@ -12,7 +13,7 @@ import {
   displayRequestStatusLabel,
   isTerminalAppointment,
 } from '../../../shared/status-labels';
-import { apiErrorDetail, apiErrorMessage } from '../../../core/api-error.util';
+import { appointmentActionErrorMessage, apiErrorMessage } from '../../../core/api-error.util';
 import { ActionError } from '../../../shared/ui/action-error';
 import { formatScheduledAt } from '../../../shared/datetime.util';
 import { SlowLoadHint, isNotFoundError } from '../../../shared/load-state';
@@ -25,6 +26,13 @@ import { formatBudgetDisplay } from '../../../shared/format-budget';
 import { providerBidRowStatus } from '../../../shared/status-labels';
 import { scrollToFirstError } from '../../../shared/scroll-to-first-error';
 import { JOB_COMPLETED_REVIEW_NOTICE } from './request-detail.copy';
+
+/** R40 T4-27: 409 with no ProblemDetails.detail -> reason per action (never the "Conflict" title). */
+const CONFLICT_COPY: Record<string, string> = {
+  Confirmed: 'นัดหมายนี้ไม่อยู่ในสถานะที่ยืนยันได้',
+  InProgress: 'นัดหมายนี้ไม่อยู่ในสถานะที่เริ่มงานได้',
+  Completed: 'นัดหมายนี้ไม่อยู่ในสถานะที่ปิดงานได้',
+};
 import { AuthService } from '../../../core/auth.service';
 import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { RequestFlowCacheService } from '../../../core/request-flow-cache.service';
@@ -45,7 +53,7 @@ import {
 
 @Component({
   selector: 'app-provider-request-detail-page',
-  imports: [
+  imports: [FitSourceDirective, FitTargetDirective, 
     ActionError,
     PageShell,
     ProviderBottomNav,
@@ -744,13 +752,8 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       }
       this.notice.set(null);
       // TX-1: a server/transport failure (5xx/0, e.g. the new Thai 503) → "<action>ไม่สำเร็จ กรุณาลองใหม่".
-      const httpStatus = (e as { status?: number } | null)?.status ?? -1;
-      // R39 T4-28/A5-15: heading = "<action>ไม่สำเร็จ" + ProblemDetails.detail, in a focused role=alert box.
-      const detail = apiErrorDetail(e);
-      const msg =
-        httpStatus === 0 || httpStatus >= 500
-          ? `${detail ?? 'ระบบขัดข้องชั่วคราว'} กรุณาลองใหม่`
-          : apiErrorMessage(e, options.errorFallback);
+      // R40 T4-27/T4-28b: detail only (never title); 409 w/o detail → Thai reason; retry hint once.
+      const msg = appointmentActionErrorMessage(e, CONFLICT_COPY[status] ?? 'นัดหมายนี้ไม่อยู่ในสถานะที่ทำรายการได้', options.errorFallback);
       this.errorHeading.set(options.errorFallback);
       this.error.set(msg);
     } finally {

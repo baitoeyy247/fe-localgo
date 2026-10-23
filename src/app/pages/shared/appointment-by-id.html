@@ -2,7 +2,7 @@
   @if (loading()) {
     <div class="skeleton-stack skeleton-stack--appointment-detail">
       <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>
-      <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true">
+      <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true" lgFitTarget>
         <div class="row between" style="align-items: flex-start">
           <div>
             <!-- R39 M-1: same inline structure as the loaded card (muted label + 44px name link) so it wraps identically -->
@@ -29,7 +29,7 @@
     @if (actionError()) {
       <app-action-error heading="ยกเลิกนัดหมายไม่สำเร็จ" [message]="actionError()" />
     }
-    <div class="card">
+    <div class="card" lgFitSource>
       <div class="row between" style="align-items: flex-start">
         <div>
           @if (providerName(); as name) {

@@ -1,3 +1,4 @@
+import { FitSourceDirective, FitTargetDirective } from '../../../shared/ui/skeleton-fit.directive';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { NgClass } from '@angular/common';
@@ -22,7 +23,7 @@ import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
 import { ActionError } from '../../../shared/ui/action-error';
 @Component({
   selector: 'app-requester-home-page',
-  imports: [ActionError, PageShell, RouterLink, RequesterBottomNav, NgClass, ErrorState, ConfirmSheet],
+  imports: [FitSourceDirective, FitTargetDirective, ActionError, PageShell, RouterLink, RequesterBottomNav, NgClass, ErrorState, ConfirmSheet],
   templateUrl: './requester-home.html',
 })
 export class RequesterHomePage implements OnInit, OnDestroy {
@@ -44,7 +45,8 @@ export class RequesterHomePage implements OnInit, OnDestroy {
   private readonly router = inject(Router);
 
   async ngOnInit(): Promise<void> {
-    await this.load();
+    // R40 T4-26b: always fetch fresh statuses so a provider rejection never shows as "รอผู้ให้บริการยืนยัน".
+    await this.load(true);
   }
 
   ngOnDestroy(): void {
@@ -170,7 +172,7 @@ export class RequesterHomePage implements OnInit, OnDestroy {
       return 'ยกเลิกแล้ว';
     }
     if (request.appointmentStatus === 'Rejected') {
-      return 'ผู้ให้บริการปฏิเสธ';
+      return 'นัดใหม่หรือเลือกข้อเสนออื่น';
     }
     if (request.status === 'Completed') {
       return request.hasReviewed ? 'ดูรายละเอียด' : 'ให้คะแนนและรีวิว';

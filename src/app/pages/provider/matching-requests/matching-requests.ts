@@ -1,3 +1,4 @@
+import { FitSourceDirective, FitTargetDirective } from '../../../shared/ui/skeleton-fit.directive';
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { NgClass } from '@angular/common';
@@ -28,7 +29,7 @@ type JobTab = 'pending' | 'bidWaiting' | 'scheduled' | 'active' | 'completed' | 
 
 @Component({
   selector: 'app-matching-requests-page',
-  imports: [PageShell, RouterLink, ProviderBottomNav, NgClass, ErrorState, SkeletonCard],
+  imports: [FitSourceDirective, FitTargetDirective, PageShell, RouterLink, ProviderBottomNav, NgClass, ErrorState, SkeletonCard],
   templateUrl: './matching-requests.html',
   styles: [
     `

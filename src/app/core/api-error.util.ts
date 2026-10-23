@@ -102,18 +102,48 @@ export function apiErrorMessage(err: unknown, fallback = 'เกิดข้อ�
   return fallback;
 }
 
-/** R39 T4-28: the server's ProblemDetails text (detail/title/message), or null when absent. */
+/** R40 T4-27: the server's ProblemDetails.detail (or field validation) only — never the generic title. */
 export function apiErrorDetail(err: unknown): string | null {
   if (err instanceof HttpErrorResponse) {
-    return messageFromBody(err.error as ProblemBody | null, err.status, '');
+    const body = err.error as ProblemBody | null;
+    if (!body || typeof body !== 'object') {
+      return null;
+    }
+    const validation = body.errors ? firstValidationMessage(body.errors) : null;
+    if (validation) {
+      return validation;
+    }
+    const raw = body.detail ?? body.message;
+    if (typeof raw === 'string' && raw.trim()) {
+      const out = normalizeDetail(raw, err.status, '');
+      return out || null;
+    }
   }
   return null;
 }
 
+/** R40 T4-28b: append " กรุณาลองใหม่" only when the text doesn't already ask to retry. */
+export function withRetryHint(text: string): string {
+  return text.includes('ลองใหม่') ? text : `${text} กรุณาลองใหม่`;
+}
+
+/** R40 T4-27/T4-28b: action failure text — detail only; 409 without detail → appointment-specific reason. */
+export function appointmentActionErrorMessage(err: unknown, conflictFallback: string, fallback: string): string {
+  const status = err instanceof HttpErrorResponse ? err.status : ((err as { status?: number } | null)?.status ?? -1);
+  const detail = apiErrorDetail(err);
+  if (status === 0 || status >= 500) {
+    return withRetryHint(detail ?? 'ระบบขัดข้องชั่วคราว');
+  }
+  if (detail) {
+    return detail;
+  }
+  if (status === 409) {
+    return conflictFallback;
+  }
+  return err instanceof HttpErrorResponse ? (STATUS_MESSAGES[status] ?? fallback) : fallback;
+}
+
 /** R39 T4-27: cancel-appointment failure; a 409 with no detail gets an appointment-specific reason. */
 export function cancelAppointmentErrorMessage(err: unknown): string {
-  if (err instanceof HttpErrorResponse && err.status === 409 && !apiErrorDetail(err)) {
-    return 'นัดหมายนี้ไม่อยู่ในสถานะที่ยกเลิกได้';
-  }
-  return apiErrorMessage(err, 'ยกเลิกนัดหมายไม่สำเร็จ');
+  return appointmentActionErrorMessage(err, 'นัดหมายนี้ไม่อยู่ในสถานะที่ยกเลิกได้', 'ยกเลิกนัดหมายไม่สำเร็จ');
 }

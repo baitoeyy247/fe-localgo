@@ -72,7 +72,7 @@ export function displayRequestStatusLabel(
     return PROVIDER_APPOINTMENT_STATUS[appointmentStatus];
   }
   if (appointmentStatus === 'Rejected') {
-    return 'ผู้ให้บริการปฏิเสธ';
+    return 'ผู้ให้บริการปฏิเสธนัดหมาย';
   }
   if (appointmentStatus === 'Cancelled' || status === 'Cancelled') {
     return 'ยกเลิกแล้ว';
