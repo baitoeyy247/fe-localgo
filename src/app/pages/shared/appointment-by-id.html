@@ -100,7 +100,8 @@
     [cancelLabel]="cancelAppointmentDismissLabel"
     [danger]="true"
     [busy]="acting()"
+    busyLabel="กำลังยกเลิก…"
     (confirm)="cancelAppointment()"
-    (cancel)="cancelOpen.set(false)"
+    (cancel)="!acting() && cancelOpen.set(false)"
   />
 </app-page-shell>

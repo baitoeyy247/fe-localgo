@@ -143,14 +143,16 @@ export class AppointmentByIdPage implements OnInit {
     if (!a || this.acting() || !this.canCancel()) {
       return;
     }
+    // A5-24: keep the sheet open (busy "กำลังยกเลิก…") until the PATCH settles; close on success or error.
     this.acting.set(true);
-    this.cancelOpen.set(false);
     this.actionError.set(null);
     try {
       const updated = await firstValueFrom(this.api.updateAppointmentStatus(a.id, 'Cancelled'));
+      this.cancelOpen.set(false);
       this.appointment.set(updated);
       this.toast.show(cancelAppointmentToast(a.scheduledAt, this.title()));
     } catch (e) {
+      this.cancelOpen.set(false);
       this.actionError.set(cancelAppointmentErrorMessage(e));
     } finally {
       this.acting.set(false);
