@@ -190,6 +190,7 @@
     [cancelLabel]="cancelAppointmentDismissLabel"
     [danger]="true"
     [busy]="saving()"
+    busyLabel="กำลังยกเลิก…"
     (confirm)="cancelAppointment()"
     (cancel)="confirmCancelOpen.set(false)"
   />

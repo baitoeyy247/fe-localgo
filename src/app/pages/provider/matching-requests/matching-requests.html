@@ -11,7 +11,8 @@
       <!-- R42 M-1c: mirror the real page order: [เปิดรับข้อเสนอ section] → chip bar → current tab section.
            The open section is skipped only when the last load had no open jobs (stored '1'). -->
       <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>
-      @if (!skeletonChipsFirst()) {
+      <!-- R45 M-1g: the open section is always rendered (real page shows an equal-height empty state). -->
+      @if (true) {
         <div class="sec-title" aria-hidden="true"><span class="ghost">งานเปิดรับข้อเสนอ (0)</span></div>
         <article class="card skeleton-card skeleton-card--ghost" aria-hidden="true" lgFitTarget>
           <div class="row between" style="align-items: flex-start">
@@ -31,7 +32,7 @@
       <div class="sec-title" aria-hidden="true">{{ currentTabLabel() }}</div>
       <div class="skeleton-stack skeleton-stack--provider-requests">
         @for (i of [0, 1]; track i) {
-          @if (skeletonChipsFirst() && i === 0) {
+          @if (false) {
             <article class="card skeleton-card skeleton-card--ghost" aria-hidden="true" lgFitTarget>
               <ng-container *ngTemplateOutlet="pendingSkel" />
             </article>
@@ -79,12 +80,18 @@
           </button>
         </article>
       }
+    } @else {
+      <div class="sec-title">งานเปิดรับข้อเสนอ (0)</div>
+      <article class="card open-empty" [lgFitSource]="true">
+        <b>ยังไม่มีงานเปิดรับข้อเสนอ</b>
+        <p class="muted" style="margin: 4px 0 0">เมื่อมีงานใหม่ในพื้นที่และบริการของคุณ จะแสดงที่นี่</p>
+      </article>
     }
 
     <p class="muted chips__hint" style="margin: 0">เลื่อนดูแท็บทั้งหมด</p>
-    <div class="chips chips--scroll" role="tablist" aria-label="กรองงาน">
+    <div class="chips chips--scroll" role="group" aria-label="กรองงาน">
       @for (t of tabs; track t.key) {
-        <button type="button" class="chip" [class.on]="tab() === t.key" (click)="setTab(t.key)">
+        <button type="button" class="chip" [class.on]="tab() === t.key" [attr.aria-pressed]="tab() === t.key" (click)="setTab(t.key)">
           {{ t.label }} ({{ tabCount(t.key) }})
         </button>
       }
@@ -92,7 +99,7 @@
 
     <div class="sec-title">{{ currentTabLabel() }}</div>
     @for (request of filteredMyJobs(); track request.id) {
-      <article class="card" [lgFitSource]="$first && openJobs().length === 0">
+      <article class="card" [lgFitSource]="false">
         <div class="row between" style="align-items: flex-start">
           <b>{{ request.title }}</b>
           <span class="badge" [ngClass]="chipClass(request)">{{ chipLabel(request) }}</span>

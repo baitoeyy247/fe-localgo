@@ -182,7 +182,7 @@ export class MapView implements AfterViewInit, OnChanges, OnDestroy {
     }
 
     if (!this.marker) {
-      this.marker = L.marker(position, { icon: markerIcon }).addTo(this.map);
+      this.marker = L.marker(position, { icon: markerIcon, alt: 'ตำแหน่งบนแผนที่', title: 'ตำแหน่งบนแผนที่', keyboard: false }).addTo(this.map);
     } else {
       this.marker.setLatLng(position);
     }

@@ -133,7 +133,7 @@
 
     <div class="sec-title">
       รายการงาน
-      <select class="input" style="max-width: 180px; min-height: 40px" [value]="requestStatusFilter()" (change)="setRequestFilter($any($event.target).value)">
+      <select class="input" style="max-width: 180px; min-height: 40px" aria-label="กรองสถานะงาน" [value]="requestStatusFilter()" (change)="setRequestFilter($any($event.target).value)">
         <option value="">ทุกสถานะ</option>
         <option value="Open">เปิดรับข้อเสนอ</option>
         <option value="HasOffers">มีข้อเสนอ</option>
@@ -186,7 +186,7 @@
 
     <div class="sec-title">
       นัดหมาย
-      <select class="input" style="max-width: 180px; min-height: 40px" [value]="appointmentStatusFilter()" (change)="setAppointmentFilter($any($event.target).value)">
+      <select class="input" style="max-width: 180px; min-height: 40px" aria-label="กรองสถานะนัดหมาย" [value]="appointmentStatusFilter()" (change)="setAppointmentFilter($any($event.target).value)">
         <option value="">ทุกสถานะ</option>
         <option value="Pending">รอยืนยัน</option>
         <option value="Confirmed">ยืนยันแล้ว</option>

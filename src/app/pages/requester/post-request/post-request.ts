@@ -162,6 +162,19 @@ export class PostRequestPage implements OnInit {
     return this.formGuard.hasChanges(this.formSnapshot());
   }
 
+  /** R45 T4-3: visible reason the submit button is disabled (null when enabled). */
+  protected submitBlockedHint(): string | null {
+    if (this.posting() || this.hasChanges()) {
+      return null;
+    }
+    const missing: string[] = [];
+    if (!this.selectedCategoryId()) missing.push('หมวดบริการ');
+    if (!this.title().trim()) missing.push('ชื่องาน');
+    return missing.length > 0
+      ? `กรอก${missing.join(' และ ')}ก่อน จึงจะประกาศงานได้`
+      : 'กรอกหรือแก้ไขรายละเอียดงานก่อน จึงจะประกาศงานได้';
+  }
+
   protected selectCategory(id: string): void {
     this.selectedCategoryId.set(id);
     this.touchForm();

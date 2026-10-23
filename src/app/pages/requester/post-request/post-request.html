@@ -147,10 +147,14 @@
     type="button"
     [class.is-busy]="posting()"
     [disabled]="posting() || !hasChanges()"
+    [attr.aria-describedby]="submitBlockedHint() ? 'post-submit-hint' : null"
     (click)="askSave()"
   >
     {{ posting() ? 'กำลังประกาศ…' : 'ประกาศงาน' }}
   </button>
+  @if (submitBlockedHint(); as hint) {
+    <p id="post-submit-hint" class="submit-hint" role="status">{{ hint }}</p>
+  }
   </div>
   }
 

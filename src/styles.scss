@@ -1938,3 +1938,17 @@ h1.page-h1:focus { outline: none; }
   .fixed-card > .row.between > .fc-grow > .fc-title { height: auto; max-height: 2.8em; }
   .fixed-card > .row.between { row-gap: 2px; }
 }
+
+/* R45 A5-3: WCAG AA contrast (>=4.5:1 on white). */
+:root { --text-2: #6B6B6B; }
+.stars, .rating-picker__star.is-active { color: #8A5A00; }
+.flow a.is-locked,
+.flow a.is-step.is-locked,
+.flow-bar__step.is-locked,
+.setup-bar__step.is-locked { opacity: 1; color: #595959; }
+.btn[disabled] { color: #595959; }
+.coverage-card__toggle { all: unset; cursor: pointer; text-align: left; }
+.coverage-card__toggle:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 4px; }
+/* R45 T4-3 */
+.submit-hint { margin: 8px 0 0; color: #595959; font-size: 14px; }
+.open-empty { min-height: 159px; box-sizing: border-box; }

@@ -1,8 +1,8 @@
 <app-page-shell [busy]="loading()" title="ข้อเสนอของฉัน" backLink="/provider">
   @if (loading() || (!error() && items().length > 0)) {
-    <div class="chips" role="tablist" aria-label="กรองตามสถานะ">
+    <div class="chips" role="group" aria-label="กรองตามสถานะ">
       @for (chip of chips; track chip.key) {
-        <button type="button" class="chip" [class.on]="filter() === chip.key" [disabled]="loading()" (click)="setFilter(chip.key)">
+        <button type="button" class="chip" [class.on]="filter() === chip.key" [attr.aria-pressed]="filter() === chip.key" [disabled]="loading()" (click)="setFilter(chip.key)">
           {{ chip.label }}
         </button>
       }

@@ -44,16 +44,12 @@
         <article
           class="card coverage-card"
           [class.card--selected]="selectedBranchId() === branch.id"
-          role="button"
-          tabindex="0"
-          [attr.aria-selected]="selectedBranchId() === branch.id"
           [style.opacity]="branch.isActive ? '1' : '0.7'"
           (click)="selectBranch(branch)"
-          (keydown.enter)="selectBranch(branch)"
-          (keydown.space)="$event.preventDefault(); selectBranch(branch)"
         >
           <div class="row between">
-            <b>{{ branch.name }}</b>
+            <!-- A5-4: no interactive role on the article (nested-interactive); the name button toggles details -->
+            <button type="button" class="coverage-card__toggle" [attr.aria-expanded]="selectedBranchId() === branch.id"><b>{{ branch.name }}</b></button>
             <span class="badge" [class.b-green]="branch.isActive" [class.b-gray]="!branch.isActive">{{
               branch.isActive ? 'เปิด' : 'ปิด'
             }}</span>

@@ -58,10 +58,14 @@ const FOCUSABLE =
             [class.btn-danger]="danger()"
             [class.btn-primary]="!danger()"
             [disabled]="busy()"
+            [attr.aria-busy]="busy() ? 'true' : null"
             (click)="onConfirm()"
           >
             {{ busy() ? busyLabel() : confirmLabel() }}
           </button>
+          @if (busy()) {
+            <span class="sr-only" role="status">{{ busyLabel() }}</span>
+          }
           <button
             type="button"
             class="btn btn-ghost btn-block"

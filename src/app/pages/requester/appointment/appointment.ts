@@ -427,17 +427,17 @@ export class AppointmentPage implements OnInit, OnDestroy {
     }
     this.saving.set(true);
     this.error.set(null);
-    this.confirmCancelOpen.set(false);
-    // Optimistic: reflect cancelled immediately so all labels update on refresh path.
-    this.appointment.set({ ...existing, status: 'Cancelled' });
+    // R45 L-T1-4b/A5-24: keep the sheet open showing "กำลังยกเลิก…" until the PATCH settles.
     const req = this.request();
-    if (req) {
-      this.request.set({ ...req, status: 'Cancelled' });
-    }
     const title = req?.title?.trim() || 'งาน';
     this.cancelError.set(null);
     try {
       await firstValueFrom(this.api.updateAppointmentStatus(existing.id, 'Cancelled'));
+      this.confirmCancelOpen.set(false);
+      this.appointment.set({ ...existing, status: 'Cancelled' });
+      if (req) {
+        this.request.set({ ...req, status: 'Cancelled' });
+      }
       // A5-13: success live region only after the server confirmed.
       this.toast.show(cancelAppointmentToast(existing.scheduledAt, title));
       this.cache.invalidateAll();
@@ -446,6 +446,7 @@ export class AppointmentPage implements OnInit, OnDestroy {
         await this.loadRequestState(requestId);
       }
     } catch (e) {
+      this.confirmCancelOpen.set(false);
       this.appointment.set(existing);
       if (req) {
         this.request.set(req);
@@ -623,6 +624,9 @@ export class AppointmentPage implements OnInit, OnDestroy {
   }
 
   protected cancelActionLabel(): string {
+    if (this.saving() && this.confirmCancelOpen()) {
+      return 'กำลังยกเลิก…';
+    }
     if (this.canCancelAppointment()) {
       return 'ยกเลิกนัดหมาย';
     }
