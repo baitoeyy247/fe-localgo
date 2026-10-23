@@ -2,11 +2,11 @@
   @if (loading()) {
     <div class="skeleton-stack skeleton-stack--appointment-detail">
       <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>
-      <div class="card skeleton-card skeleton-card--ghost" aria-hidden="true" lgFitTarget>
-        <div class="row between" style="align-items: flex-start">
-          <div>
+      <div class="card fixed-card skeleton-card skeleton-card--ghost" aria-hidden="true">
+        <div class="row between" style="align-items: center; gap: 8px">
+          <div class="fc-grow">
             <!-- R39 M-1: same inline structure as the loaded card (muted label + 44px name link) so it wraps identically -->
-            <p style="margin: 0"><span class="muted ghost ghost--inline">ผู้ให้บริการ: </span><span class="provider-name-link"><b class="ghost ghost--inline">ชื่อผู้ให้ 01</b></span></p>
+            <p class="fc-line" style="margin: 0"><span class="muted ghost ghost--inline">ผู้ให้บริการ: </span><span class="provider-name-link"><b class="ghost ghost--inline">ชื่อผู้ให้ 01</b></span></p>
           </div>
           <span class="badge ghost">ผู้ให้บริการยืนยันนัดหมายแล้ว</span>
         </div>
@@ -29,11 +29,11 @@
     @if (actionError()) {
       <app-action-error heading="ยกเลิกนัดหมายไม่สำเร็จ" [message]="actionError()" />
     }
-    <div class="card" lgFitSource>
-      <div class="row between" style="align-items: flex-start">
-        <div>
+    <div class="card fixed-card">
+      <div class="row between" style="align-items: center; gap: 8px">
+        <div class="fc-grow">
           @if (providerName(); as name) {
-            <p style="margin: 0">
+            <p class="fc-line" style="margin: 0">
               <span class="muted">{{ GLOSSARY.providerLabel }}: </span>
               @if (providerProfileLink(); as link) {
                 <a class="provider-name-link" [routerLink]="link"><b>{{ name }}</b></a>

@@ -49,7 +49,11 @@
           ข้อเสนอ {{ request.bidCount }}
         </p>
         <div class="row requester-job-actions">
-          @if (isTerminalCard(request)) {
+          @if (request.appointmentStatus === 'Rejected' && request.status !== 'Cancelled') {
+            <!-- R42 T4-26b: same copy/target as the rejected block on the detail pages. -->
+            <a class="btn btn-primary btn-sm grow" routerLink="/requester/bids" [queryParams]="{ requestId: request.id }">{{ REJECTED.action }}</a>
+            <button type="button" class="btn btn-ghost btn-sm grow" (click)="openDetail(request)">ดูรายละเอียด</button>
+          } @else if (isTerminalCard(request)) {
             <button type="button" class="btn btn-ghost btn-sm grow" (click)="openDetail(request)">
               ดูรายละเอียด
             </button>

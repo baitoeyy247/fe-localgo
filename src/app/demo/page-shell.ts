@@ -24,7 +24,7 @@ import { navigateWithDirtyGuard } from '../shared/nav-guard';
             }
             <span class="app-mark app-mark--on-hero">LocalGo</span>
           </div>
-          <h1>{{ title() }}</h1>
+          <h1 tabindex="-1" class="page-h1">{{ title() }}</h1>
           @if (subtitle()) {
             <p>{{ subtitle() }}</p>
           }
@@ -34,7 +34,7 @@ import { navigateWithDirtyGuard } from '../shared/nav-guard';
           @if (showBack()) {
             <button type="button" class="icon-btn" [attr.aria-label]="backLabel()" (click)="onBack()">←</button>
           }
-          <h1>{{ title() }}</h1>
+          <h1 tabindex="-1" class="page-h1">{{ title() }}</h1>
           <span class="app-mark" [class.app-mark--on-hero]="greenHeader()">LocalGo</span>
         </header>
       }

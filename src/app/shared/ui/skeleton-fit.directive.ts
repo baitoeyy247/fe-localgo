@@ -1,4 +1,4 @@
-import { Directive, ElementRef, afterNextRender, inject, input } from '@angular/core';
+import { DestroyRef, Directive, ElementRef, afterNextRender, inject, input } from '@angular/core';
 
 /**
  * R40/R41 M-1: remember where/how tall the first real card was (per route + viewport width, localStorage)
@@ -6,8 +6,11 @@ import { Directive, ElementRef, afterNextRender, inject, input } from '@angular/
  */
 type FitBox = { top: number; h: number };
 
+/** R42 M-1a: key = role + path + width (role from the route prefix, e.g. requester/provider/admin). */
 function fitKey(): string {
-  return `lg.fit:${location.pathname.replace(/[0-9a-f]{8}-[0-9a-f-]{27}/gi, ":id")}:${window.innerWidth}`;
+  const path = location.pathname.replace(/[0-9a-f]{8}-[0-9a-f-]{27}/gi, ':id');
+  const role = path.split('/').filter(Boolean)[0] ?? 'root';
+  return `lg.fit:${role}:${path}:${window.innerWidth}`;
 }
 
 function readFit(): FitBox | null {
@@ -31,14 +34,16 @@ export class FitSourceDirective {
   private readonly el = inject<ElementRef<HTMLElement>>(ElementRef);
 
   constructor() {
+    const destroyRef = inject(DestroyRef);
     afterNextRender(() => {
-      const on = this.lgFitSource();
-      if (on === false) {
+      if (this.lgFitSource() === false) {
         return;
       }
-      // Wait one frame so fonts/layout settle before measuring.
-      requestAnimationFrame(() => {
-        const node = this.el.nativeElement;
+      const node = this.el.nativeElement;
+      const save = () => {
+        if (this.lgFitSource() === false) {
+          return;
+        }
         const h = Math.round(node.getBoundingClientRect().height);
         if (h <= 0) {
           return;
@@ -48,7 +53,15 @@ export class FitSourceDirective {
         } catch {
           /* ignore */
         }
-      });
+      };
+      // R42 M-1a: refresh the cache after every real render/resize of the first card
+      // (order/content changes would otherwise leave a stale height from a previous visit).
+      requestAnimationFrame(save);
+      if (typeof ResizeObserver !== 'undefined') {
+        const ro = new ResizeObserver(() => save());
+        ro.observe(node);
+        destroyRef.onDestroy(() => ro.disconnect());
+      }
     });
   }
 }

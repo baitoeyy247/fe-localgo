@@ -1,7 +1,7 @@
 import { FitSourceDirective, FitTargetDirective } from '../../../shared/ui/skeleton-fit.directive';
 import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
-import { NgClass } from '@angular/common';
+import { NgClass, NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { PageShell } from '../../../demo/page-shell';
@@ -29,7 +29,7 @@ type JobTab = 'pending' | 'bidWaiting' | 'scheduled' | 'active' | 'completed' | 
 
 @Component({
   selector: 'app-matching-requests-page',
-  imports: [FitSourceDirective, FitTargetDirective, PageShell, RouterLink, ProviderBottomNav, NgClass, ErrorState, SkeletonCard],
+  imports: [FitSourceDirective, FitTargetDirective, PageShell, RouterLink, ProviderBottomNav, NgClass, NgTemplateOutlet, ErrorState, SkeletonCard],
   templateUrl: './matching-requests.html',
   styles: [
     `
@@ -397,10 +397,11 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
 const SKELETON_LAYOUT_KEY = 'lg.provider.requests.chipsFirst';
 function readSkeletonChipsFirst(): boolean {
   try {
-    // R41 M-1c: first visit (nothing stored) → assume the pending-confirm layout (chips + "รอยืนยัน" + card).
-    return localStorage.getItem(SKELETON_LAYOUT_KEY) !== '0';
+    // R42 M-1c: only skip the "เปิดรับข้อเสนอ" section when the last load had no open jobs.
+    // First visit (nothing stored) → render both sections in real-page order.
+    return localStorage.getItem(SKELETON_LAYOUT_KEY) === '1';
   } catch {
-    return true;
+    return false;
   }
 }
 function writeSkeletonChipsFirst(value: boolean): void {

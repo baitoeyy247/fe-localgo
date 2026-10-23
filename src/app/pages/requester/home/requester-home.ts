@@ -28,6 +28,7 @@ import { ActionError } from '../../../shared/ui/action-error';
   templateUrl: './requester-home.html',
 })
 export class RequesterHomePage implements OnInit, OnDestroy {
+  protected readonly REJECTED = REJECTED_APPOINTMENT_COPY;
   protected readonly requests = signal<ServiceRequestSummary[]>([]);
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);

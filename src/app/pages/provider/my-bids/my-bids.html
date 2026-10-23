@@ -12,13 +12,12 @@
     <div class="skeleton-stack skeleton-stack--provider-my-bids">
       <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>
       @for (i of [0, 1]; track i) {
-        <article class="card skeleton-card skeleton-card--ghost" aria-hidden="true" lgFitTarget>
-          <div class="row between" style="align-items: flex-start">
-            <span class="grow">
-              <!-- R39 M-1: inline ghost text + realistic lengths so it wraps like the real row at 320px -->
-              <b class="ghost ghost--inline">ชื่องานบริการที่เสนอราคาตัวอย่าง</b><br />
-              <span class="muted ghost ghost--inline">{{ GLOSSARY.bidOfferedPriceLabel }} <span class="price" style="font-size: 16px">1,000 บาท</span></span><br />
-              <span class="muted ghost ghost--inline" style="font-size: 13px">ส่งเมื่อ 00 ต.ค. 2569 00:00 · {{ GLOSSARY.appointment }} 00 ต.ค. 2569 00:00</span>
+        <article class="card fixed-card skeleton-card skeleton-card--ghost" aria-hidden="true">
+          <div class="row between" style="align-items: flex-start; gap: 8px">
+            <span class="fc-grow">
+              <b class="fc-title"><span class="ghost ghost--inline">ชื่องานบริการที่เสนอราคาตัวอย่าง</span></b>
+              <span class="muted fc-line"><span class="ghost ghost--inline">{{ GLOSSARY.bidOfferedPriceLabel }} <span class="price" style="font-size: 16px">1,000 บาท</span></span></span>
+              <span class="muted fc-line" style="font-size: 13px"><span class="ghost ghost--inline">ส่งเมื่อ 00 ต.ค. 2569 00:00 · {{ GLOSSARY.appointment }} 00 ต.ค. 2569</span></span>
             </span>
             <span class="badge ghost">ยืนยันนัดแล้ว</span>
           </div>
@@ -45,15 +44,15 @@
     }
 
     @for (item of filtered(); track item.id) {
-      <article class="card" [lgFitSource]="$first">
-        <button type="button" class="row between" style="width: 100%; background: none; border: 0; padding: 0; font: inherit; text-align: left; cursor: pointer; align-items: flex-start" (click)="openItem(item)">
-          <span class="grow">
-            <b>{{ item.requestTitle }}</b><br />
-            <span class="muted"
+      <article class="card fixed-card">
+        <button type="button" class="row between" style="width: 100%; background: none; border: 0; padding: 0; font: inherit; text-align: left; cursor: pointer; align-items: flex-start; gap: 8px" (click)="openItem(item)">
+          <span class="fc-grow">
+            <b class="fc-title">{{ item.requestTitle }}</b>
+            <span class="muted fc-line"
               >{{ GLOSSARY.bidOfferedPriceLabel }}
               <span class="price" style="font-size: 16px">{{ formatPrice(item.priceText) }}</span></span
-            ><br />
-            <span class="muted" style="font-size: 13px">
+            >
+            <span class="muted fc-line" style="font-size: 13px">
               ส่งเมื่อ {{ formatProposed(item.createdAt) }}
               @if (item.appointmentScheduledAt) {
                 · {{ GLOSSARY.appointment }} {{ formatWhen(item.appointmentScheduledAt) }}

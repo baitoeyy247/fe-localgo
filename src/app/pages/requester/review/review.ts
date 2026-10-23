@@ -26,6 +26,7 @@ import { buildReviewConfirmMessage } from '../../../shared/confirm-copy';
 export class ReviewPage implements OnInit {
   protected readonly GLOSSARY = GLOSSARY;
   protected readonly rating = signal(0);
+  protected readonly COMMENT_MAX = 2000;
   protected readonly comment = signal('');
   protected readonly providerName = signal('กำลังโหลดผู้ให้บริการ…');
   protected readonly providerId = signal<string | null>(null);
@@ -152,7 +153,7 @@ export class ReviewPage implements OnInit {
   }
 
   protected updateComment(value: string): void {
-    this.comment.set(value);
+    this.comment.set(value.slice(0, this.COMMENT_MAX));
     this.touchForm();
   }
 

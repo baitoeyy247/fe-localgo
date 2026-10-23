@@ -41,9 +41,13 @@
           class="input"
           rows="3"
           placeholder="บอกประสบการณ์สั้น ๆ"
+          [attr.maxlength]="COMMENT_MAX"
+          aria-describedby="review-comment-count"
           [value]="comment()"
           (input)="updateComment($any($event.target).value)"
         ></textarea>
+        <!-- R42 F-L1: same limit as BE FieldRules (2000, trimmed). -->
+        <small class="muted" id="review-comment-count" aria-live="polite" style="display: block; text-align: right">{{ comment().length }}/{{ COMMENT_MAX }}</small>
       </label>
 
       @if (error()) {

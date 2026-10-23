@@ -179,7 +179,7 @@ const APPOINTMENT_STATUS: Record<string, string> = {
   InProgress: 'กำลังดำเนินงาน',
   Completed: 'เสร็จสิ้น',
   Cancelled: 'ยกเลิกแล้ว',
-  Rejected: 'ผู้ให้บริการปฏิเสธ',
+  Rejected: 'ผู้ให้บริการปฏิเสธนัดหมาย',
 };
 
 export function appointmentStatusLabel(status: string, viewer: StatusViewer = 'requester'): string {
