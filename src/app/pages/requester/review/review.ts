@@ -224,9 +224,17 @@ export class ReviewPage implements OnInit {
     } catch (e) {
       const status = (e as { status?: number } | null)?.status ?? -1;
       if (status === 409) {
-        // R-3: server says a review already exists → switch to read-only, not an error.
+        // R41 T4-29: never trust the client's stars — read the review back from the server.
+        const existing = await firstValueFrom(this.api.getMyReview(providerId, requestId)).catch(() => null);
+        if (!existing || !(existing.rating >= 1)) {
+          this.error.set('ส่งรีวิวไม่สำเร็จ กรุณาลองใหม่');
+          this.submitting.set(false);
+          setTimeout(() => (document.getElementById('review-error') as HTMLElement | null)?.focus(), 0);
+          return;
+        }
+        // R-3: server has the review → switch to read-only with the server's rating.
         this.alreadyReviewed.set(true);
-        this.reviewedRating.set(stars);
+        this.reviewedRating.set(existing.rating);
         this.canSubmit.set(false);
         this.cache.invalidateMyRequests();
         this.formGuard.markSaved(this.formSnapshot());

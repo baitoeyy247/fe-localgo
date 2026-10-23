@@ -11,9 +11,9 @@ const STATUS_MESSAGES: Record<number, string> = {
   422: 'ข้อมูลไม่ผ่านการตรวจสอบ',
   429: 'คุณทำรายการบ่อยเกินไป ลองใหม่ภายหลัง',
   499: 'คำขอถูกยกเลิก',
-  500: 'ระบบขัดข้องชั่วคราว',
-  502: 'ระบบขัดข้องชั่วคราว',
-  503: 'ระบบขัดข้องชั่วคราว',
+  500: 'ระบบขัดข้องชั่วคราว กรุณาลองใหม่',
+  502: 'ระบบขัดข้องชั่วคราว กรุณาลองใหม่',
+  503: 'ระบบขัดข้องชั่วคราว กรุณาลองใหม่',
   504: 'ระบบตอบสนองช้า ลองใหม่อีกครั้ง',
 };
 
@@ -60,7 +60,8 @@ function messageFromBody(body: ProblemBody | null, status: number, fallback: str
   if (validation) {
     return validation;
   }
-  const raw = body.detail ?? body.title ?? body.message;
+  // R41 T4-27c: never surface ProblemDetails.title ("Conflict" etc.).
+  const raw = body.detail ?? body.message;
   if (typeof raw === 'string' && raw.trim()) {
     return normalizeDetail(raw, status, fallback);
   }
@@ -146,4 +147,9 @@ export function appointmentActionErrorMessage(err: unknown, conflictFallback: st
 /** R39 T4-27: cancel-appointment failure; a 409 with no detail gets an appointment-specific reason. */
 export function cancelAppointmentErrorMessage(err: unknown): string {
   return appointmentActionErrorMessage(err, 'นัดหมายนี้ไม่อยู่ในสถานะที่ยกเลิกได้', 'ยกเลิกนัดหมายไม่สำเร็จ');
+}
+
+/** R41 T4-27c: cancel a service request (งาน); 409 without detail → Thai reason. */
+export function cancelRequestErrorMessage(err: unknown): string {
+  return appointmentActionErrorMessage(err, 'งานนี้ไม่อยู่ในสถานะที่ยกเลิกได้', 'ยกเลิกงานไม่สำเร็จ');
 }

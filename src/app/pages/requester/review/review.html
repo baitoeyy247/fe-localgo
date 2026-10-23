@@ -13,7 +13,7 @@
       <h3 style="margin: 8px 0 4px">รีวิว {{ providerName() }}</h3>
       <p class="muted" style="margin: 0">รีวิวนี้เป็นรีวิวที่ยืนยันแล้วจากงานในระบบ</p>
       @if (alreadyReviewed()) {
-        <p style="margin: 8px 0 0" role="status" id="reviewed-note" tabindex="-1"><b>คุณรีวิวงานนี้แล้ว</b>@if (reviewedRating()) { · ★{{ reviewedRating() }} }</p>
+        <p style="margin: 8px 0 0" role="status" id="reviewed-note" tabindex="-1"><b>งานนี้ถูกรีวิวไปแล้ว</b>@if (reviewedRating()) { · ★{{ reviewedRating() }} }</p>
       } @else if (statusHint()) {
         <p class="muted" style="margin: 8px 0 0">{{ statusHint() }}</p>
       }

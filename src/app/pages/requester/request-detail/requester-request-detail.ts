@@ -1,3 +1,4 @@
+import { REJECTED_APPOINTMENT_COPY, rejectedRebookTarget } from '../../../shared/status-labels';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { NgClass } from '@angular/common';
@@ -7,7 +8,7 @@ import { RequesterBottomNav } from '../../../shared/requester-bottom-nav';
 import { LocalGoApiService } from '../../../core/localgo-api.service';
 import { AppointmentDetail, BidItem, ServiceRequestDetail } from '../../../core/models';
 import { SessionStateService } from '../../../core/session-state.service';
-import { apiErrorMessage } from '../../../core/api-error.util';
+import { apiErrorMessage, cancelRequestErrorMessage } from '../../../core/api-error.util';
 import { ToastService } from '../../../core/toast.service';
 import {
   bidStatusLabel,
@@ -38,6 +39,14 @@ import { MarketplaceCacheService } from '../../../core/marketplace-cache.service
   templateUrl: './requester-request-detail.html',
 })
 export class RequesterRequestDetailPage implements OnInit, OnDestroy {
+  /** R41 T4-26b/26c: one primary action for a rejected appointment → bids of this request. */
+  protected readonly REJECTED = REJECTED_APPOINTMENT_COPY;
+  protected async goRebookRejected(): Promise<void> {
+    const t = rejectedRebookTarget(this.request()?.id);
+    this.session.clearRequesterFlow();
+    await this.router.navigate([t.path], { queryParams: t.queryParams });
+  }
+
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly bids = signal<BidItem[]>([]);
   protected readonly appointment = signal<AppointmentDetail | null>(null);
@@ -204,7 +213,7 @@ export class RequesterRequestDetailPage implements OnInit, OnDestroy {
       await this.load();
     } catch (e) {
       this.cancelOpen.set(false);
-      const msg = apiErrorMessage(e, 'ยกเลิกงานไม่สำเร็จ');
+      const msg = cancelRequestErrorMessage(e);
       this.actionError.set(msg);
     } finally {
       this.busy.set(false);

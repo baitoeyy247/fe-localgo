@@ -72,7 +72,7 @@ export function displayRequestStatusLabel(
     return PROVIDER_APPOINTMENT_STATUS[appointmentStatus];
   }
   if (appointmentStatus === 'Rejected') {
-    return 'ผู้ให้บริการปฏิเสธนัดหมาย';
+    return REJECTED_APPOINTMENT_COPY.title;
   }
   if (appointmentStatus === 'Cancelled' || status === 'Cancelled') {
     return 'ยกเลิกแล้ว';
@@ -204,4 +204,14 @@ export const PROVIDER_TYPE_OPTIONS = [
 /** Terminal appointment — hide all action buttons. */
 export function isTerminalAppointment(status?: string | null): boolean {
   return status === 'Cancelled' || status === 'Rejected';
+}
+
+/** R41 T4-26b/26c: single source for the requester's view of a rejected appointment (all pages + home card). */
+export const REJECTED_APPOINTMENT_COPY = {
+  title: 'ผู้ให้บริการปฏิเสธนัดหมาย',
+  action: 'นัดใหม่หรือเลือกข้อเสนออื่น',
+} as const;
+
+export function rejectedRebookTarget(requestId: string | null | undefined): { path: string; queryParams: Record<string, string> } {
+  return { path: '/requester/bids', queryParams: requestId ? { requestId } : {} };
 }

@@ -397,14 +397,15 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
 const SKELETON_LAYOUT_KEY = 'lg.provider.requests.chipsFirst';
 function readSkeletonChipsFirst(): boolean {
   try {
-    return sessionStorage.getItem(SKELETON_LAYOUT_KEY) === '1';
+    // R41 M-1c: first visit (nothing stored) → assume the pending-confirm layout (chips + "รอยืนยัน" + card).
+    return localStorage.getItem(SKELETON_LAYOUT_KEY) !== '0';
   } catch {
-    return false;
+    return true;
   }
 }
 function writeSkeletonChipsFirst(value: boolean): void {
   try {
-    sessionStorage.setItem(SKELETON_LAYOUT_KEY, value ? '1' : '0');
+    localStorage.setItem(SKELETON_LAYOUT_KEY, value ? '1' : '0');
   } catch {
     /* ignore */
   }

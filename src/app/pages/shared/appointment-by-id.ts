@@ -6,7 +6,7 @@ import { PageShell } from '../../demo/page-shell';
 import { LocalGoApiService } from '../../core/localgo-api.service';
 import { AppointmentDetail, ServiceRequestDetail } from '../../core/models';
 import { apiErrorMessage, cancelAppointmentErrorMessage } from '../../core/api-error.util';
-import { appointmentStatusLabel } from '../../shared/status-labels';
+import { REJECTED_APPOINTMENT_COPY, appointmentStatusLabel, rejectedRebookTarget } from '../../shared/status-labels';
 import { formatScheduledAt } from '../../shared/datetime.util';
 import { formatPrice } from '../../shared/format-price';
 import { ErrorState } from '../../shared/ui/error-state';
@@ -27,6 +27,8 @@ import { ActionError } from '../../shared/ui/action-error';
   templateUrl: './appointment-by-id.html',
 })
 export class AppointmentByIdPage implements OnInit {
+  protected readonly REJECTED = REJECTED_APPOINTMENT_COPY;
+  protected readonly rebook = rejectedRebookTarget;
   protected readonly GLOSSARY = GLOSSARY;
   protected readonly cancelAppointmentDismissLabel = destructiveSheetDismissCancelAppointment;
   protected readonly appointment = signal<AppointmentDetail | null>(null);

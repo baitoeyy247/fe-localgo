@@ -356,6 +356,13 @@ export class LocalGoApiService {
     return this.get<ReviewItem[]>(`/providers/${providerId}/reviews`);
   }
 
+  /** R41 T4-29: the caller's own review for a job (404 → none). */
+  getMyReview(providerId: string, serviceRequestId: string): Observable<ReviewItem> {
+    return this.get<ReviewItem>(
+      `/providers/${providerId}/reviews/mine?serviceRequestId=${encodeURIComponent(serviceRequestId)}`,
+    );
+  }
+
   createReview(
     providerId: string,
     body: {

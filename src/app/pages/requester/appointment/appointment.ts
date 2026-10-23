@@ -1,3 +1,4 @@
+import { REJECTED_APPOINTMENT_COPY, rejectedRebookTarget } from '../../../shared/status-labels';
 import { Component, OnDestroy, OnInit, inject, signal, viewChild } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -63,6 +64,14 @@ import { ActionError } from '../../../shared/ui/action-error';
   templateUrl: './appointment.html',
 })
 export class AppointmentPage implements OnInit, OnDestroy {
+  /** R41 T4-26b/26c: one primary action for a rejected appointment → bids of this request. */
+  protected readonly REJECTED = REJECTED_APPOINTMENT_COPY;
+  protected async goRebookRejected(): Promise<void> {
+    const t = rejectedRebookTarget(this.request()?.id);
+    this.session.clearRequesterFlow();
+    await this.router.navigate([t.path], { queryParams: t.queryParams });
+  }
+
   protected readonly GLOSSARY = GLOSSARY;
   protected readonly cancelAppointmentDismissLabel = destructiveSheetDismissCancelAppointment;
   protected readonly request = signal<ServiceRequestDetail | null>(null);

@@ -1,3 +1,4 @@
+import { REJECTED_APPOINTMENT_COPY } from '../../../shared/status-labels';
 import { FitSourceDirective, FitTargetDirective } from '../../../shared/ui/skeleton-fit.directive';
 import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
@@ -15,7 +16,7 @@ import {
   displayRequestStatusLabel,
 } from '../../../shared/status-labels';
 import { AuthService } from '../../../core/auth.service';
-import { apiErrorMessage } from '../../../core/api-error.util';
+import { apiErrorMessage, cancelRequestErrorMessage } from '../../../core/api-error.util';
 import { SlowLoadHint } from '../../../shared/load-state';
 import { ErrorState } from '../../../shared/ui/error-state';
 import { ConfirmSheet } from '../../../shared/ui/confirm-sheet';
@@ -114,7 +115,7 @@ export class RequesterHomePage implements OnInit, OnDestroy {
       const items = await firstValueFrom(this.cache.listMyRequests(true));
       this.requests.set(items);
     } catch (e) {
-      this.actionError.set(apiErrorMessage(e, 'ยกเลิกงานไม่สำเร็จ'));
+      this.actionError.set(cancelRequestErrorMessage(e));
       this.cache.invalidateMyRequests();
       await this.load(true);
       // keep the cancel failure visible even if the silent reload had its own issue
@@ -147,6 +148,11 @@ export class RequesterHomePage implements OnInit, OnDestroy {
       });
       return;
     }
+    if (request.appointmentStatus === 'Rejected' && request.status !== 'Cancelled') {
+      // R41 T4-26c: same target as the rejected block on the detail pages.
+      await this.router.navigate(['/requester/bids'], { queryParams: { requestId: request.id } });
+      return;
+    }
     if (request.appointmentStatus === 'Rejected' || request.status === 'Cancelled') {
       await this.router.navigate(['/requester/appointment'], {
         queryParams: { requestId: request.id },
@@ -172,7 +178,7 @@ export class RequesterHomePage implements OnInit, OnDestroy {
       return 'ยกเลิกแล้ว';
     }
     if (request.appointmentStatus === 'Rejected') {
-      return 'นัดใหม่หรือเลือกข้อเสนออื่น';
+      return REJECTED_APPOINTMENT_COPY.action;
     }
     if (request.status === 'Completed') {
       return request.hasReviewed ? 'ดูรายละเอียด' : 'ให้คะแนนและรีวิว';

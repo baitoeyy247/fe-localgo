@@ -61,9 +61,8 @@
     @if (role() === 'requester') {
       @if (a.status === 'Rejected') {
         <div class="state">
-          <p class="muted">{{ role() === 'provider' ? 'คุณปฏิเสธนัดหมายนี้แล้ว' : 'ผู้ให้บริการปฏิเสธนัดหมาย — คุณสามารถจองใหม่หรือหาผู้ให้บริการรายอื่น' }}</p>
-          <a class="btn btn-primary btn-block" routerLink="/requester/search">หาผู้ให้บริการอื่น</a>
-          <a class="btn btn-secondary btn-block" routerLink="/requester/post">จองใหม่ / ประกาศงาน</a>
+          <h3>{{ REJECTED.title }}</h3>
+          <a class="btn btn-primary btn-block" [routerLink]="rebook(a.serviceRequestId).path" [queryParams]="rebook(a.serviceRequestId).queryParams">{{ REJECTED.action }}</a>
         </div>
       } @else if (a.status === 'Completed') {
         <a
