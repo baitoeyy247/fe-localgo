@@ -6,7 +6,7 @@ export const environment = {
   mapDefaultLat: 13.7563,
   mapDefaultLng: 100.5018,
   devLoginDisplayName: 'ทดสอบ ผู้รับ 01',
-  allowDevLogin: true,
+  allowDevLogin: false,
   privacyVersion: '1.0-mvp',
   httpConsoleLog: true,
 };

@@ -25,7 +25,7 @@ jobs:
           NG_APP_LIFF_ID: ${{ secrets.SIT_LIFF_ID }}
           NG_APP_MAP_DEFAULT_LAT: ${{ secrets.SIT_MAP_DEFAULT_LAT }}
           NG_APP_MAP_DEFAULT_LNG: ${{ secrets.SIT_MAP_DEFAULT_LNG }}
-          NG_APP_ALLOW_DEV_LOGIN: ${{ vars.NG_APP_ALLOW_DEV_LOGIN || 'true' }}
+          NG_APP_ALLOW_DEV_LOGIN: ${{ vars.NG_APP_ALLOW_DEV_LOGIN || 'false' }}
         run: node scripts/generate-fe-environment.mjs
 
       - name: Install and build
