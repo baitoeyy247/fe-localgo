@@ -142,8 +142,9 @@
       <button class="btn btn-danger-o btn-block" type="button" (click)="logout()">ออกจากระบบ / เปลี่ยนบัญชี</button>
     }
 
-    @if (!auth.isLineClient() && !showTestMode()) {
-      <button class="btn btn-ghost btn-block" type="button" (click)="enterAdmin()">เข้าหลังบ้านแอดมิน</button>
+    @if (showTestMode() && !auth.isLineClient()) {
+      <!-- R47: dev-login admin shortcut — test mode only (was shown whenever test mode was OFF). -->
+      <button class="btn btn-ghost btn-block" type="button" (click)="enterAdmin()">เข้าหลังบ้านแอดมิน (ทดสอบ)</button>
     }
   }
 </app-page-shell>

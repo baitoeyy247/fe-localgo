@@ -180,6 +180,9 @@ export class EntryPage implements OnInit, OnDestroy {
   }
 
   protected async enterAdmin(): Promise<void> {
+    if (!this.showTestMode()) {
+      return;
+    }
     await this.auth.loginAsAdmin();
     await this.router.navigateByUrl('/admin');
   }
