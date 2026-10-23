@@ -21,11 +21,13 @@ import { GLOSSARY } from '../../../shared/glossary';
 const FILTER_CHIPS: { key: ProviderBidFilterKey; label: string }[] = [
   { key: 'all', label: 'ทั้งหมด' },
   { key: 'waiting', label: 'รอผล' },
-  { key: 'selected', label: 'ถูกเลือก' },
-  { key: 'confirm', label: GLOSSARY.pendingAppointmentConfirmChip },
-  { key: 'inprogress', label: 'กำลังทำ' },
-  { key: 'done', label: 'เสร็จ' },
-  { key: 'withdrawn', label: 'ถอนแล้ว' },
+  // R44 L-T3-6: chip words == badge words (PROVIDER_APPOINTMENT_STATUS).
+  { key: 'confirm', label: 'รอยืนยันนัดหมาย' },
+  { key: 'selected', label: 'ยืนยันนัดหมายแล้ว' },
+  { key: 'inprogress', label: 'กำลังดำเนินงาน' },
+  { key: 'done', label: 'เสร็จสิ้น' },
+  { key: 'rejected', label: 'คุณปฏิเสธนัดหมาย' },
+  { key: 'withdrawn', label: 'ถอนแล้ว/ยกเลิกแล้ว' },
 ];
 
 @Component({

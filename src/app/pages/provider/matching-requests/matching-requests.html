@@ -1,4 +1,4 @@
-<app-page-shell title="งานที่ตรงกับบริการ" backLink="/provider">
+<app-page-shell [busy]="loading()" title="งานที่ตรงกับบริการ" backLink="/provider">
   <div class="sec-title">
     รายการงาน
     <button type="button" class="btn btn-ghost btn-sm" (click)="reload()" [disabled]="loading()">รีเฟรช</button>

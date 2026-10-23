@@ -10,6 +10,7 @@ import { SessionStateService } from '../../../core/session-state.service';
 import {
   appointmentStatusLabel,
   bidStatusLabel,
+  providerBidStatusLabel,
   displayRequestStatusLabel,
   isTerminalAppointment,
 } from '../../../shared/status-labels';
@@ -70,6 +71,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
   protected readonly withdrawDismissLabel = destructiveSheetDismissWithdrawBid;
   protected readonly request = signal<ServiceRequestDetail | null>(null);
   protected readonly myBid = signal<BidItem | null>(null);
+  protected readonly myAppointmentStatus = signal<string | null>(null);
   protected readonly myProvider = signal<ProviderDetail | null>(null);
   protected readonly appointment = signal<AppointmentDetail | null>(null);
   protected readonly appointmentLoading = signal(false);
@@ -240,9 +242,16 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
         appt = apptFromApi;
       }
       this.appointment.set(appt);
-      this.myBid.set(
-        myProvider ? (detail.bids?.find((bid) => bid.providerId === myProvider.id) ?? null) : null,
-      );
+      const mine = myProvider ? (detail.bids?.find((bid) => bid.providerId === myProvider.id) ?? null) : null;
+      this.myBid.set(mine);
+      // R44 T4-10c: request.appointmentStatus may belong to another provider after a reopen — read my own.
+      this.myAppointmentStatus.set(null);
+      if (mine && (mine.status === 'Rejected' || mine.status === 'Selected')) {
+        this.api.listMyProviderBids().pipe(catchError(() => of([]))).subscribe((rows) => {
+          const row = rows.find((r) => r.serviceRequestId === detail.id);
+          this.myAppointmentStatus.set(row?.appointmentStatus ?? null);
+        });
+      }
       let meters: number | null = null;
       if (detail.latitude != null && detail.longitude != null && myProvider) {
         const branch =
@@ -382,7 +391,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       return 'งานเสร็จสิ้น';
     }
     if (req.status === 'Open' || req.status === 'HasOffers') {
-      return bid.status === 'Withdrawn' ? 'ถอนข้อเสนอแล้ว' : bidStatusLabel(bid.status);
+      return bid.status === 'Withdrawn' ? 'ถอนข้อเสนอแล้ว' : providerBidStatusLabel(bid.status, this.myAppointmentStatus());
     }
     return providerBidRowStatus({
       status: bid.status,

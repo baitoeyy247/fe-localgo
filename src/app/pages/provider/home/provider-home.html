@@ -1,4 +1,4 @@
-<app-page-shell title="ผู้ให้บริการ" [showBack]="false" [hero]="true">
+<app-page-shell [busy]="loading()" title="ผู้ให้บริการ" [showBack]="false" [hero]="true">
   @if (loading()) {
     <app-skeleton-card [slow]="hint.slow()" [count]="2" />
   } @else if (error()) {

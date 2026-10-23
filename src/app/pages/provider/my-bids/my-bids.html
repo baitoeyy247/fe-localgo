@@ -1,4 +1,4 @@
-<app-page-shell title="ข้อเสนอของฉัน" backLink="/provider">
+<app-page-shell [busy]="loading()" title="ข้อเสนอของฉัน" backLink="/provider">
   @if (loading() || (!error() && items().length > 0)) {
     <div class="chips" role="tablist" aria-label="กรองตามสถานะ">
       @for (chip of chips; track chip.key) {
@@ -17,7 +17,7 @@
             <span class="fc-grow">
               <b class="fc-title"><span class="ghost ghost--inline">ชื่องานบริการที่เสนอราคาตัวอย่าง</span></b>
               <span class="muted fc-line"><span class="ghost ghost--inline">{{ GLOSSARY.bidOfferedPriceLabel }} <span class="price" style="font-size: 16px">1,000 บาท</span></span></span>
-              <span class="muted fc-line" style="font-size: 13px"><span class="ghost ghost--inline">ส่งเมื่อ 00 ต.ค. 2569 00:00 · {{ GLOSSARY.appointment }} 00 ต.ค. 2569</span></span>
+              <span class="muted fc-line fc-meta" style="font-size: 13px"><span class="ghost ghost--inline">ส่งเมื่อ 00 ต.ค. 2569 00:00 · {{ GLOSSARY.appointment }} 00 ต.ค. 2569</span></span>
             </span>
             <span class="badge ghost">ยืนยันนัดหมายแล้ว</span>
           </div>
@@ -52,7 +52,7 @@
               >{{ GLOSSARY.bidOfferedPriceLabel }}
               <span class="price" style="font-size: 16px">{{ formatPrice(item.priceText) }}</span></span
             >
-            <span class="muted fc-line" style="font-size: 13px">
+            <span class="muted fc-line fc-meta" style="font-size: 13px">
               ส่งเมื่อ {{ formatProposed(item.createdAt) }}
               @if (item.appointmentScheduledAt) {
                 · {{ GLOSSARY.appointment }} {{ formatWhen(item.appointmentScheduledAt) }}

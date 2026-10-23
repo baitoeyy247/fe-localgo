@@ -59,7 +59,16 @@ const PROVIDER_APPOINTMENT_STATUS: Record<string, string> = {
   InProgress: 'กำลังดำเนินงาน',
   Completed: 'เสร็จสิ้น',
   Rejected: 'คุณปฏิเสธนัดหมาย',
+  Cancelled: 'ยกเลิกแล้ว',
 };
+
+/** R44 T4-10c: provider-facing bid label; once an appointment exists use the appointment vocabulary. */
+export function providerBidStatusLabel(bidStatus: string, myAppointmentStatus?: string | null): string {
+  if (myAppointmentStatus && PROVIDER_APPOINTMENT_STATUS[myAppointmentStatus]) {
+    return PROVIDER_APPOINTMENT_STATUS[myAppointmentStatus];
+  }
+  return bidStatusLabel(bidStatus);
+}
 
 export function displayRequestStatusLabel(
   status: string,
@@ -170,7 +179,7 @@ export function providerBidRowStatus(item: {
     if (item.appointmentStatus === 'Completed') {
       return { key: 'done', label: PROVIDER_APPOINTMENT_STATUS['Completed'], badgeClass: 'badge--success' };
     }
-    return { key: 'selected', label: 'ถูกเลือก', badgeClass: 'badge--green' };
+    return { key: 'selected', label: PROVIDER_APPOINTMENT_STATUS['Confirmed'], badgeClass: 'badge--green' };
   }
   if (item.status === 'Submitted' || item.status === 'Pending') {
     return { key: 'waiting', label: 'รอผล', badgeClass: 'badge--orange' };

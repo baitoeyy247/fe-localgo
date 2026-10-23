@@ -1,4 +1,4 @@
-<app-page-shell [title]="pageTitle()" backLink="/requester/search" [hideNavPad]="!!provider()">
+<app-page-shell [busy]="loading()" [title]="pageTitle()" backLink="/requester/search" [hideNavPad]="!!provider()">
   @if (loading()) {
     <app-skeleton-card variant="detail" [count]="2" [topOffset]="true" />
   } @else if (loadError()) {

@@ -1930,3 +1930,11 @@ h1.page-h1:focus { outline: none; }
   .fixed-card > .row.between > .fc-grow { flex: 1 1 100%; width: 100%; }
   .fixed-card > .row.between > .badge { margin-left: 0; }
 }
+
+/* R44 L-T3-7: my-bids below 360px — meta line ("ส่งเมื่อ… · นัดหมาย…") wraps instead of ellipsis
+   (fixed 2-line box so skeleton == real), and the title box shrinks to its content (no empty 2nd line). */
+@media (max-width: 359.98px) {
+  .fixed-card .fc-meta { white-space: normal; overflow: visible; text-overflow: clip; min-height: 3em; }
+  .fixed-card > .row.between > .fc-grow > .fc-title { height: auto; max-height: 2.8em; }
+  .fixed-card > .row.between { row-gap: 2px; }
+}

@@ -1,4 +1,4 @@
-<app-page-shell title="ให้คะแนนและรีวิว" backLink="/requester/appointment">
+<app-page-shell [busy]="loading()" title="ให้คะแนนและรีวิว" backLink="/requester/appointment">
   <app-requester-flow-bar active="review" [unlockedThrough]="flowUnlockedThrough()" />
 
   @if (loading() && !providerId()) {

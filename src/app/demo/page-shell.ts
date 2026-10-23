@@ -39,7 +39,7 @@ import { navigateWithDirtyGuard } from '../shared/nav-guard';
         </header>
       }
 
-      <main class="content page-content">
+      <main class="content page-content" [attr.aria-busy]="busy() === null ? null : busy() ? 'true' : 'false'">
         <ng-content />
       </main>
       @if (showBuildInfo()) {
@@ -63,6 +63,8 @@ export class PageShell {
   /** Skip bottom-nav padding (entry / sheets). */
   readonly hideNavPad = input(false);
   readonly showBuildInfo = input(true);
+  /** R44 A5-20: aria-busy on the main container while the page skeleton is shown. */
+  readonly busy = input<boolean | null>(null);
 
   private readonly location = inject(Location);
   private readonly router = inject(Router);

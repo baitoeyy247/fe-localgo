@@ -34,6 +34,7 @@ export class RequesterHomePage implements OnInit, OnDestroy {
   protected readonly error = signal<string | null>(null);
   protected readonly cancelTarget = signal<ServiceRequestSummary | null>(null);
   protected readonly busy = signal(false);
+  protected readonly cancellingId = signal<string | null>(null);
   protected readonly actionError = signal<string | null>(null);
   protected readonly hint = new SlowLoadHint();
   protected readonly statusLabel = displayRequestStatusLabel;
@@ -101,12 +102,8 @@ export class RequesterHomePage implements OnInit, OnDestroy {
     }
     this.busy.set(true);
     this.actionError.set(null);
-    // Optimistic + close dialog immediately.
-    this.requests.set(
-      this.requests().map((r) =>
-        r.id === target.id ? { ...r, status: 'Cancelled', appointmentStatus: 'Cancelled' } : r,
-      ),
-    );
+    // R44 L-T1-4/5: close the sheet, keep the card button visible as "กำลังยกเลิก…" (disabled) until the server answers.
+    this.cancellingId.set(target.id);
     this.cancelTarget.set(null);
     try {
       await firstValueFrom(this.api.cancelRequest(target.id));
@@ -122,6 +119,7 @@ export class RequesterHomePage implements OnInit, OnDestroy {
       // keep the cancel failure visible even if the silent reload had its own issue
       this.error.set(null);
     } finally {
+      this.cancellingId.set(null);
       this.busy.set(false);
     }
   }

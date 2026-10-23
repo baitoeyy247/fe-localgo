@@ -1,4 +1,4 @@
-<app-page-shell title="นัดหมาย" [backLink]="isDirectBooking() ? '/requester' : '/requester/bids'">
+<app-page-shell [busy]="loading()" title="นัดหมาย" [backLink]="isDirectBooking() ? '/requester' : '/requester/bids'">
   <app-requester-flow-bar
     active="appointment"
     [unlockedThrough]="flowUnlockedThrough()"

@@ -1,4 +1,4 @@
-<app-page-shell title="ข้อเสนอที่ได้รับ" backLink="/requester">
+<app-page-shell [busy]="loading()" title="ข้อเสนอที่ได้รับ" backLink="/requester">
   <app-requester-flow-bar active="bids" [unlockedThrough]="flowUnlockedThrough()" [requestId]="request()?.id" />
 
   @if (justPosted() && !loading()) {

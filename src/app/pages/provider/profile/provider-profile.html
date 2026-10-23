@@ -1,4 +1,4 @@
-<app-page-shell title="โปรไฟล์ผู้ให้บริการ" subtitle="ขั้นตอนที่ 1 จาก 3" backLink="/provider">
+<app-page-shell [busy]="loading()" title="โปรไฟล์ผู้ให้บริการ" subtitle="ขั้นตอนที่ 1 จาก 3" backLink="/provider">
   <app-provider-setup-bar active="profile" />
 
   @if (loading()) {

@@ -1,4 +1,4 @@
-<app-page-shell [title]="title()" [backLink]="backLink()">
+<app-page-shell [busy]="loading()" [title]="title()" [backLink]="backLink()">
   @if (loading()) {
     <div class="skeleton-stack skeleton-stack--appointment-detail">
       <span class="sr-only" role="status" aria-live="polite">กำลังโหลด…</span>

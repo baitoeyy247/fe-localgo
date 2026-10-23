@@ -1,10 +1,11 @@
-<app-page-shell [title]="GLOSSARY.submitBid" [backLink]="backLink()">
+<app-page-shell [busy]="loading() && !request()" [title]="GLOSSARY.submitBid" [backLink]="backLink()">
   @if (loading() && !request()) {
     <app-skeleton-card [slow]="hint.slow()" variant="form" [count]="1" [topOffset]="true" />
   } @else if (loadError()) {
     <app-error-state [message]="loadError()!" (retry)="ngOnInit()" />
   } @else if (categoryBlocked()) {
-    <div class="state">
+    <!-- R44 A5-21: the deny reason (e.g. "คุณปฏิเสธนัดหมายของงานนี้แล้ว…") is announced once. -->
+    <div class="state" role="status" aria-live="polite" aria-atomic="true">
       <div class="em">🚫</div>
       <h3>{{ categoryBlockedTitle() }}</h3>
       <p class="muted">{{ categoryBlocked() }}</p>

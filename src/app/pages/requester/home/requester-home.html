@@ -1,4 +1,4 @@
-<app-page-shell title="ผู้รับบริการ" subtitle="ต้องการบริการอะไรวันนี้?" [showBack]="false" [hero]="true">
+<app-page-shell [busy]="loading()" title="ผู้รับบริการ" subtitle="ต้องการบริการอะไรวันนี้?" [showBack]="false" [hero]="true">
   <a class="search" routerLink="/requester/search" style="background: #fff; box-shadow: var(--shadow-1)">
     🔍 เช่น ซักรีด, ทำความสะอาด, ช่างไฟ
   </a>
@@ -65,7 +65,7 @@
               <button type="button" class="btn btn-ghost btn-sm grow" (click)="openDetail(request)">ดูรายละเอียด</button>
             }
             @if (canCancel(request.status)) {
-              <button type="button" class="btn btn-danger-o btn-sm grow" (click)="askCancel(request, $event)">ยกเลิกงาน</button>
+              <button type="button" class="btn btn-danger-o btn-sm grow" [disabled]="cancellingId() === request.id" [attr.aria-busy]="cancellingId() === request.id ? 'true' : null" (click)="askCancel(request, $event)">{{ cancellingId() === request.id ? 'กำลังยกเลิก…' : 'ยกเลิกงาน' }}</button>
             }
           }
         </div>
@@ -92,6 +92,7 @@
     title="ยกเลิกงานนี้?"
     [message]="cancelTarget() ? 'ยกเลิกงาน &quot;' + cancelTarget()!.title + '&quot; ใช่หรือไม่' : ''"
     confirmLabel="ยกเลิกงาน"
+    busyLabel="กำลังยกเลิก…"
     cancelLabel="กลับ"
     [danger]="true"
     [busy]="busy()"

@@ -85,13 +85,14 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
 
   protected readonly formatPrice = formatPrice;
   protected readonly tabs: { key: JobTab; label: string }[] = [
-    { key: 'pending', label: 'รอยืนยัน' },
+    // R44 L-T3-6: tab words == badge words (PROVIDER_APPOINTMENT_STATUS).
+    { key: 'pending', label: 'รอยืนยันนัดหมาย' },
     { key: 'bidWaiting', label: 'รอผลข้อเสนอ' },
-    { key: 'scheduled', label: 'นัดหมายแล้ว' },
-    { key: 'active', label: 'กำลังทำ' },
+    { key: 'scheduled', label: 'ยืนยันนัดหมายแล้ว' },
+    { key: 'active', label: 'กำลังดำเนินงาน' },
     { key: 'completed', label: 'เสร็จสิ้น' },
-    { key: 'cancelled', label: 'ยกเลิก' },
-    { key: 'rejected', label: 'ปฏิเสธ' },
+    { key: 'cancelled', label: 'ยกเลิกแล้ว' },
+    { key: 'rejected', label: 'คุณปฏิเสธนัดหมาย' },
   ];
 
   /** Jobs open for bidding (not yet mine) — shown above tabs. */
@@ -397,11 +398,11 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
 const SKELETON_LAYOUT_KEY = 'lg.provider.requests.chipsFirst';
 function readSkeletonChipsFirst(): boolean {
   try {
-    // R42 M-1c: only skip the "เปิดรับข้อเสนอ" section when the last load had no open jobs.
-    // First visit (nothing stored) → render both sections in real-page order.
-    return localStorage.getItem(SKELETON_LAYOUT_KEY) === '1';
+    // R44 M-1f: render the "เปิดรับข้อเสนอ" skeleton section only when the last known load had open
+    // jobs ('0'). First visit (nothing stored) → skip it, matching the common empty-open case.
+    return localStorage.getItem(SKELETON_LAYOUT_KEY) !== '0';
   } catch {
-    return false;
+    return true;
   }
 }
 function writeSkeletonChipsFirst(value: boolean): void {

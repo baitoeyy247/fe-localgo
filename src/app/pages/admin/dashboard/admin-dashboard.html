@@ -1,4 +1,4 @@
-<app-page-shell title="แอดมิน · ภาพรวมระบบ" [showBack]="true" backLink="/" [hideNavPad]="true">
+<app-page-shell [busy]="loading()" title="แอดมิน · ภาพรวมระบบ" [showBack]="true" backLink="/" [hideNavPad]="true">
   @if (loading()) {
     <app-skeleton-card [count]="2" />
     <p class="muted" style="text-align: center">กำลังโหลดข้อมูล…</p>

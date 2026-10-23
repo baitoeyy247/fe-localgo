@@ -1,4 +1,4 @@
-<app-page-shell title="รายละเอียดงาน" [backLink]="'/provider/requests'">
+<app-page-shell [busy]="(loading() && !request()) || (!request() && !notFound() && !error())" title="รายละเอียดงาน" [backLink]="'/provider/requests'">
   @if ((loading() && !request()) || (!request() && !notFound() && !error())) {
     @if (hint.timedOut()) {
       <app-skeleton-card [timedOut]="true" (retry)="load()" />
