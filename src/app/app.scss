@@ -20,3 +20,8 @@
   visibility: hidden;
   pointer-events: none;
 }
+
+/* R43 M-1e: page-shaped fallback supplies its own padding via PageShell. */
+.route-skeleton--shell {
+  padding: 0;
+}

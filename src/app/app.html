@@ -2,10 +2,23 @@
   <app-offline-bar />
   <main class="app-main" [class.is-route-loading]="routeLoading()">
     @if (routeLoading()) {
-      <div class="route-skeleton" aria-busy="true" aria-live="polite">
-        <app-skeleton-card [count]="2" />
-        <p class="muted" style="text-align: center">กำลังโหลดหน้า…</p>
-      </div>
+      @if (routeTarget(); as t) {
+        <!-- R43 M-1e: same header (+ flow bar) as the real page so the first card does not jump when the chunk lands. -->
+        <div class="route-skeleton route-skeleton--shell" aria-busy="true">
+          <app-page-shell [title]="t.title || 'LocalGo'" [hero]="isHeroPath(t.path)" [showBack]="!isHeroPath(t.path)" [showBuildInfo]="false">
+            @if (t.path === 'requester/bids') {
+              <app-requester-flow-bar active="bids" />
+            }
+            <span class="sr-only" role="status" aria-live="polite">กำลังโหลดหน้า…</span>
+            <app-skeleton-card [count]="2" />
+          </app-page-shell>
+        </div>
+      } @else {
+        <div class="route-skeleton" aria-busy="true" aria-live="polite">
+          <app-skeleton-card [count]="2" />
+          <p class="muted" style="text-align: center">กำลังโหลดหน้า…</p>
+        </div>
+      }
     }
     <div class="route-outlet">
       <router-outlet />

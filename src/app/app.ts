@@ -7,15 +7,22 @@ import { ConfirmSheet } from './shared/ui/confirm-sheet';
 import { OfflineBar } from './shared/ui/offline-bar';
 import { SkeletonCard } from './shared/ui/skeleton-card';
 import { ToastHost } from './shared/ui/toast-host';
+import { PageShell } from './demo/page-shell';
+import { RequesterFlowBar } from './shared/requester-flow-bar';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, OfflineBar, ToastHost, SkeletonCard, ConfirmSheet],
+  imports: [RouterOutlet, OfflineBar, ToastHost, SkeletonCard, ConfirmSheet, PageShell, RequesterFlowBar],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App {
   protected readonly routeLoading = inject(RouteLoadingService).active;
+  protected readonly routeTarget = inject(RouteLoadingService).target;
+  /** Pages that render PageShell with [hero]="true". */
+  protected isHeroPath(path: string): boolean {
+    return path === '' || path === 'requester' || path === 'provider';
+  }
   protected readonly dirty = inject(DirtyFormGuardState);
 
   constructor() {
@@ -31,7 +38,7 @@ export class App {
         }
         let tries = 0;
         const focusH1 = () => {
-          const h1 = document.querySelector<HTMLElement>('app-page-shell h1.page-h1');
+          const h1 = document.querySelector<HTMLElement>('.route-outlet app-page-shell h1.page-h1');
           if (h1) {
             h1.focus({ preventScroll: true });
           } else if (++tries < 20) {

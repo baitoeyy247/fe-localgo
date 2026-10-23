@@ -1922,3 +1922,11 @@ h1.page-h1:focus { outline: none; }
 }
 .fixed-card .fc-grow { min-width: 0; flex: 1 1 auto; }
 .fixed-card .badge { flex: 0 0 auto; white-space: nowrap; }
+
+/* R43 T3-CL1: the R42 rule only matched `.card > .row.between > b`; fixed cards (my-bids,
+   appointment detail) put the title in `.fc-grow` inside a button/div header. Same wrap below 360px. */
+@media (max-width: 359.98px) {
+  .fixed-card > .row.between { flex-wrap: wrap; row-gap: 4px; }
+  .fixed-card > .row.between > .fc-grow { flex: 1 1 100%; width: 100%; }
+  .fixed-card > .row.between > .badge { margin-left: 0; }
+}

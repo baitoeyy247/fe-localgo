@@ -1,8 +1,9 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import { provideRouter } from '@angular/router';
+import { provideRouter, withPreloading } from '@angular/router';
 
 import { routes } from './app.routes';
+import { RolePreloadingStrategy } from './core/role-preloading.strategy';
 import { authInterceptor } from './core/auth.interceptor';
 import { authErrorInterceptor } from './core/auth-error.interceptor';
 import { httpTimeoutInterceptor } from './core/http-timeout.interceptor';
@@ -15,6 +16,6 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(
       withInterceptors([httpConsoleLogInterceptor, httpTimeoutInterceptor, ngrokInterceptor, authInterceptor, authErrorInterceptor]),
     ),
-    provideRouter(routes),
+    provideRouter(routes, withPreloading(RolePreloadingStrategy)),
   ],
 };

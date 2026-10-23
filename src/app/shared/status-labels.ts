@@ -1,4 +1,3 @@
-import { GLOSSARY } from './glossary';
 
 const REQUEST_STATUS: Record<string, string> = {
   Draft: 'ฉบับร่าง',
@@ -54,8 +53,11 @@ export type StatusViewer = 'requester' | 'provider' | 'admin';
 
 /** T4-1: provider sees their own actions in first person. */
 const PROVIDER_APPOINTMENT_STATUS: Record<string, string> = {
-  Pending: 'รอคุณยืนยันนัดหมาย',
-  Confirmed: 'คุณยืนยันนัดหมายแล้ว',
+  // R43 T4-10b: one provider vocabulary for /provider/requests, /provider/my-bids and detail pages.
+  Pending: 'รอยืนยันนัดหมาย',
+  Confirmed: 'ยืนยันนัดหมายแล้ว',
+  InProgress: 'กำลังดำเนินงาน',
+  Completed: 'เสร็จสิ้น',
   Rejected: 'คุณปฏิเสธนัดหมาย',
 };
 
@@ -153,14 +155,20 @@ export function providerBidRowStatus(item: {
     return { key: 'withdrawn', label: 'ถอนแล้ว', badgeClass: 'badge--muted' };
   }
   if (item.requestStatus === 'Completed') {
-    return { key: 'done', label: 'เสร็จ', badgeClass: 'badge--success' };
+    return { key: 'done', label: PROVIDER_APPOINTMENT_STATUS['Completed'], badgeClass: 'badge--success' };
   }
   if (item.requestStatus === 'InProgress' || item.appointmentStatus === 'InProgress') {
-    return { key: 'inprogress', label: 'กำลังทำ', badgeClass: 'badge--blue' };
+    return { key: 'inprogress', label: PROVIDER_APPOINTMENT_STATUS['InProgress'], badgeClass: 'badge--blue' };
   }
   if (item.status === 'Selected') {
     if (!item.appointmentStatus || item.appointmentStatus === 'Pending') {
-      return { key: 'confirm', label: GLOSSARY.pendingAppointmentConfirmChip, badgeClass: 'badge--orange' };
+      return { key: 'confirm', label: PROVIDER_APPOINTMENT_STATUS['Pending'], badgeClass: 'badge--orange' };
+    }
+    if (item.appointmentStatus === 'Confirmed') {
+      return { key: 'selected', label: PROVIDER_APPOINTMENT_STATUS['Confirmed'], badgeClass: 'badge--green' };
+    }
+    if (item.appointmentStatus === 'Completed') {
+      return { key: 'done', label: PROVIDER_APPOINTMENT_STATUS['Completed'], badgeClass: 'badge--success' };
     }
     return { key: 'selected', label: 'ถูกเลือก', badgeClass: 'badge--green' };
   }

@@ -201,7 +201,7 @@ export class MatchingRequestsPage implements OnInit, OnDestroy {
   /** Single chip per card, from the shared status mapping. */
   protected chipLabel(request: ServiceRequestSummary): string {
     if (request.needsAppointmentConfirm) {
-      return 'รอคุณยืนยันนัดหมาย';
+      return 'รอยืนยันนัดหมาย';
     }
     if (request.alreadyBidByMe && this.isBiddable(request)) {
       return 'ส่งราคาแล้ว';

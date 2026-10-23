@@ -120,7 +120,7 @@ export class ProviderRequestDetailPage implements OnInit, OnDestroy {
       return null;
     }
     if (appt.status === 'Pending') {
-      return 'รอคุณยืนยันนัดหมาย';
+      return 'รอยืนยันนัดหมาย';
     }
     if (appt.status === 'Confirmed') {
       return this.startWindowHint() ?? 'กดเริ่มงานเมื่อถึงเวลานัดหมาย';
