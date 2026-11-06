@@ -1,13 +1,13 @@
 import { signal } from '@angular/core';
 
-/** Delay before showing the "connecting to server" hint. */
-export const SLOW_LOAD_HINT_MS = 3000;
-/** After this, show timeout + retry affordance. */
-export const LOAD_TIMEOUT_MS = 10_000;
+/** H1: Delay before showing the "connecting to server" hint. */
+export const SLOW_LOAD_HINT_MS = 4_000;
+/** H1: After this, show timeout + retry affordance. */
+export const LOAD_TIMEOUT_MS = 15_000;
 
 /**
- * Tracks slow loading: after 3s of `begin()` without `end()`, `slow()` becomes true.
- * After 10s, `timedOut()` becomes true for retry UI.
+ * Tracks slow loading: after 4s of `begin()` without `end()`, `slow()` becomes true.
+ * After 15s, `timedOut()` becomes true for retry UI.
  * Use together with `<app-skeleton-card [slow]="hint.slow()" [timedOut]="hint.timedOut()" (retry)="..." />`.
  */
 export class SlowLoadHint {

@@ -11,7 +11,7 @@ import { SKELETON_PAGE_PRESETS, type SkeletonPagePreset } from './skeleton-layou
       <div class="state" role="alert">
         <div class="em">⏳</div>
         <h3>โหลดนานเกินไป</h3>
-        <p>เกิน 10 วินาทีแล้ว ลองใหม่อีกครั้ง</p>
+        <p>เกิน 15 วินาทีแล้ว ลองใหม่อีกครั้ง</p>
         <button type="button" class="btn btn-primary" (click)="retry.emit()">ลองใหม่</button>
       </div>
     } @else {
