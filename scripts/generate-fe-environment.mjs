@@ -17,10 +17,13 @@ const apiBaseUrl = env('NG_APP_API_BASE_URL', 'https://be-localgo.onrender.com/a
 const liffId = env('NG_APP_LIFF_ID', '2010177240-Bu98ZCLT');
 const mapLat = env('NG_APP_MAP_DEFAULT_LAT', '13.7563');
 const mapLng = env('NG_APP_MAP_DEFAULT_LNG', '100.5018');
-const allowDevLogin =
-  (process.env.NG_APP_ALLOW_DEV_LOGIN ?? 'false').toLowerCase() === 'true' ||
-  (process.env.NG_APP_ALLOW_DEV_LOGIN ?? '') === '1';
-const devLoginDisplayName = env('NG_APP_DEV_LOGIN_DISPLAY_NAME', 'ทดสอบ ผู้รับ 01');
+// SIT/prod builds never ship dev login (BE dev login is off; /api/auth/dev/login = 404).
+// Hard-coded false on purpose: no env var, repo variable, or deploy script can flip it on.
+// Re-enabling the QA persona picker requires a reviewed code change here.
+const allowDevLogin = false;
+if ((process.env.NG_APP_ALLOW_DEV_LOGIN ?? '').toLowerCase() === 'true' || process.env.NG_APP_ALLOW_DEV_LOGIN === '1') {
+  console.warn('WARN: NG_APP_ALLOW_DEV_LOGIN=true ignored — SIT/prod builds always use allowDevLogin=false');
+}
 // B-1: every deploy path (deploy-pages.sh / wrangler / CI) stamps the short commit.
 function gitShortSha() {
   try {
@@ -39,11 +42,10 @@ export const environment = {
   liffId: '${liffId}',
   mapDefaultLat: ${mapLat},
   mapDefaultLng: ${mapLng},
-  devLoginDisplayName: '${devLoginDisplayName}',
   allowDevLogin: ${allowDevLogin},
   privacyVersion: '1.0-mvp',
   buildSha: '${buildSha}',
-  httpConsoleLog: true,
+  httpConsoleLog: false,
 };
 `;
 

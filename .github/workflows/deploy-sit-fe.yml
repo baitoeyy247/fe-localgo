@@ -25,7 +25,6 @@ jobs:
           NG_APP_LIFF_ID: ${{ secrets.SIT_LIFF_ID }}
           NG_APP_MAP_DEFAULT_LAT: ${{ secrets.SIT_MAP_DEFAULT_LAT }}
           NG_APP_MAP_DEFAULT_LNG: ${{ secrets.SIT_MAP_DEFAULT_LNG }}
-          NG_APP_ALLOW_DEV_LOGIN: ${{ vars.NG_APP_ALLOW_DEV_LOGIN || 'false' }}
         run: node scripts/generate-fe-environment.mjs
 
       - name: Install and build
@@ -35,6 +34,9 @@ jobs:
 
       - name: Absolutize asset paths
         run: node scripts/absolutize-assets.mjs dist/localgo/browser
+
+      - name: Guard - bundle must not enable dev login
+        run: node scripts/assert-no-dev-login.mjs dist/localgo/browser
 
       - name: Publish to Cloudflare Pages
         env:

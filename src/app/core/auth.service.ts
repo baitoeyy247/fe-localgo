@@ -193,7 +193,7 @@ export class AuthService {
     }
     const response = await firstValueFrom(
       this.api.devLogin({
-        displayName: options?.displayName ?? (environment.devLoginDisplayName || 'Dev User'),
+        displayName: options?.displayName ?? ((environment as { devLoginDisplayName?: string }).devLoginDisplayName || 'Dev User'),
         activeRole: options?.activeRole ?? 'Requester',
         asAdmin: options?.asAdmin ?? false,
         personaKey: options?.personaKey,

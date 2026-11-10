@@ -18,8 +18,8 @@ fi
 export CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID
 export NG_APP_API_BASE_URL="${NG_APP_API_BASE_URL:-https://be-localgo-ul36.onrender.com/api}"
 export NG_APP_LIFF_ID="${NG_APP_LIFF_ID:-2010177240-Bu98ZCLT}"
-# Temporary SIT playtest: persona picker (set NG_APP_ALLOW_DEV_LOGIN=false to turn off)
-export NG_APP_ALLOW_DEV_LOGIN="${NG_APP_ALLOW_DEV_LOGIN:-true}"
+# Dev login is never shipped from SIT/prod builds (generator hard-codes allowDevLogin=false).
+unset NG_APP_ALLOW_DEV_LOGIN
 
 # B-1: footer "build <sha>" must match the deployed commit.
 export BUILD_COMMIT="${BUILD_COMMIT:-$(git rev-parse --short HEAD)}"
@@ -46,6 +46,9 @@ fi
 
 echo "==> Absolutizing asset paths (deep-link MIME fix)"
 node scripts/absolutize-assets.mjs "$DIST_DIR"
+
+echo "==> Guard: bundle must not enable dev login"
+node scripts/assert-no-dev-login.mjs "$DIST_DIR"
 
 echo "==> Deploying $DIST_DIR to Cloudflare Pages project localgo-sit (production)"
 # wrangler/workerd must match the CPU arch of the node that runs it (avoid Rosetta mismatch).
