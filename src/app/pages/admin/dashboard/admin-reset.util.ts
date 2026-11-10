@@ -1,24 +1,22 @@
+import { HttpErrorResponse } from '@angular/common/http';
+import { apiErrorMessage } from '../../../core/api-error.util';
 import { AdminDashboard } from '../../../core/models';
-
-/** Optimistic KPI patch after test reset — keeps user/provider counts (10/5/0/0/0/0). */
-export function optimisticAdminDashboardAfterReset(
-  current: AdminDashboard | null,
-  keptUsers = 10,
-): AdminDashboard {
-  const users = current?.users && current.users > 0 ? current.users : keptUsers;
-  const providers = current?.providers && current.providers > 0 ? current.providers : 5;
-  return {
-    users,
-    providers,
-    publishedRequests: 0,
-    completedRequests: 0,
-    expiredRequests: 0,
-    pendingNotifications: 0,
-  };
-}
 
 export const ADMIN_RESET_TOAST = 'รีเซ็ตข้อมูลทดสอบแล้ว';
 
+/** A-1: BE answers 404 for test-data tools when dev login / test mode is off. */
+export const ADMIN_TOOL_DISABLED_MESSAGE = 'ฟังก์ชันนี้ปิดอยู่ในโหมดใช้งานจริง';
+
+export function adminToolErrorMessage(err: unknown, fallback: string): string {
+  const status =
+    err instanceof HttpErrorResponse ? err.status : ((err as { status?: number } | null)?.status ?? -1);
+  if (status === 404) {
+    return ADMIN_TOOL_DISABLED_MESSAGE;
+  }
+  return apiErrorMessage(err, fallback);
+}
+
+/** Parse the dashboard the BE returns with a reset result. No invented defaults: null when absent. */
 export function normalizeResetDashboard(raw: unknown): AdminDashboard | null {
   if (!raw || typeof raw !== 'object') {
     return null;

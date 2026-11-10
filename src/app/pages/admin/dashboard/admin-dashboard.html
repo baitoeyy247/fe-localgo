@@ -14,6 +14,12 @@
       <p class="error-text" role="alert">{{ actionError() }}</p>
     }
 
+    @if (sectionError('dashboard'); as secErr) {
+      <div class="banner warn admin-section-error" role="alert" data-section="dashboard">
+        <span>{{ secErr }}</span>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="retrySection('dashboard')">ลองใหม่</button>
+      </div>
+    }
     @if (dashboard(); as d) {
       <div class="kpi">
         <div>
@@ -35,26 +41,40 @@
           <b style="color: #d9001b">{{ d.pendingNotifications }}</b><span>แจ้งเตือนค้าง</span>
         </div>
       </div>
+    } @else if (isSectionLoading('dashboard')) {
+      <app-skeleton-card [count]="1" />
     }
 
-    <p class="muted" style="margin: 0; font-size: 13px">
-      <b>ซ่อมข้อมูลทดสอบ</b> — แก้รีวิว/งานค้างโดยไม่ลบบัญชี · <b>รีเซ็ตข้อมูลทดสอบ</b> — ล้างงาน/นัดหมาย/รีวิว คง 10 บัญชีทดสอบ
-    </p>
-    <div class="sec-title admin-users-head__title">ผู้ใช้ ({{ usersTotal() }})</div>
-    <div class="admin-tool-row">
-      <button type="button" class="btn btn-secondary btn-sm" [disabled]="acting() || resetting() || repairing()" (click)="askRepairTestData()">
-        {{ repairing() ? 'กำลังซ่อม…' : 'ซ่อมข้อมูลทดสอบ' }}
-      </button>
-      <button type="button" class="btn btn-danger-o btn-sm" [disabled]="acting() || resetting() || repairing()" (click)="askResetTestData()">
-        {{ resetting() ? 'กำลังรีเซ็ต…' : 'รีเซ็ตข้อมูลทดสอบ' }}
-      </button>
+    @if (showTestTools()) {
+      <p class="muted admin-test-tools-help" style="margin: 0; font-size: 13px">
+        <b>ซ่อมข้อมูลทดสอบ</b> — แก้รีวิว/งานค้างโดยไม่ลบบัญชี · <b>รีเซ็ตข้อมูลทดสอบ</b> — ล้างงาน/นัดหมาย/รีวิว คง 10 บัญชีทดสอบ
+      </p>
+    }
+    <div class="sec-title admin-users-head__title">
+      ผู้ใช้@if (!isSectionLoading('users') && !sectionError('users')) { ({{ usersTotal() }}) }
     </div>
+    @if (showTestTools()) {
+      <div class="admin-tool-row">
+        <button type="button" class="btn btn-secondary btn-sm" data-testid="admin-repair" [disabled]="adminActionsDisabled()" (click)="askRepairTestData()">
+          {{ repairing() ? 'กำลังซ่อม…' : 'ซ่อมข้อมูลทดสอบ' }}
+        </button>
+        <button type="button" class="btn btn-danger-o btn-sm" data-testid="admin-reset" [disabled]="adminActionsDisabled()" (click)="askResetTestData()">
+          {{ resetting() ? 'กำลังรีเซ็ต…' : 'รีเซ็ตข้อมูลทดสอบ' }}
+        </button>
+      </div>
+    }
+    @if (sectionError('users'); as secErr) {
+      <div class="banner warn admin-section-error" role="alert" data-section="users">
+        <span>{{ secErr }}</span>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="retrySection('users')">ลองใหม่</button>
+      </div>
+    }
     <div class="admin-user-cards" aria-label="รายการผู้ใช้">
       @for (u of users(); track u.id ?? $index) {
         <article class="admin-user-card">
           <b>{{ u.displayName ?? u.lineUserId ?? 'ผู้ใช้' }}</b>
           @if (isTestUser(u)) {
-            <span class="muted">บัญชีทดสอบ</span>
+            <span class="muted admin-test-badge">บัญชีทดสอบ</span>
           }
           <div class="admin-user-card__meta">
             <span>{{ adminAccountRoleLabel(u) }}</span>
@@ -65,7 +85,7 @@
               <button
                 type="button"
                 class="btn btn-ghost btn-sm admin-user-action-btn"
-                [disabled]="acting()"
+                [disabled]="adminActionsDisabled()"
                 [attr.aria-label]="userStatus(u) === 'Suspended' ? 'เปิดใช้งานบัญชี ' + (u.displayName ?? u.lineUserId ?? 'ผู้ใช้') : suspendButtonAriaLabel(u)"
                 (click)="requestToggleUser(u)"
               >
@@ -77,7 +97,7 @@
           </div>
         </article>
       } @empty {
-        <p class="muted">ยังไม่มีผู้ใช้</p>
+        <p class="muted">{{ isSectionLoading('users') ? 'กำลังโหลดผู้ใช้…' : sectionError('users') ? '—' : 'ยังไม่มีผู้ใช้' }}</p>
       }
     </div>
     <div class="admin-table-wrap admin-wide admin-users-table">
@@ -96,7 +116,7 @@
               <td>
                 {{ u.displayName ?? u.lineUserId ?? 'ผู้ใช้' }}
                 @if (isTestUser(u)) {
-                  <span class="muted"> · ทดสอบ</span>
+                  <span class="muted admin-test-badge"> · ทดสอบ</span>
                 }
               </td>
               <td>{{ adminAccountRoleLabel(u) }}</td>
@@ -106,7 +126,7 @@
                   <button
                     type="button"
                     class="btn btn-ghost btn-sm admin-user-action-btn"
-                    [disabled]="acting()"
+                    [disabled]="adminActionsDisabled()"
                     [attr.aria-label]="userStatus(u) === 'Suspended' ? 'เปิดใช้งานบัญชี ' + (u.displayName ?? u.lineUserId ?? 'ผู้ใช้') : suspendButtonAriaLabel(u)"
                     (click)="requestToggleUser(u)"
                   >
@@ -119,7 +139,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="4" class="muted">ยังไม่มีผู้ใช้</td>
+              <td colspan="4" class="muted">{{ isSectionLoading('users') ? 'กำลังโหลดผู้ใช้…' : sectionError('users') ? '—' : 'ยังไม่มีผู้ใช้' }}</td>
             </tr>
           }
         </tbody>
@@ -146,6 +166,12 @@
     @if (listsLoading()) {
       <p class="muted" style="text-align: center">กำลังอัปเดตรายการ…</p>
     }
+    @if (sectionError('requests'); as secErr) {
+      <div class="banner warn admin-section-error" role="alert" data-section="requests">
+        <span>{{ secErr }}</span>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="retrySection('requests')">ลองใหม่</button>
+      </div>
+    }
     <div class="admin-mobile-cards admin-requests-cards">
       @for (r of requests(); track r.id) {
         <article class="admin-user-card">
@@ -156,7 +182,7 @@
           </div>
         </article>
       } @empty {
-        <p class="muted">ไม่มีงาน</p>
+        <p class="muted">{{ isSectionLoading('requests') ? 'กำลังโหลดงาน…' : sectionError('requests') ? '—' : 'ไม่มีงาน' }}</p>
       }
     </div>
     <div class="admin-table-wrap admin-wide admin-requests-table">
@@ -177,7 +203,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="3" class="muted">ไม่มีงาน</td>
+              <td colspan="3" class="muted">{{ isSectionLoading('requests') ? 'กำลังโหลดงาน…' : sectionError('requests') ? '—' : 'ไม่มีงาน' }}</td>
             </tr>
           }
         </tbody>
@@ -196,6 +222,12 @@
         <option value="Rejected">ผู้ให้บริการปฏิเสธ</option>
       </select>
     </div>
+    @if (sectionError('appointments'); as secErr) {
+      <div class="banner warn admin-section-error" role="alert" data-section="appointments">
+        <span>{{ secErr }}</span>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="retrySection('appointments')">ลองใหม่</button>
+      </div>
+    }
     <div class="admin-mobile-cards admin-appointments-cards">
       @for (a of appointments(); track a.id) {
         <article class="admin-user-card">
@@ -217,7 +249,7 @@
           }
         </article>
       } @empty {
-        <p class="muted">ไม่มีนัดหมาย</p>
+        <p class="muted">{{ isSectionLoading('appointments') ? 'กำลังโหลดนัดหมาย…' : sectionError('appointments') ? '—' : 'ไม่มีนัดหมาย' }}</p>
       }
     </div>
     <div class="admin-table-wrap admin-wide admin-appointments-table">
@@ -249,7 +281,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="5" class="muted">ไม่มีนัดหมาย</td>
+              <td colspan="5" class="muted">{{ isSectionLoading('appointments') ? 'กำลังโหลดนัดหมาย…' : sectionError('appointments') ? '—' : 'ไม่มีนัดหมาย' }}</td>
             </tr>
           }
         </tbody>
@@ -257,6 +289,12 @@
     </div>
 
     <div class="sec-title">บันทึกแจ้งเตือนล่าสุด</div>
+    @if (sectionError('notifications'); as secErr) {
+      <div class="banner warn admin-section-error" role="alert" data-section="notifications">
+        <span>{{ secErr }}</span>
+        <button type="button" class="btn btn-ghost btn-sm" (click)="retrySection('notifications')">ลองใหม่</button>
+      </div>
+    }
     <div class="admin-mobile-cards admin-notifications-cards">
       @for (n of notifications().slice(0, 12); track $index) {
         <article class="admin-user-card">
@@ -267,7 +305,7 @@
           </div>
         </article>
       } @empty {
-        <p class="muted">ยังไม่มีบันทึกแจ้งเตือน</p>
+        <p class="muted">{{ isSectionLoading('notifications') ? 'กำลังโหลดแจ้งเตือน…' : sectionError('notifications') ? '—' : 'ยังไม่มีบันทึกแจ้งเตือน' }}</p>
       }
     </div>
     <div class="admin-table-wrap admin-wide admin-notifications-table">
@@ -288,7 +326,7 @@
             </tr>
           } @empty {
             <tr>
-              <td colspan="3" class="muted">ยังไม่มีบันทึกแจ้งเตือน</td>
+              <td colspan="3" class="muted">{{ isSectionLoading('notifications') ? 'กำลังโหลดแจ้งเตือน…' : sectionError('notifications') ? '—' : 'ยังไม่มีบันทึกแจ้งเตือน' }}</td>
             </tr>
           }
         </tbody>
@@ -318,25 +356,27 @@
     (confirm)="confirmActivateUser()"
     (cancel)="activateConfirmOpen.set(false)"
   />
-  <app-confirm-sheet
-    [open]="resetConfirmOpen()"
-    title="รีเซ็ตข้อมูลทดสอบ?"
-    message="ล้างงาน นัดหมาย และรีวิวของบัญชีทดสอบทั้งหมด แต่คงบัญชี 10 รายไว้"
-    confirmLabel="รีเซ็ต"
-    cancelLabel="ยกเลิก"
-    [danger]="true"
-    [busy]="resetting()"
-    (confirm)="resetTestData()"
-    (cancel)="resetConfirmOpen.set(false)"
-  />
-  <app-confirm-sheet
-    [open]="repairConfirmOpen()"
-    title="ซ่อมข้อมูลทดสอบ?"
-    message="จัดรีวิวและลบงานค้างโดยไม่ลบบัญชีผู้ใช้"
-    confirmLabel="ซ่อมข้อมูล"
-    cancelLabel="ยกเลิก"
-    [busy]="repairing()"
-    (confirm)="repairTestData()"
-    (cancel)="repairConfirmOpen.set(false)"
-  />
+  @if (showTestTools()) {
+    <app-confirm-sheet
+      [open]="resetConfirmOpen()"
+      title="รีเซ็ตข้อมูลทดสอบ?"
+      message="ล้างงาน นัดหมาย และรีวิวของบัญชีทดสอบทั้งหมด แต่คงบัญชี 10 รายไว้"
+      confirmLabel="รีเซ็ต"
+      cancelLabel="ยกเลิก"
+      [danger]="true"
+      [busy]="resetting()"
+      (confirm)="resetTestData()"
+      (cancel)="resetConfirmOpen.set(false)"
+    />
+    <app-confirm-sheet
+      [open]="repairConfirmOpen()"
+      title="ซ่อมข้อมูลทดสอบ?"
+      message="จัดรีวิวและลบงานค้างโดยไม่ลบบัญชีผู้ใช้"
+      confirmLabel="ซ่อมข้อมูล"
+      cancelLabel="ยกเลิก"
+      [busy]="repairing()"
+      (confirm)="repairTestData()"
+      (cancel)="repairConfirmOpen.set(false)"
+    />
+  }
 </app-page-shell>

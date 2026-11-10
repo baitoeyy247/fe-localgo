@@ -437,8 +437,11 @@ export class LocalGoApiService {
     );
   }
 
-  listAdminNotifications(): Observable<AdminNotificationRow[]> {
-    return this.get<unknown>('/admin/notifications').pipe(
+  listAdminNotifications(page = 1, pageSize = 20): Observable<AdminNotificationRow[]> {
+    const params = new HttpParams()
+      .set('page', String(page))
+      .set('pageSize', String(pageSize));
+    return this.get<unknown>('/admin/notifications', { params }).pipe(
       map((raw) => normalizeList<AdminNotificationRow>(raw)),
     );
   }

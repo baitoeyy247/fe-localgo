@@ -33,11 +33,14 @@ import { ToastService } from '../../../core/toast.service';
 import { MarketplaceCacheService } from '../../../core/marketplace-cache.service';
 import { suspendUserConfirmMessage, suspendUserAriaLabel } from '../../../shared/confirm-copy';
 import { GLOSSARY } from '../../../shared/glossary';
-import {
-  ADMIN_RESET_TOAST,
-  normalizeResetDashboard,
-  optimisticAdminDashboardAfterReset,
-} from './admin-reset.util';
+import { environment } from '../../../../environments/environment';
+import { ADMIN_RESET_TOAST, adminToolErrorMessage, normalizeResetDashboard } from './admin-reset.util';
+
+/** A-3: each dashboard section loads independently so one slow/failed call never blanks the page. */
+export type AdminSection = 'dashboard' | 'users' | 'notifications' | 'requests' | 'appointments';
+export const ADMIN_SECTIONS: readonly AdminSection[] = ['dashboard', 'users', 'notifications', 'requests', 'appointments'];
+/** A-3: dashboard shows the latest 20 notification rows; the full log is paged on the BE. */
+export const ADMIN_NOTIFICATIONS_PAGE_SIZE = 20;
 
 @Component({
   selector: 'app-admin-dashboard-page',
@@ -70,6 +73,11 @@ export class AdminDashboardPage implements OnInit {
   protected readonly activateTarget = signal<AdminUserRow | null>(null);
   protected readonly resetConfirmOpen = signal(false);
   protected readonly repairConfirmOpen = signal(false);
+  /** A-3: per-section error copy (missing key = section loaded fine). */
+  protected readonly sectionErrors = signal<Partial<Record<AdminSection, string>>>({});
+  protected readonly sectionLoading = signal<Partial<Record<AdminSection, boolean>>>({});
+  /** A-2: test-data tools and "บัญชีทดสอบ" badges only exist when the build enables test mode. */
+  protected readonly showTestTools = signal(environment.allowDevLogin === true);
   protected readonly requestStatusLabel = requestStatusLabel;
   protected readonly appointmentStatusLabel = appointmentStatusLabel;
   protected readonly displayInitial = displayInitial;
@@ -87,15 +95,18 @@ export class AdminDashboardPage implements OnInit {
   }
 
   protected async load(initial = false): Promise<void> {
-    if (initial) {
+    // A-1: a retry with nothing loaded yet must show the skeleton, never an empty page with fake KPIs.
+    if (initial || !this.dashboard()) {
       this.loading.set(true);
     }
     this.listsLoading.set(true);
     this.error.set(null);
     try {
-      await this.fetchAllAdminData();
-    } catch (e) {
-      this.error.set(apiErrorMessage(e, 'โหลดหลังบ้านไม่สำเร็จ'));
+      const failed = await this.fetchAllAdminData();
+      if (failed.length === ADMIN_SECTIONS.length) {
+        // Nothing loaded at all → full-page error with retry.
+        this.error.set(this.sectionErrors().dashboard ?? 'โหลดหลังบ้านไม่สำเร็จ');
+      }
     } finally {
       this.loading.set(false);
       this.listsLoading.set(false);
@@ -107,27 +118,84 @@ export class AdminDashboardPage implements OnInit {
     this.listsLoading.set(true);
     try {
       await this.fetchAllAdminData();
-    } catch (e) {
-      this.actionError.set(apiErrorMessage(e, 'โหลดข้อมูลหลังรีเซ็ตไม่สำเร็จ'));
     } finally {
       this.listsLoading.set(false);
     }
   }
 
-  private async fetchAllAdminData(): Promise<void> {
-    const [dashboard, usersPage, notifications, requests, appointments] = await Promise.all([
-      firstValueFrom(this.api.getAdminDashboard(true)),
-      firstValueFrom(this.api.listAdminUsers(this.usersPage(), this.pageSize)),
-      firstValueFrom(this.api.listAdminNotifications()),
-      firstValueFrom(this.api.listAdminServiceRequests(this.requestStatusFilter() || undefined)),
-      firstValueFrom(this.api.listAdminAppointments(this.appointmentStatusFilter() || undefined)),
-    ]);
-    this.dashboard.set(dashboard);
-    this.users.set(usersPage.items);
-    this.usersTotal.set(usersPage.total);
-    this.notifications.set(notifications);
-    this.requests.set(requests);
-    this.appointments.set(appointments);
+  /** A-3: independent loads (allSettled). Returns the sections that failed. */
+  private async fetchAllAdminData(): Promise<AdminSection[]> {
+    const results = await Promise.allSettled(ADMIN_SECTIONS.map((s) => this.loadSection(s)));
+    return ADMIN_SECTIONS.filter((_, i) => results[i].status === 'rejected');
+  }
+
+  private async loadSection(section: AdminSection): Promise<void> {
+    this.sectionLoading.update((m) => ({ ...m, [section]: true }));
+    try {
+      switch (section) {
+        case 'dashboard':
+          this.dashboard.set(await firstValueFrom(this.api.getAdminDashboard(true)));
+          break;
+        case 'users': {
+          const page = await firstValueFrom(this.api.listAdminUsers(this.usersPage(), this.pageSize));
+          this.users.set(page.items);
+          this.usersTotal.set(page.total);
+          break;
+        }
+        case 'notifications':
+          this.notifications.set(
+            await firstValueFrom(this.api.listAdminNotifications(1, ADMIN_NOTIFICATIONS_PAGE_SIZE)),
+          );
+          break;
+        case 'requests':
+          this.requests.set(
+            await firstValueFrom(this.api.listAdminServiceRequests(this.requestStatusFilter() || undefined)),
+          );
+          break;
+        case 'appointments':
+          this.appointments.set(
+            await firstValueFrom(this.api.listAdminAppointments(this.appointmentStatusFilter() || undefined)),
+          );
+          break;
+      }
+      this.sectionErrors.update((m) => {
+        const next = { ...m };
+        delete next[section];
+        return next;
+      });
+    } catch (e) {
+      this.sectionErrors.update((m) => ({ ...m, [section]: apiErrorMessage(e, 'โหลดส่วนนี้ไม่สำเร็จ') }));
+      throw e;
+    } finally {
+      this.sectionLoading.update((m) => ({ ...m, [section]: false }));
+    }
+  }
+
+  protected sectionError(section: AdminSection): string | null {
+    return this.sectionErrors()[section] ?? null;
+  }
+
+  protected isSectionLoading(section: AdminSection): boolean {
+    return !!this.sectionLoading()[section] || (this.listsLoading() && !this.sectionError(section));
+  }
+
+  protected async retrySection(section: AdminSection): Promise<void> {
+    if (this.sectionLoading()[section]) {
+      return;
+    }
+    await this.loadSection(section).catch(() => undefined);
+  }
+
+  /** A-1: reset/repair/suspend stay disabled until real dashboard data is on screen. */
+  protected adminActionsDisabled(): boolean {
+    return (
+      this.loading() ||
+      this.listsLoading() ||
+      !this.dashboard() ||
+      this.acting() ||
+      this.resetting() ||
+      this.repairing()
+    );
   }
 
   protected totalPages(): number {
@@ -140,23 +208,17 @@ export class AdminDashboardPage implements OnInit {
       return;
     }
     this.usersPage.set(next);
-    const page = await firstValueFrom(this.api.listAdminUsers(next, this.pageSize));
-    this.users.set(page.items);
-    this.usersTotal.set(page.total);
+    await this.retrySection('users');
   }
 
   protected async setRequestFilter(status: string): Promise<void> {
     this.requestStatusFilter.set(status);
-    this.requests.set(
-      await firstValueFrom(this.api.listAdminServiceRequests(status || undefined)),
-    );
+    await this.retrySection('requests');
   }
 
   protected async setAppointmentFilter(status: string): Promise<void> {
     this.appointmentStatusFilter.set(status);
-    this.appointments.set(
-      await firstValueFrom(this.api.listAdminAppointments(status || undefined)),
-    );
+    await this.retrySection('appointments');
   }
 
   protected canToggleUserStatus(u: AdminUserRow): boolean {
@@ -179,7 +241,7 @@ export class AdminDashboardPage implements OnInit {
   }
 
   protected requestToggleUser(u: AdminUserRow): void {
-    if (!this.canToggleUserStatus(u) || this.acting()) {
+    if (!this.canToggleUserStatus(u) || this.adminActionsDisabled()) {
       return;
     }
     const currentStatus = this.userStatus(u);
@@ -245,63 +307,67 @@ export class AdminDashboardPage implements OnInit {
   }
 
   protected askResetTestData(): void {
-    if (this.resetting() || this.repairing()) {
+    if (!this.showTestTools() || this.adminActionsDisabled()) {
       return;
     }
     this.resetConfirmOpen.set(true);
   }
 
   protected async resetTestData(): Promise<void> {
-    if (this.resetting() || this.repairing()) {
+    if (!this.showTestTools() || this.resetting() || this.repairing() || !this.dashboard()) {
       return;
     }
     this.resetConfirmOpen.set(false);
     this.resetting.set(true);
     this.actionError.set(null);
-    this.notice.set('กำลังรีเซ็ต…');
-    const keptGuess = this.dashboard()?.users ?? 10;
-    this.dashboard.set(optimisticAdminDashboardAfterReset(this.dashboard(), keptGuess));
-    this.requests.set([]);
-    this.appointments.set([]);
-    this.notifications.set([]);
-    this.toast.show(ADMIN_RESET_TOAST, 4000);
+    this.notice.set(null);
+    // A-1: no optimistic clearing and no toast before the BE confirms.
     try {
-      const result = await firstValueFrom(this.api.resetTestData());
-      const kept = (result as { keptUsers?: number }).keptUsers ?? 10;
-      const dashFromApi = normalizeResetDashboard((result as { dashboard?: unknown }).dashboard);
-      const deletedReq = (result as { deletedRequests?: number }).deletedRequests ?? 0;
-      const seeded = (result as { sampleReviewsSeeded?: number }).sampleReviewsSeeded ?? 0;
+      const result = (await firstValueFrom(this.api.resetTestData())) as {
+        keptUsers?: number;
+        deletedRequests?: number;
+        sampleReviewsSeeded?: number;
+        dashboard?: unknown;
+      };
       this.marketplaceCache.invalidateAll();
       this.usersPage.set(1);
-      this.dashboard.set(
-        dashFromApi ?? optimisticAdminDashboardAfterReset(this.dashboard(), kept),
-      );
+      const dashFromApi = normalizeResetDashboard(result.dashboard);
+      if (dashFromApi) {
+        this.dashboard.set(dashFromApi);
+      }
       await this.refreshAfterMutation();
-      this.dashboard.update((d) => (d ? optimisticAdminDashboardAfterReset(d, kept) : d));
-      this.notice.set(
-        `รีเซ็ตสำเร็จ — ลบงาน ${deletedReq} รายการ · คงบัญชีทดสอบ ${kept} บัญชี · สร้างรีวิวตัวอย่าง ${seeded} รายการ`,
-      );
+      const parts = [`ลบงาน ${result.deletedRequests ?? 0} รายการ`];
+      if (typeof result.keptUsers === 'number') {
+        parts.push(`คงบัญชีทดสอบ ${result.keptUsers} บัญชี`);
+      }
+      if (typeof result.sampleReviewsSeeded === 'number') {
+        parts.push(`สร้างรีวิวตัวอย่าง ${result.sampleReviewsSeeded} รายการ`);
+      }
+      this.notice.set(`รีเซ็ตสำเร็จ — ${parts.join(' · ')}`);
+      this.toast.show(ADMIN_RESET_TOAST, 4000);
     } catch (e) {
-      this.actionError.set(apiErrorMessage(e, 'รีเซ็ตข้อมูลทดสอบไม่สำเร็จ'));
+      this.notice.set(null);
+      this.actionError.set(adminToolErrorMessage(e, 'รีเซ็ตข้อมูลทดสอบไม่สำเร็จ'));
     } finally {
       this.resetting.set(false);
     }
   }
 
   protected askRepairTestData(): void {
-    if (this.resetting() || this.repairing()) {
+    if (!this.showTestTools() || this.adminActionsDisabled()) {
       return;
     }
     this.repairConfirmOpen.set(true);
   }
 
   protected async repairTestData(): Promise<void> {
-    if (this.resetting() || this.repairing()) {
+    if (!this.showTestTools() || this.resetting() || this.repairing() || !this.dashboard()) {
       return;
     }
     this.repairConfirmOpen.set(false);
     this.repairing.set(true);
     this.actionError.set(null);
+    this.notice.set(null);
     try {
       const result = await firstValueFrom(this.api.repairTestData());
       const moved = result.reviewReassigned ? 'ย้ายรีวิวแล้ว' : 'รีวิวตรงอยู่แล้วหรือไม่พบ';
@@ -310,7 +376,8 @@ export class AdminDashboardPage implements OnInit {
         `ซ่อมข้อมูลทดสอบสำเร็จ: ${moved} · ลบงานเก่า ${result.staleRequestsRemoved ?? 0} รายการ`,
       );
     } catch (e) {
-      this.actionError.set(apiErrorMessage(e, 'ซ่อมข้อมูลทดสอบไม่สำเร็จ'));
+      this.notice.set(null);
+      this.actionError.set(adminToolErrorMessage(e, 'ซ่อมข้อมูลทดสอบไม่สำเร็จ'));
     } finally {
       this.repairing.set(false);
     }
@@ -329,7 +396,7 @@ export class AdminDashboardPage implements OnInit {
   }
 
   protected isTestUser(u: AdminUserRow): boolean {
-    return !!u.lineUserId?.startsWith('dev-persona-');
+    return this.showTestTools() && !!u.lineUserId?.startsWith('dev-persona-');
   }
 
   protected notificationLabel(row: AdminNotificationRow): string {
