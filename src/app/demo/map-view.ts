@@ -190,9 +190,9 @@ export class MapView implements AfterViewInit, OnChanges, OnDestroy {
     if (!this.circle) {
       this.circle = L.circle(position, {
         radius: radiusMeters,
-        color: '#0a9f50',
+        color: '#06C755',
         weight: 2,
-        fillColor: '#0a9f50',
+        fillColor: '#06C755',
         fillOpacity: 0.08,
       }).addTo(this.map);
     } else {
